@@ -784,7 +784,7 @@ const IngresoList = ({ ingresos, onDelete }: { ingresos: Ingreso[], onDelete: (i
           <p style={{ fontSize: '1.5rem', fontWeight: 950, color: '#ef4444' }}>${formatPesos(totalAceptado)}</p>
         </div>
       </div>
-      <div style={{ maxHeight: '420px', overflowY: 'auto', paddingRight: '0.75rem' }} className="custom-scrollbar">
+      <div style={{ flex: 1, maxHeight: '800px', overflowY: 'auto', paddingRight: '0.75rem', minHeight: '300px' }} className="custom-scrollbar">
         <AnimatePresence>
           {ingresos.length === 0 ? (
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '3rem', fontSize: '0.9rem' }}>
