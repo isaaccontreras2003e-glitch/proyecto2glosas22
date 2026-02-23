@@ -108,13 +108,18 @@ export default function Home() {
         if (iRes?.error) throw iRes.error;
 
         if (gRes && gRes.data) {
-          setGlosas(gRes.data);
-          localStorage.setItem('cached_glosas', JSON.stringify(gRes.data));
+          // SOLO sobrescribir caché si recibimos datos, para evitar borrar todo por culpa de RLS/Errores
+          if (gRes.data.length > 0 || glosas.length === 0) {
+            setGlosas(gRes.data);
+            localStorage.setItem('cached_glosas', JSON.stringify(gRes.data));
+          }
           lastFetchedUserId.current = user.id;
         }
         if (iRes && iRes.data) {
-          setIngresos(iRes.data);
-          localStorage.setItem('cached_ingresos', JSON.stringify(iRes.data));
+          if (iRes.data.length > 0 || ingresos.length === 0) {
+            setIngresos(iRes.data);
+            localStorage.setItem('cached_ingresos', JSON.stringify(iRes.data));
+          }
         }
 
         setLastUpdate(new Date());
@@ -951,6 +956,9 @@ export default function Home() {
               <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.65rem', marginTop: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                 Gestión de Alto Rendimiento para Clínicas Internacionales
               </p>
+            </div>
+            <div style={{ marginTop: '2rem', padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.65rem', color: 'rgba(255,255,255,0.15)', fontFamily: 'monospace' }}>
+              DEBUG: ID={user?.id} | ROL={role} | EMAIL={user?.email}
             </div>
           </div>
         </footer>
