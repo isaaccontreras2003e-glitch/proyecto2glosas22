@@ -454,15 +454,22 @@ export default function Home() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 onClick={() => {
-                  if (confirm('¿Deseas importar datos manualmente desde un archivo JSON o texto de respaldo?')) {
+                  const recovered = {
+                    glosas: JSON.parse(localStorage.getItem('sisfact_glosas') || '[]'),
+                    ingresos: JSON.parse(localStorage.getItem('sisfact_ingresos') || '[]')
+                  };
+
+                  if (confirm('¿Deseas intentar IMPORTAR a la nube o DESCARGAR un respaldo en tu PC?\n\nAceptar = Importar a la Nube\nCancelar = Descargar a mi PC')) {
                     handleManualImport();
                   } else {
-                    console.log('--- DIAGNÓSTICO DE ALMACENAMIENTO ---');
-                    for (let i = 0; i < localStorage.length; i++) {
-                      const key = localStorage.key(i);
-                      console.log(`Clave: ${key}, Tamaño: ${localStorage.getItem(key!)?.length} caracteres`);
-                    }
-                    alert('Diagnóstico enviado a la consola (F12). Si tienes un código de respaldo, vuelve a presionar este botón y elige "Aceptar" para importarlo.');
+                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(recovered, null, 2));
+                    const downloadAnchorNode = document.createElement('a');
+                    downloadAnchorNode.setAttribute("href", dataStr);
+                    downloadAnchorNode.setAttribute("download", "respaldo_glosas_seguro.json");
+                    document.body.appendChild(downloadAnchorNode);
+                    downloadAnchorNode.click();
+                    downloadAnchorNode.remove();
+                    alert('Se ha descargado el archivo "respaldo_glosas_seguro.json". Guárdalo bien, es tu información.');
                   }
                 }}
                 className="btn btn-secondary"
