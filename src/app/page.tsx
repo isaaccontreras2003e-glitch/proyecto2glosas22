@@ -552,44 +552,7 @@ export default function Home() {
             <p style={{ fontWeight: 700, color: 'white', marginBottom: '0.25rem', fontSize: '1.1rem' }}>
               {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                onClick={() => {
-                  const recovered = {
-                    glosas: JSON.parse(localStorage.getItem('sisfact_glosas') || '[]'),
-                    ingresos: JSON.parse(localStorage.getItem('sisfact_ingresos') || '[]')
-                  };
-
-                  if (confirm('¿Deseas intentar IMPORTAR a la nube o DESCARGAR un respaldo en tu PC?\n\nAceptar = Importar a la Nube\nCancelar = Descargar a mi PC')) {
-                    handleManualImport();
-                  } else {
-                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(recovered, null, 2));
-                    const downloadAnchorNode = document.createElement('a');
-                    downloadAnchorNode.setAttribute("href", dataStr);
-                    downloadAnchorNode.setAttribute("download", "respaldo_glosas_seguro.json");
-                    document.body.appendChild(downloadAnchorNode);
-                    downloadAnchorNode.click();
-                    downloadAnchorNode.remove();
-                    alert('Se ha descargado el archivo "respaldo_glosas_seguro.json". Guárdalo bien, es tu información.');
-                  }
-                }}
-                className="btn btn-secondary"
-                style={{ padding: '0.6rem 1.25rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#f59e0b', borderColor: 'rgba(245,158,11,0.2)' }}
-              >
-                <Activity size={14} />
-                DIAGNÓSTICO DATOS
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                onClick={testConnection}
-                className="btn btn-secondary"
-                style={{ padding: '0.6rem 1.25rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#60a5fa', borderColor: 'rgba(96,165,250,0.2)' }}
-              >
-                <Activity size={14} />
-                PROBAR CONEXIÓN
-              </motion.button>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
 
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -668,8 +631,49 @@ export default function Home() {
           </>
         )}
 
-        <footer style={{ marginTop: '5rem', padding: '3rem 0', borderTop: '1px solid var(--border)', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-          &copy; {new Date().getFullYear()} Sisfact Auditoría. Gestión de Alto Rendimiento.
+        <footer style={{ marginTop: '8rem', padding: '4rem 0', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+          <div style={{ marginBottom: '3rem', display: 'flex', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap', opacity: 0.6 }}>
+            <motion.button
+              whileHover={{ scale: 1.05, opacity: 1 }}
+              onClick={() => {
+                const recovered = {
+                  glosas: JSON.parse(localStorage.getItem('sisfact_glosas') || '[]'),
+                  ingresos: JSON.parse(localStorage.getItem('sisfact_ingresos') || '[]')
+                };
+
+                if (confirm('¿Deseas intentar IMPORTAR a la nube o DESCARGAR un respaldo en tu PC?\n\nAceptar = Importar a la Nube\nCancelar = Descargar a mi PC')) {
+                  handleManualImport();
+                } else {
+                  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(recovered, null, 2));
+                  const downloadAnchorNode = document.createElement('a');
+                  downloadAnchorNode.setAttribute("href", dataStr);
+                  downloadAnchorNode.setAttribute("download", "respaldo_glosas_seguro.json");
+                  document.body.appendChild(downloadAnchorNode);
+                  downloadAnchorNode.click();
+                  downloadAnchorNode.remove();
+                  alert('Se ha descargado el archivo "respaldo_glosas_seguro.json".');
+                }
+              }}
+              className="btn btn-secondary"
+              style={{ padding: '0.5rem 1rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b' }}
+            >
+              <Activity size={12} />
+              RESCATE DE DATOS LOCALES
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.05, opacity: 1 }}
+              onClick={testConnection}
+              className="btn btn-secondary"
+              style={{ padding: '0.5rem 1rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#60a5fa' }}
+            >
+              <Activity size={12} />
+              PROBAR CONEXIÓN NUBE
+            </motion.button>
+          </div>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+            &copy; {new Date().getFullYear()} Sisfact Auditoría. Gestión de Alto Rendimiento.
+          </p>
         </footer>
       </main>
     </div>
