@@ -40,6 +40,7 @@ export default function Home() {
   const [ingresos, setIngresos] = useState<Ingreso[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [forcedEntry, setForcedEntry] = useState(false);
   const [showForceButton, setShowForceButton] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, role, loading: authLoading, signOut } = useAuth();
@@ -413,7 +414,7 @@ export default function Home() {
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)', position: 'relative' }}>
       {/* Loading overlay - Top Level */}
       <AnimatePresence>
-        {(loading || authLoading) && (
+        {((loading || authLoading) && !forcedEntry) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -448,7 +449,10 @@ export default function Home() {
               <motion.button
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                onClick={() => setLoading(false)}
+                onClick={() => {
+                  setLoading(false);
+                  setForcedEntry(true);
+                }}
                 className="btn btn-secondary"
                 style={{
                   fontSize: '0.75rem',
