@@ -81,40 +81,58 @@ export default function Home() {
 
   const loadData = React.useCallback(async (force = false) => {
     if (!user) return;
-    // Permitir cargar si se fuerza, o si el usuario cambió, o si no hay datos
     if (!force && lastFetchedUserId.current === user.id && glosas.length > 0) return;
 
-    try {
-      setLoading(true);
-      setSupabaseError(null);
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout de conexión (12s)')), 12000));
+    let retries = 0;
+    const maxRetries = 2;
 
-      const fetchPromise = Promise.all([
-        supabase.from('glosas').select('*').order('fecha', { ascending: false }),
-        supabase.from('ingresos').select('*').order('fecha', { ascending: false }),
-      ]);
+    const attemptFetch = async (): Promise<boolean> => {
+      try {
+        setLoading(true);
+        setSupabaseError(retries > 0 ? `Reintentando... (${retries}/${maxRetries})` : null);
 
-      const results = await Promise.race([fetchPromise, timeoutPromise]) as any;
-      const [gRes, iRes] = results;
+        // Timeout de seguridad de 20s
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout de conexión (20s)')), 20000)
+        );
 
-      if (gRes?.error) throw gRes.error;
-      if (iRes?.error) throw iRes.error;
+        const fetchPromise = Promise.all([
+          supabase.from('glosas').select('*').order('fecha', { ascending: false }),
+          supabase.from('ingresos').select('*').order('fecha', { ascending: false }),
+        ]);
 
-      if (gRes && gRes.data) {
-        setGlosas(gRes.data);
-        lastFetchedUserId.current = user.id;
+        const results = await Promise.race([fetchPromise, timeoutPromise]) as any;
+        const [gRes, iRes] = results;
+
+        if (gRes?.error) throw gRes.error;
+        if (iRes?.error) throw iRes.error;
+
+        if (gRes && gRes.data) {
+          setGlosas(gRes.data);
+          lastFetchedUserId.current = user.id;
+        }
+        if (iRes && iRes.data) setIngresos(iRes.data);
+
+        setLastUpdate(new Date());
+        setSupabaseError(null);
+        return true;
+      } catch (err: any) {
+        console.error(`Error en intento ${retries + 1}:`, err);
+        if (retries < maxRetries) {
+          retries++;
+          // Esperar un poco antes de reintentar
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return attemptFetch();
+        }
+        setSupabaseError(err.message || 'Error de conexión persistente');
+        return false;
+      } finally {
+        setLoading(false);
       }
-      if (iRes && iRes.data) setIngresos(iRes.data);
+    };
 
-      if ((gRes && gRes.data) || (iRes && iRes.data)) setLastUpdate(new Date());
-
-    } catch (err: any) {
-      console.error('Error cargando datos:', err);
-      setSupabaseError(err.message || 'Error desconocido al conectar con Supabase');
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.id]); // Quitamos glosas.length para evitar hooks circulares o ruidos
+    await attemptFetch();
+  }, [user?.id]);
 
   // Cargar datos desde Supabase al montar o cambiar usuario (FIJO: No bloqueamos por forcedEntry)
   useEffect(() => {
@@ -664,9 +682,9 @@ export default function Home() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     style={{
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      border: '1px solid rgba(239, 68, 68, 0.2)',
-                      color: '#ef4444',
+                      background: supabaseError.includes('Reintentando') ? 'rgba(139, 92, 246, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                      border: `1px solid ${supabaseError.includes('Reintentando') ? 'rgba(139, 92, 246, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+                      color: supabaseError.includes('Reintentando') ? '#8b5cf6' : '#ef4444',
                       padding: '4px 12px',
                       borderRadius: '8px',
                       fontSize: '0.8rem',
@@ -674,7 +692,7 @@ export default function Home() {
                       marginTop: '0.82rem'
                     }}
                   >
-                    ⚠️ ERROR BD: {supabaseError}
+                    {supabaseError.includes('Reintentando') ? '🔄 ' : '⚠️ '} {supabaseError.includes('Reintentando') ? supabaseError : `ERROR BD: ${supabaseError}`}
                   </motion.div>
                 )}
               </div>
