@@ -35,11 +35,14 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen w-full flex items-center justify-center p-6 bg-[#0a0a0f] overflow-hidden" style={{
+        <div className="flex items-center justify-center p-6 bg-[#0a0a0f]" style={{
             backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.05) 0%, transparent 50%)',
             position: 'fixed',
-            top: 0,
-            left: 0
+            inset: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 9999,
+            overflow: 'auto'
         }}>
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
