@@ -688,7 +688,7 @@ export default function Home() {
           </motion.div>
         </header>
 
-        {(!loading && !authLoading && user) && (
+        {((!loading && !authLoading) || forcedEntry) && user && (
           <>
             <Dashboard
               totalCount={stats.totalCount}

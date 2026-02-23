@@ -26,22 +26,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         // Escuchar cambios en la sesión
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            setUser(session?.user ?? null);
+            try {
+                setUser(session?.user ?? null);
 
-            if (session?.user) {
-                // Obtener el rol del perfil
-                const { data: profile } = await supabase
-                    .from('perfiles')
-                    .select('rol')
-                    .eq('id', session.user.id)
-                    .single();
+                if (session?.user) {
+                    // Obtener el rol del perfil con timeout implícito si es posible, o simplemente try-catch
+                    const { data: profile, error } = await supabase
+                        .from('perfiles')
+                        .select('rol')
+                        .eq('id', session.user.id)
+                        .single();
 
-                setRole(profile?.rol ?? 'visor');
-            } else {
-                setRole(null);
+                    if (error) {
+                        console.warn('Error fetching profile, defaulting to visor:', error);
+                        setRole('visor');
+                    } else {
+                        setRole(profile?.rol ?? 'visor');
+                    }
+                } else {
+                    setRole(null);
+                }
+            } catch (err) {
+                console.error('Critical Auth State Error:', err);
+                setRole('visor'); // Fallback seguro
+            } finally {
+                setLoading(false);
             }
-
-            setLoading(false);
         });
 
         return () => {
