@@ -40,6 +40,7 @@ export default function Home() {
   const [ingresos, setIngresos] = useState<Ingreso[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showForceButton, setShowForceButton] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, role, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
@@ -50,6 +51,19 @@ export default function Home() {
       router.push('/login');
     }
   }, [user, authLoading, router]);
+
+  // Temporizador de seguridad para el botón "Forzar Entrada"
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (loading || authLoading) {
+      timer = setTimeout(() => {
+        setShowForceButton(true);
+      }, 5000); // Aparece tras 5 segundos
+    } else {
+      setShowForceButton(false);
+    }
+    return () => clearTimeout(timer);
+  }, [loading, authLoading]);
 
   // Cargar datos desde Supabase al montar
   useEffect(() => {
@@ -122,11 +136,11 @@ export default function Home() {
           ]);
           if (gData) setGlosas(gData);
           if (iData) setIngresos(iData);
-          setLoading(false);
         }
       } catch (err: any) {
-        setLoading(false);
         console.error('Error durante la recuperación:', err);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -599,9 +613,47 @@ export default function Home() {
 
         {/* Loading overlay */}
         {(loading || authLoading) && (
-          <div style={{ textAlign: 'center', padding: '10rem', color: 'var(--text-secondary)' }}>
-            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ width: '40px', height: '40px', border: '3px solid rgba(139,92,246,0.2)', borderTop: '3px solid #8b5cf6', borderRadius: '50%', margin: '0 auto 1rem' }} />
-            <p>Preparando ambiente seguro...</p>
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 10000,
+            background: 'var(--background)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center'
+          }}>
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+              style={{
+                width: '40px',
+                height: '40px',
+                border: '3px solid rgba(139,92,246,0.2)',
+                borderTop: '3px solid #8b5cf6',
+                borderRadius: '50%',
+                marginBottom: '1rem'
+              }}
+            />
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Preparando ambiente seguro...</p>
+
+            {showForceButton && (
+              <motion.button
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={() => setLoading(false)}
+                className="btn btn-secondary"
+                style={{
+                  fontSize: '0.7rem',
+                  padding: '0.5rem 1rem',
+                  opacity: 0.7,
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}
+              >
+                ¿PROBLEMAS? FORZAR ENTRADA
+              </motion.button>
+            )}
           </div>
         )}
 
