@@ -552,32 +552,21 @@ export default function Home() {
             <p style={{ fontWeight: 700, color: 'white', marginBottom: '0.25rem', fontSize: '1.1rem' }}>
               {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                onClick={() => fileInputRef.current?.click()}
-                className="btn btn-secondary"
-                style={{ padding: '0.6rem 1.25rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#10b981', borderColor: 'rgba(16,185,129,0.2)' }}
-              >
-                <ListChecks size={14} />
-                IMPORTAR EXCEL (CSV)
-              </motion.button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleCSVImport}
-                accept=".csv"
-                style={{ display: 'none' }}
-              />
-              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={exportGlosasToExcel} className="btn btn-secondary" style={{ padding: '0.6rem 1.25rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'rgba(139, 92, 246, 0.1)', borderColor: 'rgba(139, 92, 246, 0.2)', fontWeight: 700 }}>
-                <Download size={14} color="var(--primary)" />
-                EXPORTAR LISTADO
-              </motion.button>
-              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={exportToExcel} className="btn btn-secondary" style={{ padding: '0.6rem 1.25rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 700 }}>
-                <Download size={14} />
-                CONSOLIDADO FACTURAS
-              </motion.button>
+            <div style={{ marginTop: '0.5rem' }}>
+              <p style={{
+                fontSize: '0.9rem',
+                color: 'rgba(255,255,255,0.5)',
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                justifyContent: 'flex-end'
+              }}>
+                <span style={{ width: '20px', height: '1px', background: 'rgba(255,255,255,0.2)' }}></span>
+                Diseñado y Desarrollado por Isaac Contreras
+              </p>
             </div>
           </motion.div>
         </header>
@@ -631,49 +620,103 @@ export default function Home() {
           </>
         )}
 
-        <footer style={{ marginTop: '8rem', padding: '4rem 0', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
-          <div style={{ marginBottom: '3rem', display: 'flex', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap', opacity: 0.6 }}>
-            <motion.button
-              whileHover={{ scale: 1.05, opacity: 1 }}
-              onClick={() => {
-                const recovered = {
-                  glosas: JSON.parse(localStorage.getItem('sisfact_glosas') || '[]'),
-                  ingresos: JSON.parse(localStorage.getItem('sisfact_ingresos') || '[]')
-                };
+        <footer style={{ marginTop: '8rem', padding: '6rem 0', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+            <h3 style={{
+              fontSize: '0.8rem',
+              color: 'rgba(255,255,255,0.3)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.2em',
+              marginBottom: '2.5rem',
+              fontWeight: 800
+            }}>
+              Panel de Control y Gestión de Datos
+            </h3>
 
-                if (confirm('¿Deseas intentar IMPORTAR a la nube o DESCARGAR un respaldo en tu PC?\n\nAceptar = Importar a la Nube\nCancelar = Descargar a mi PC')) {
-                  handleManualImport();
-                } else {
-                  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(recovered, null, 2));
-                  const downloadAnchorNode = document.createElement('a');
-                  downloadAnchorNode.setAttribute("href", dataStr);
-                  downloadAnchorNode.setAttribute("download", "respaldo_glosas_seguro.json");
-                  document.body.appendChild(downloadAnchorNode);
-                  downloadAnchorNode.click();
-                  downloadAnchorNode.remove();
-                  alert('Se ha descargado el archivo "respaldo_glosas_seguro.json".');
-                }
-              }}
-              className="btn btn-secondary"
-              style={{ padding: '0.5rem 1rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b' }}
-            >
-              <Activity size={12} />
-              RESCATE DE DATOS LOCALES
-            </motion.button>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1.25rem', flexWrap: 'wrap', marginBottom: '4rem' }}>
+              {/* Grupo: Gestión de Archivos */}
+              <div style={{ display: 'flex', gap: '0.75rem', background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '1.25rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="btn btn-secondary"
+                  style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#10b981', borderColor: 'rgba(16,185,129,0.2)' }}
+                >
+                  <ListChecks size={16} />
+                  IMPORTAR EXCEL
+                </motion.button>
+                <input type="file" ref={fileInputRef} onChange={handleCSVImport} accept=".csv" style={{ display: 'none' }} />
 
-            <motion.button
-              whileHover={{ scale: 1.05, opacity: 1 }}
-              onClick={testConnection}
-              className="btn btn-secondary"
-              style={{ padding: '0.5rem 1rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#60a5fa' }}
-            >
-              <Activity size={12} />
-              PROBAR CONEXIÓN NUBE
-            </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  onClick={exportGlosasToExcel}
+                  className="btn btn-secondary"
+                  style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#8b5cf6', borderColor: 'rgba(139,92,246,0.2)' }}
+                >
+                  <Download size={16} />
+                  EXPORTAR DATOS
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  onClick={exportToExcel}
+                  className="btn btn-secondary"
+                  style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}
+                >
+                  <Download size={16} />
+                  CONSOLIDADO
+                </motion.button>
+              </div>
+
+              {/* Grupo: Mantenimiento (Discreto) */}
+              <div style={{ display: 'flex', gap: '0.75rem', opacity: 0.5 }}>
+                <motion.button
+                  whileHover={{ scale: 1.05, opacity: 1 }}
+                  onClick={() => {
+                    const recovered = {
+                      glosas: JSON.parse(localStorage.getItem('sisfact_glosas') || '[]'),
+                      ingresos: JSON.parse(localStorage.getItem('sisfact_ingresos') || '[]')
+                    };
+                    if (confirm('¿Deseas intentar IMPORTAR a la nube o DESCARGAR un respaldo?')) {
+                      handleManualImport();
+                    } else {
+                      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(recovered, null, 2));
+                      const downloadAnchorNode = document.createElement('a');
+                      downloadAnchorNode.setAttribute("href", dataStr);
+                      downloadAnchorNode.setAttribute("download", "respaldo_glosas_seguro.json");
+                      document.body.appendChild(downloadAnchorNode);
+                      downloadAnchorNode.click();
+                      downloadAnchorNode.remove();
+                    }
+                  }}
+                  className="btn btn-secondary"
+                  style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b' }}
+                >
+                  <Activity size={12} />
+                  RESCATE
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.05, opacity: 1 }}
+                  onClick={testConnection}
+                  className="btn btn-secondary"
+                  style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#60a5fa' }}
+                >
+                  <Activity size={12} />
+                  TEST NUBE
+                </motion.button>
+              </div>
+            </div>
+
+            <div style={{ opacity: 0.4 }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
+                &copy; {new Date().getFullYear()} Sisfact Auditoría. Desarrollado por Isaac Contreras.
+              </p>
+              <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.65rem', marginTop: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                Gestión de Alto Rendimiento para Clínicas Internacionales
+              </p>
+            </div>
           </div>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-            &copy; {new Date().getFullYear()} Sisfact Auditoría. Gestión de Alto Rendimiento.
-          </p>
         </footer>
       </main>
     </div>
