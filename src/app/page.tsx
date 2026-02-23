@@ -7,6 +7,9 @@ import { GlosaTable } from '@/components/GlosaTable';
 import { supabase } from '@/lib/supabase';
 import { LayoutDashboard, TrendingUp, Wallet, Activity, Trash2, Download, ListChecks, PieChart, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/lib/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { LogOut } from 'lucide-react';
 
 const formatPesos = (value: number): string => {
   return Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -38,11 +41,21 @@ export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user, role, loading: authLoading, signOut } = useAuth();
+  const router = useRouter();
+
+  // Redirección si no está autenticado
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authLoading, router]);
 
   // Cargar datos desde Supabase al montar
   useEffect(() => {
     setIsMounted(true);
     const loadData = async () => {
+      if (!user) return;
       setLoading(true);
       const [{ data: glosasData }, { data: ingresosData }] = await Promise.all([
         supabase.from('glosas').select('*').order('fecha', { ascending: false }),
@@ -52,8 +65,8 @@ export default function Home() {
       if (ingresosData) setIngresos(ingresosData);
       setLoading(false);
     };
-    loadData();
-  }, []);
+    if (user) loadData();
+  }, [user]);
 
   // Migración de datos desde localStorage a Supabase (Escaneo Profundo)
   useEffect(() => {
@@ -552,7 +565,7 @@ export default function Home() {
             <p style={{ fontWeight: 700, color: 'white', marginBottom: '0.25rem', fontSize: '1.1rem' }}>
               {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
-            <div style={{ marginTop: '0.5rem' }}>
+            <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', justifyContent: 'flex-end' }}>
               <p style={{
                 fontSize: '0.9rem',
                 color: 'rgba(255,255,255,0.5)',
@@ -562,24 +575,57 @@ export default function Home() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                justifyContent: 'flex-end'
               }}>
                 <span style={{ width: '20px', height: '1px', background: 'rgba(255,255,255,0.2)' }}></span>
                 Diseñado y Desarrollado por Isaac Contreras
               </p>
+
+              <button
+                onClick={signOut}
+                style={{
+                  position: 'fixed',
+                  top: '1.5rem',
+                  right: '1.5rem',
+                  zIndex: 1100,
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#ef4444',
+                  padding: '0.6rem 1.2rem',
+                  borderRadius: '1rem',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.6rem',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                CERRAR SESIÓN <LogOut size={16} />
+              </button>
             </div>
           </motion.div>
         </header>
 
         {/* Loading overlay */}
-        {loading && (
-          <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
+        {(loading || authLoading) && (
+          <div style={{ textAlign: 'center', padding: '10rem', color: 'var(--text-secondary)' }}>
             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ width: '40px', height: '40px', border: '3px solid rgba(139,92,246,0.2)', borderTop: '3px solid #8b5cf6', borderRadius: '50%', margin: '0 auto 1rem' }} />
-            <p>Sincronizando con la nube...</p>
+            <p>Preparando ambiente seguro...</p>
           </div>
         )}
 
-        {!loading && (
+        {(!loading && !authLoading && user) && (
           <>
             <Dashboard
               totalCount={stats.totalCount}
@@ -592,7 +638,7 @@ export default function Home() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '2.5rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
-                <GlosaForm onAddGlosa={handleAddGlosa} existingGlosas={glosas} />
+                <GlosaForm onAddGlosa={handleAddGlosa} existingGlosas={glosas} isAdmin={role === 'admin'} />
                 <AnimatePresence mode="popLayout">
                   <motion.div key="table-container" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                     <GlosaTable
@@ -607,14 +653,15 @@ export default function Home() {
                       setFilterTipo={setFilterTipo}
                       filterEstado={filterEstado}
                       setFilterEstado={setFilterEstado}
+                      isAdmin={role === 'admin'}
                     />
                   </motion.div>
                 </AnimatePresence>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
-                <IngresoForm onAddIngreso={handleAddIngreso} />
-                <IngresoList ingresos={ingresos} onDelete={handleDeleteIngreso} />
+                <IngresoForm onAddIngreso={handleAddIngreso} isAdmin={role === 'admin'} />
+                <IngresoList ingresos={ingresos} onDelete={handleDeleteIngreso} isAdmin={role === 'admin'} />
               </div>
             </div>
           </>
@@ -636,16 +683,20 @@ export default function Home() {
             <div style={{ display: 'flex', justifyContent: 'center', gap: '1.25rem', flexWrap: 'wrap', marginBottom: '4rem' }}>
               {/* Grupo: Gestión de Archivos */}
               <div style={{ display: 'flex', gap: '0.75rem', background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '1.25rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="btn btn-secondary"
-                  style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#10b981', borderColor: 'rgba(16,185,129,0.2)' }}
-                >
-                  <ListChecks size={16} />
-                  IMPORTAR EXCEL
-                </motion.button>
-                <input type="file" ref={fileInputRef} onChange={handleCSVImport} accept=".csv" style={{ display: 'none' }} />
+                {role === 'admin' && (
+                  <>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="btn btn-secondary"
+                      style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#10b981', borderColor: 'rgba(16,185,129,0.2)' }}
+                    >
+                      <ListChecks size={16} />
+                      IMPORTAR EXCEL
+                    </motion.button>
+                    <input type="file" ref={fileInputRef} onChange={handleCSVImport} accept=".csv" style={{ display: 'none' }} />
+                  </>
+                )}
 
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -669,43 +720,45 @@ export default function Home() {
               </div>
 
               {/* Grupo: Mantenimiento (Discreto) */}
-              <div style={{ display: 'flex', gap: '0.75rem', opacity: 0.5 }}>
-                <motion.button
-                  whileHover={{ scale: 1.05, opacity: 1 }}
-                  onClick={() => {
-                    const recovered = {
-                      glosas: JSON.parse(localStorage.getItem('sisfact_glosas') || '[]'),
-                      ingresos: JSON.parse(localStorage.getItem('sisfact_ingresos') || '[]')
-                    };
-                    if (confirm('¿Deseas intentar IMPORTAR a la nube o DESCARGAR un respaldo?')) {
-                      handleManualImport();
-                    } else {
-                      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(recovered, null, 2));
-                      const downloadAnchorNode = document.createElement('a');
-                      downloadAnchorNode.setAttribute("href", dataStr);
-                      downloadAnchorNode.setAttribute("download", "respaldo_glosas_seguro.json");
-                      document.body.appendChild(downloadAnchorNode);
-                      downloadAnchorNode.click();
-                      downloadAnchorNode.remove();
-                    }
-                  }}
-                  className="btn btn-secondary"
-                  style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b' }}
-                >
-                  <Activity size={12} />
-                  RESCATE
-                </motion.button>
+              {role === 'admin' && (
+                <div style={{ display: 'flex', gap: '0.75rem', opacity: 0.5 }}>
+                  <motion.button
+                    whileHover={{ scale: 1.05, opacity: 1 }}
+                    onClick={() => {
+                      const recovered = {
+                        glosas: JSON.parse(localStorage.getItem('sisfact_glosas') || '[]'),
+                        ingresos: JSON.parse(localStorage.getItem('sisfact_ingresos') || '[]')
+                      };
+                      if (confirm('¿Deseas intentar IMPORTAR a la nube o DESCARGAR un respaldo?')) {
+                        handleManualImport();
+                      } else {
+                        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(recovered, null, 2));
+                        const downloadAnchorNode = document.createElement('a');
+                        downloadAnchorNode.setAttribute("href", dataStr);
+                        downloadAnchorNode.setAttribute("download", "respaldo_glosas_seguro.json");
+                        document.body.appendChild(downloadAnchorNode);
+                        downloadAnchorNode.click();
+                        downloadAnchorNode.remove();
+                      }
+                    }}
+                    className="btn btn-secondary"
+                    style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b' }}
+                  >
+                    <Activity size={12} />
+                    RESCATE
+                  </motion.button>
 
-                <motion.button
-                  whileHover={{ scale: 1.05, opacity: 1 }}
-                  onClick={testConnection}
-                  className="btn btn-secondary"
-                  style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#60a5fa' }}
-                >
-                  <Activity size={12} />
-                  TEST NUBE
-                </motion.button>
-              </div>
+                  <motion.button
+                    whileHover={{ scale: 1.05, opacity: 1 }}
+                    onClick={testConnection}
+                    className="btn btn-secondary"
+                    style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#60a5fa' }}
+                  >
+                    <Activity size={12} />
+                    TEST NUBE
+                  </motion.button>
+                </div>
+              )}
             </div>
 
             <div style={{ opacity: 0.4 }}>
@@ -723,12 +776,12 @@ export default function Home() {
   );
 }
 
-const IngresoForm = ({ onAddIngreso }: { onAddIngreso: (ingreso: Ingreso) => void }) => {
+const IngresoForm = ({ onAddIngreso, isAdmin }: { onAddIngreso: (ingreso: Ingreso) => void, isAdmin: boolean }) => {
   const [formData, setFormData] = useState({ factura: '', valor_aceptado: '', valor_no_aceptado: '' });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.factura) return;
+    if (!isAdmin || !formData.factura) return;
     onAddIngreso({
       id: Math.random().toString(36).substr(2, 9),
       factura: formData.factura,
@@ -749,28 +802,35 @@ const IngresoForm = ({ onAddIngreso }: { onAddIngreso: (ingreso: Ingreso) => voi
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div className="input-group">
             <label className="label">Número de Factura Afectada</label>
-            <input type="text" className="input" style={{ padding: '0.85rem 1rem' }} placeholder="Ej: FAC-100" value={formData.factura} onChange={(e) => setFormData({ ...formData, factura: e.target.value })} required />
+            <input type="text" className="input" style={{ padding: '0.85rem 1rem' }} placeholder="Ej: FAC-100" value={formData.factura} onChange={(e) => setFormData({ ...formData, factura: e.target.value })} required disabled={!isAdmin} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="input-group">
               <label className="label" style={{ color: '#10b981' }}>Valor No Aceptado</label>
-              <input type="number" className="input" style={{ padding: '0.85rem 1rem', borderColor: 'rgba(16, 185, 129, 0.2)' }} placeholder="0.00" value={formData.valor_no_aceptado} onChange={(e) => setFormData({ ...formData, valor_no_aceptado: e.target.value })} />
+              <input type="number" className="input" style={{ padding: '0.85rem 1rem', borderColor: 'rgba(16, 185, 129, 0.2)' }} placeholder="0.00" value={formData.valor_no_aceptado} onChange={(e) => setFormData({ ...formData, valor_no_aceptado: e.target.value })} disabled={!isAdmin} />
             </div>
             <div className="input-group">
               <label className="label" style={{ color: '#ef4444' }}>Valor Aceptado</label>
-              <input type="number" className="input" style={{ padding: '0.85rem 1rem', borderColor: 'rgba(239, 68, 68, 0.3)' }} placeholder="0.00" value={formData.valor_aceptado} onChange={(e) => setFormData({ ...formData, valor_aceptado: e.target.value })} />
+              <input type="number" className="input" style={{ padding: '0.85rem 1rem', borderColor: 'rgba(239, 68, 68, 0.3)' }} placeholder="0.00" value={formData.valor_aceptado} onChange={(e) => setFormData({ ...formData, valor_aceptado: e.target.value })} disabled={!isAdmin} />
             </div>
           </div>
         </div>
-        <motion.button whileHover={{ scale: 1.02, background: '#059669' }} whileTap={{ scale: 0.98 }} type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '2rem', background: '#10b981', height: '52px', fontSize: '0.9rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          REGISTRAR MOVIMIENTO
-        </motion.button>
+
+        {isAdmin ? (
+          <motion.button whileHover={{ scale: 1.02, background: '#059669' }} whileTap={{ scale: 0.98 }} type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '2rem', background: '#10b981', height: '52px', fontSize: '0.9rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            REGISTRAR MOVIMIENTO
+          </motion.button>
+        ) : (
+          <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.1)', marginTop: '2rem' }}>
+            Modo LECTURA. Registro de movimientos deshabilitado.
+          </div>
+        )}
       </form>
     </motion.div>
   );
 };
 
-const IngresoList = ({ ingresos, onDelete }: { ingresos: Ingreso[], onDelete: (id: string) => void }) => {
+const IngresoList = ({ ingresos, onDelete, isAdmin }: { ingresos: Ingreso[], onDelete: (id: string) => void, isAdmin: boolean }) => {
   const totalAceptado = ingresos.reduce((acc, i) => acc + i.valor_aceptado, 0);
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
@@ -793,28 +853,28 @@ const IngresoList = ({ ingresos, onDelete }: { ingresos: Ingreso[], onDelete: (i
           ) : (
             ingresos.map((i, idx) => (
               <motion.div key={i.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ delay: idx * 0.05 }} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '1.25rem', padding: '1.5rem', marginBottom: '1rem', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <span style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white' }}>{i.factura}</span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <Activity size={12} />
-                      {i.fecha}
-                    </span>
+                <div style={{ opacity: 0.8, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.03))', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}></div>
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
+                    <h4 style={{ color: 'white', fontWeight: 900, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>{i.factura}</h4>
+                    <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Activity size={10} /> {i.fecha}</span>
                   </div>
-                  <div style={{ display: 'flex', gap: '2rem' }}>
+                  <div style={{ display: 'flex', gap: '1.5rem' }}>
                     <div>
-                      <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>No Aceptado</p>
-                      <p style={{ fontSize: '1.1rem', color: '#10b981', fontWeight: 800 }}>${formatPesos(i.valor_no_aceptado)}</p>
+                      <p style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.2rem' }}>No Aceptado</p>
+                      <p style={{ color: '#10b981', fontWeight: 900, fontSize: '0.95rem' }}>${formatPesos(i.valor_no_aceptado)}</p>
                     </div>
                     <div>
-                      <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Aceptado</p>
-                      <p style={{ fontSize: '1.1rem', color: '#ef4444', fontWeight: 800 }}>${formatPesos(i.valor_aceptado)}</p>
+                      <p style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.2rem' }}>Aceptado</p>
+                      <p style={{ color: '#ef4444', fontWeight: 900, fontSize: '0.95rem' }}>${formatPesos(i.valor_aceptado)}</p>
                     </div>
                   </div>
                 </div>
-                <motion.button whileHover={{ scale: 1.1, background: 'rgba(239, 68, 68, 0.2)' }} whileTap={{ scale: 0.9 }} onClick={() => onDelete(i.id)} style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0.85rem', borderRadius: '1rem' }}>
-                  <Trash2 size={18} />
-                </motion.button>
+                {isAdmin && (
+                  <motion.button onClick={() => onDelete(i.id)} whileHover={{ scale: 1.1, background: 'rgba(239, 68, 68, 0.2)' }} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)', color: '#ef4444', padding: '0.75rem', borderRadius: '1rem', cursor: 'pointer', zIndex: 1 }}>
+                    <Trash2 size={16} />
+                  </motion.button>
+                )}
               </motion.div>
             ))
           )}

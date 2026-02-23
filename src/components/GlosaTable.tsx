@@ -29,6 +29,7 @@ interface GlosaTableProps {
     setFilterTipo: (val: string) => void;
     filterEstado: string;
     setFilterEstado: (val: string) => void;
+    isAdmin?: boolean;
 }
 
 export const GlosaTable = ({
@@ -42,7 +43,8 @@ export const GlosaTable = ({
     filterTipo,
     setFilterTipo,
     filterEstado,
-    setFilterEstado
+    setFilterEstado,
+    isAdmin = true
 }: GlosaTableProps) => {
     const [selectedGlosa, setSelectedGlosa] = useState<Glosa | null>(null);
     const [editingGlosa, setEditingGlosa] = useState<Glosa | null>(null);
@@ -196,7 +198,7 @@ export const GlosaTable = ({
                 </div>
 
                 {/* Barra de duplicados */}
-                {duplicateCount > 0 && (
+                {isAdmin && duplicateCount > 0 && (
                     <div style={{
                         marginBottom: '1.25rem',
                         padding: '0.85rem 1.25rem',
@@ -291,26 +293,39 @@ export const GlosaTable = ({
                                             </td>
                                             <td style={{ padding: '1.25rem 1rem', color: 'var(--text-primary)', fontWeight: 500 }}>${formatPesos(glosa.valor_glosa)}</td>
                                             <td style={{ padding: '1.25rem 1rem' }}>
-                                                <select
-                                                    value={glosa.estado}
-                                                    onChange={(e) => onUpdateStatus(glosa.id, e.target.value)}
-                                                    style={{
+                                                {isAdmin ? (
+                                                    <select
+                                                        value={glosa.estado}
+                                                        onChange={(e) => onUpdateStatus(glosa.id, e.target.value)}
+                                                        style={{
+                                                            padding: '0.35rem 0.85rem',
+                                                            borderRadius: '2rem',
+                                                            fontSize: '0.7rem',
+                                                            fontWeight: 700,
+                                                            textTransform: 'uppercase',
+                                                            border: '1px solid transparent',
+                                                            cursor: 'pointer',
+                                                            outline: 'none',
+                                                            appearance: 'none',
+                                                            ...getStatusStyle(glosa.estado)
+                                                        }}
+                                                    >
+                                                        <option value="Pendiente">Pendiente</option>
+                                                        <option value="Respondida">Respondida</option>
+                                                        <option value="Aceptada">Aceptada</option>
+                                                    </select>
+                                                ) : (
+                                                    <span style={{
                                                         padding: '0.35rem 0.85rem',
                                                         borderRadius: '2rem',
                                                         fontSize: '0.7rem',
                                                         fontWeight: 700,
                                                         textTransform: 'uppercase',
-                                                        border: '1px solid transparent',
-                                                        cursor: 'pointer',
-                                                        outline: 'none',
-                                                        appearance: 'none',
                                                         ...getStatusStyle(glosa.estado)
-                                                    }}
-                                                >
-                                                    <option value="Pendiente">Pendiente</option>
-                                                    <option value="Respondida">Respondida</option>
-                                                    <option value="Aceptada">Aceptada</option>
-                                                </select>
+                                                    }}>
+                                                        {glosa.estado}
+                                                    </span>
+                                                )}
                                             </td>
                                             <td style={{ padding: '1.25rem 1rem', textAlign: 'center' }}>
                                                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
@@ -331,70 +346,14 @@ export const GlosaTable = ({
                                                     >
                                                         <Eye size={16} />
                                                     </button>
-                                                    <button
-                                                        onClick={() => setEditingGlosa(glosa)}
-                                                        title="Editar registro"
-                                                        style={{
-                                                            background: 'rgba(255,255,255,0.05)',
-                                                            border: '1px solid rgba(255,255,255,0.1)',
-                                                            color: 'white',
-                                                            padding: '0.5rem',
-                                                            borderRadius: '0.75rem',
-                                                            cursor: 'pointer',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            transition: 'all 0.2s'
-                                                        }}
-                                                    >
-                                                        <Pencil size={16} />
-                                                    </button>
-                                                    {/* Botón eliminar fila */}
-                                                    {confirmDeleteId === glosa.id ? (
-                                                        <>
-                                                            <button
-                                                                onClick={() => { onDeleteGlosa(glosa.id); setConfirmDeleteId(null); }}
-                                                                title="Confirmar eliminación"
-                                                                style={{
-                                                                    background: 'rgba(239,68,68,0.2)',
-                                                                    border: '1px solid rgba(239,68,68,0.4)',
-                                                                    color: '#f87171',
-                                                                    padding: '0.5rem 0.65rem',
-                                                                    borderRadius: '0.75rem',
-                                                                    cursor: 'pointer',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    fontSize: '0.65rem',
-                                                                    fontWeight: 700,
-                                                                    gap: '0.2rem'
-                                                                }}
-                                                            >
-                                                                <Trash2 size={13} /> OK
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setConfirmDeleteId(null)}
-                                                                title="Cancelar"
-                                                                style={{
-                                                                    background: 'rgba(255,255,255,0.05)',
-                                                                    border: '1px solid rgba(255,255,255,0.1)',
-                                                                    color: 'rgba(255,255,255,0.5)',
-                                                                    padding: '0.5rem',
-                                                                    borderRadius: '0.75rem',
-                                                                    cursor: 'pointer',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center'
-                                                                }}
-                                                            >
-                                                                <X size={14} />
-                                                            </button>
-                                                        </>
-                                                    ) : (
+                                                    {isAdmin && (
                                                         <button
-                                                            onClick={() => setConfirmDeleteId(glosa.id)}
-                                                            title="Eliminar registro"
+                                                            onClick={() => setEditingGlosa(glosa)}
+                                                            title="Editar registro"
                                                             style={{
-                                                                background: isDupe ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.07)',
-                                                                border: `1px solid rgba(239,68,68,${isDupe ? '0.35' : '0.2'})`,
-                                                                color: '#f87171',
+                                                                background: 'rgba(255,255,255,0.05)',
+                                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                                color: 'white',
                                                                 padding: '0.5rem',
                                                                 borderRadius: '0.75rem',
                                                                 cursor: 'pointer',
@@ -403,8 +362,68 @@ export const GlosaTable = ({
                                                                 transition: 'all 0.2s'
                                                             }}
                                                         >
-                                                            <Trash2 size={16} />
+                                                            <Pencil size={16} />
                                                         </button>
+                                                    )}
+                                                    {/* Botón eliminar fila */}
+                                                    {isAdmin && (
+                                                        confirmDeleteId === glosa.id ? (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => { onDeleteGlosa(glosa.id); setConfirmDeleteId(null); }}
+                                                                    title="Confirmar eliminación"
+                                                                    style={{
+                                                                        background: 'rgba(239,68,68,0.2)',
+                                                                        border: '1px solid rgba(239,68,68,0.4)',
+                                                                        color: '#f87171',
+                                                                        padding: '0.5rem 0.65rem',
+                                                                        borderRadius: '0.75rem',
+                                                                        cursor: 'pointer',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        fontSize: '0.65rem',
+                                                                        fontWeight: 700,
+                                                                        gap: '0.2rem'
+                                                                    }}
+                                                                >
+                                                                    <Trash2 size={13} /> OK
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => setConfirmDeleteId(null)}
+                                                                    title="Cancelar"
+                                                                    style={{
+                                                                        background: 'rgba(255,255,255,0.05)',
+                                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                                        color: 'rgba(255,255,255,0.5)',
+                                                                        padding: '0.5rem',
+                                                                        borderRadius: '0.75rem',
+                                                                        cursor: 'pointer',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center'
+                                                                    }}
+                                                                >
+                                                                    <X size={14} />
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => setConfirmDeleteId(glosa.id)}
+                                                                title="Eliminar registro"
+                                                                style={{
+                                                                    background: isDupe ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.07)',
+                                                                    border: `1px solid rgba(239,68,68,${isDupe ? '0.35' : '0.2'})`,
+                                                                    color: '#f87171',
+                                                                    padding: '0.5rem',
+                                                                    borderRadius: '0.75rem',
+                                                                    cursor: 'pointer',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    transition: 'all 0.2s'
+                                                                }}
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        )
                                                     )}
                                                 </div>
                                             </td>

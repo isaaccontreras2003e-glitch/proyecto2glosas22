@@ -19,9 +19,10 @@ interface Glosa {
 interface GlosaFormProps {
     onAddGlosa: (glosa: any) => void;
     existingGlosas: Glosa[];
+    isAdmin?: boolean;
 }
 
-export const GlosaForm = ({ onAddGlosa, existingGlosas }: GlosaFormProps) => {
+export const GlosaForm = ({ onAddGlosa, existingGlosas, isAdmin = true }: GlosaFormProps) => {
     const [formData, setFormData] = useState({
         factura: '',
         servicio: '',
@@ -196,39 +197,48 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas }: GlosaFormProps) => {
                         placeholder="Detalles sobre el motivo de la glosa..."
                         value={formData.descripcion}
                         onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                        disabled={!isAdmin}
                     />
                 </div>
 
-                {/* Botón principal o botón de confirmación si es duplicado exacto */}
-                {isDuplicateExact && !forceSubmit ? (
-                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-                        <button
-                            type="button"
-                            onClick={() => setFormData({ ...formData, factura: '', servicio: '', valor_glosa: '' })}
-                            className="btn btn-secondary"
-                            style={{ flex: 1, gap: '0.5rem' }}
-                        >
-                            Limpiar Formulario
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setForceSubmit(true)}
-                            className="btn btn-primary"
-                            style={{ flex: 1, gap: '0.5rem', background: 'rgba(239,68,68,0.8)', fontSize: '0.8rem' }}
-                        >
-                            <AlertTriangle size={16} />
-                            Registrar de todas formas
-                        </button>
+                {!isAdmin && (
+                    <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.1)', marginTop: '1rem' }}>
+                        Cuenta en modo <strong>LECTURA</strong>. No puedes realizar registros.
                     </div>
-                ) : (
-                    <button
-                        type="submit"
-                        className="btn btn-primary"
-                        style={{ width: '100%', gap: '0.75rem', marginTop: '1rem' }}
-                    >
-                        {forceSubmit ? <AlertTriangle size={18} /> : <Plus size={18} />}
-                        {forceSubmit ? 'Confirmar Registro Duplicado' : 'Guardar Registro'}
-                    </button>
+                )}
+
+                {/* Botón principal o botón de confirmación si es duplicado exacto */}
+                {isAdmin && (
+                    isDuplicateExact && !forceSubmit ? (
+                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                            <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, factura: '', servicio: '', valor_glosa: '' })}
+                                className="btn btn-secondary"
+                                style={{ flex: 1, gap: '0.5rem' }}
+                            >
+                                Limpiar Formulario
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setForceSubmit(true)}
+                                className="btn btn-primary"
+                                style={{ flex: 1, gap: '0.5rem', background: 'rgba(239,68,68,0.8)', fontSize: '0.8rem' }}
+                            >
+                                <AlertTriangle size={16} />
+                                Registrar de todas formas
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            style={{ width: '100%', gap: '0.75rem', marginTop: '1rem' }}
+                        >
+                            {forceSubmit ? <AlertTriangle size={18} /> : <Plus size={18} />}
+                            {forceSubmit ? 'Confirmar Registro Duplicado' : 'Guardar Registro'}
+                        </button>
+                    )
                 )}
             </form>
         </Card>

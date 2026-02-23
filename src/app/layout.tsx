@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "Interfaz moderna para el ingreso y monitoreo de glosas médicas.",
 };
 
+import { AuthProvider } from "@/lib/contexts/AuthContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -17,7 +19,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
