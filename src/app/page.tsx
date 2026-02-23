@@ -43,6 +43,7 @@ export default function Home() {
   const [forcedEntry, setForcedEntry] = useState(false);
   const [showForceButton, setShowForceButton] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [supabaseError, setSupabaseError] = useState<string | null>(null);
   const lastFetchedUserId = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, role, loading: authLoading, signOut } = useAuth();
@@ -85,7 +86,8 @@ export default function Home() {
 
     try {
       setLoading(true);
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout de conexión')), 12000));
+      setSupabaseError(null);
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout de conexión (12s)')), 12000));
 
       const fetchPromise = Promise.all([
         supabase.from('glosas').select('*').order('fecha', { ascending: false }),
@@ -95,6 +97,9 @@ export default function Home() {
       const results = await Promise.race([fetchPromise, timeoutPromise]) as any;
       const [gRes, iRes] = results;
 
+      if (gRes?.error) throw gRes.error;
+      if (iRes?.error) throw iRes.error;
+
       if (gRes && gRes.data) {
         setGlosas(gRes.data);
         lastFetchedUserId.current = user.id;
@@ -103,20 +108,21 @@ export default function Home() {
 
       if ((gRes && gRes.data) || (iRes && iRes.data)) setLastUpdate(new Date());
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error cargando datos:', err);
+      setSupabaseError(err.message || 'Error desconocido al conectar con Supabase');
     } finally {
       setLoading(false);
     }
   }, [user?.id]); // Quitamos glosas.length para evitar hooks circulares o ruidos
 
-  // Cargar datos desde Supabase al montar o cambiar usuario
+  // Cargar datos desde Supabase al montar o cambiar usuario (FIJO: No bloqueamos por forcedEntry)
   useEffect(() => {
     setIsMounted(true);
-    if (user && !forcedEntry) {
+    if (user) {
       loadData();
     }
-  }, [user?.id, loadData, forcedEntry]);
+  }, [user?.id, loadData]);
 
   // Migración de datos desde localStorage a Supabase (Escaneo Profundo)
   useEffect(() => {
@@ -648,10 +654,30 @@ export default function Home() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingTop: '15px' }}>
               <h1 style={{ fontSize: '2.8rem', color: '#ffffff', fontWeight: 900, lineHeight: 1.1, margin: 0 }}>Sistema Auditoría Glosas</h1>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', letterSpacing: '0.05em', fontWeight: 600, margin: 0, marginTop: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Activity size={18} color="rgba(255,255,255,0.3)" />
-                Control Maestro de Facturación e Ingresos
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', letterSpacing: '0.05em', fontWeight: 600, margin: 0, marginTop: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Activity size={18} color="rgba(255,255,255,0.3)" />
+                  Control Maestro de Facturación e Ingresos
+                </p>
+                {supabaseError && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.2)',
+                      color: '#ef4444',
+                      padding: '4px 12px',
+                      borderRadius: '8px',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      marginTop: '0.82rem'
+                    }}
+                  >
+                    ⚠️ ERROR BD: {supabaseError}
+                  </motion.div>
+                )}
+              </div>
             </div>
           </motion.div>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
