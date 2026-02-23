@@ -56,14 +56,19 @@ export default function Home() {
     setIsMounted(true);
     const loadData = async () => {
       if (!user) return;
-      setLoading(true);
-      const [{ data: glosasData }, { data: ingresosData }] = await Promise.all([
-        supabase.from('glosas').select('*').order('fecha', { ascending: false }),
-        supabase.from('ingresos').select('*').order('fecha', { ascending: false }),
-      ]);
-      if (glosasData) setGlosas(glosasData);
-      if (ingresosData) setIngresos(ingresosData);
-      setLoading(false);
+      try {
+        setLoading(true);
+        const [{ data: glosasData }, { data: ingresosData }] = await Promise.all([
+          supabase.from('glosas').select('*').order('fecha', { ascending: false }),
+          supabase.from('ingresos').select('*').order('fecha', { ascending: false }),
+        ]);
+        if (glosasData) setGlosas(glosasData);
+        if (ingresosData) setIngresos(ingresosData);
+      } catch (err) {
+        console.error('Error cargando datos:', err);
+      } finally {
+        setLoading(false);
+      }
     };
     if (user) loadData();
   }, [user]);
@@ -110,35 +115,18 @@ export default function Home() {
         }
 
         if (recoveredGlosas.length > 0 || recoveredIngresos.length > 0) {
-          setLoading(true);
-
-          if (recoveredGlosas.length > 0) {
-            const { error: gErr } = await supabase.from('glosas').upsert(recoveredGlosas);
-            if (gErr) throw new Error('Error al subir glosas: ' + gErr.message);
-          }
-          if (recoveredIngresos.length > 0) {
-            const { error: iErr } = await supabase.from('ingresos').upsert(recoveredIngresos);
-            if (iErr) throw new Error('Error al subir ingresos: ' + iErr.message);
-          }
-
           localStorage.setItem('migrated_to_supabase_deep_v2', 'true');
-
           const [{ data: gData }, { data: iData }] = await Promise.all([
             supabase.from('glosas').select('*').order('fecha', { ascending: false }),
             supabase.from('ingresos').select('*').order('fecha', { ascending: false }),
           ]);
           if (gData) setGlosas(gData);
           if (iData) setIngresos(iData);
-
           setLoading(false);
-          alert('¡RECUPERACIÓN EXITOSA!\nDetalles:\n- Glosas: ' + recoveredGlosas.length + '\n- Ingresos: ' + recoveredIngresos.length + '\n\nLos datos ya están en la nube.');
-        } else {
-          alert('No se encontraron datos locales para recuperar.');
         }
       } catch (err: any) {
         setLoading(false);
         console.error('Error durante la recuperación:', err);
-        alert('Hubo un problema recuperando los datos: ' + err.message);
       }
     };
 
@@ -580,39 +568,31 @@ export default function Home() {
                 Diseñado y Desarrollado por Isaac Contreras
               </p>
 
-              <button
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 onClick={signOut}
+                title="Cerrar sesión"
                 style={{
                   position: 'fixed',
                   top: '1.5rem',
                   right: '1.5rem',
                   zIndex: 1100,
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#ef4444',
-                  padding: '0.6rem 1.2rem',
-                  borderRadius: '1rem',
-                  fontSize: '0.8rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
+                  background: '#ef4444',
+                  boxShadow: '0 0 15px rgba(239, 68, 68, 0.4)',
+                  color: 'white',
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.6rem',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
-                  e.currentTarget.style.transform = 'translateY(0)';
+                  justifyContent: 'center',
+                  border: 'none',
+                  cursor: 'pointer'
                 }}
               >
-                CERRAR SESIÓN <LogOut size={16} />
-              </button>
+                <LogOut size={20} />
+              </motion.button>
             </div>
           </motion.div>
         </header>

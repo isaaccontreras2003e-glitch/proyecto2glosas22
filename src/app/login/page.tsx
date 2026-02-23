@@ -35,20 +35,25 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-[#0a0a0f]" style={{
-            backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.05) 0%, transparent 50%)'
+        <div className="min-h-screen w-full flex items-center justify-center p-6 bg-[#0a0a0f] overflow-hidden" style={{
+            backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.05) 0%, transparent 50%)',
+            position: 'fixed',
+            top: 0,
+            left: 0
         }}>
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
                 className="card"
                 style={{
-                    maxWidth: '450px',
+                    maxWidth: '430px',
                     width: '100%',
-                    padding: '3rem',
+                    padding: '3.5rem 2.5rem',
                     background: 'rgba(255, 255, 255, 0.03)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.05)'
+                    backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                    transform: 'none' // Disabling the hover translateY from .card
                 }}
             >
                 <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
