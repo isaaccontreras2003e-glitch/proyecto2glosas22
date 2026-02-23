@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Dashboard } from '@/components/Dashboard';
 import { GlosaForm } from '@/components/GlosaForm';
 import { GlosaTable } from '@/components/GlosaTable';
@@ -37,6 +37,7 @@ export default function Home() {
   const [ingresos, setIngresos] = useState<Ingreso[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Cargar datos desde Supabase al montar
   useEffect(() => {
@@ -237,6 +238,74 @@ export default function Home() {
     } catch (e) {
       alert('Error al leer el JSON: ' + (e as Error).message);
     }
+  };
+
+  const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string;
+        const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+        if (lines.length < 2) throw new Error('El archivo está vacío o no tiene encabezados.');
+
+        // Detectar separador común en Excel (punto y coma o coma)
+        const delimiter = text.includes(';') ? ';' : ',';
+        const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase());
+
+        const data = lines.slice(1).map(line => {
+          const values = line.split(delimiter).map(v => v.trim());
+          const obj: any = {
+            id: Math.random().toString(36).substr(2, 9),
+            factura: '',
+            servicio: '',
+            orden_servicio: '',
+            valor_glosa: 0,
+            tipo_glosa: 'Tarifas',
+            estado: 'Pendiente',
+            fecha: new Date().toLocaleDateString('es-ES'),
+            descripcion: ''
+          };
+
+          headers.forEach((header, index) => {
+            const val = values[index];
+            if (!val) return;
+
+            if (header.includes('factura')) obj.factura = val;
+            if (header.includes('servicio') && !header.includes('orden')) obj.servicio = val;
+            if (header.includes('orden')) obj.orden_servicio = val;
+            if (header.includes('valor') || header.includes('glosa')) {
+              // Limpiar formato de moneda si existe (quitar $ y puntos de miles)
+              const numericVal = val.replace(/[$. ]/g, '').replace(',', '.');
+              obj.valor_glosa = parseFloat(numericVal) || 0;
+            }
+            if (header.includes('tipo')) obj.tipo_glosa = val;
+            if (header.includes('estado')) obj.estado = val;
+            if (header.includes('fecha')) obj.fecha = val;
+            if (header.includes('descripcion')) obj.descripcion = val;
+          });
+          return obj;
+        }).filter(item => item.factura);
+
+        if (data.length === 0) throw new Error('No se encontraron registros válidos por factura. Verifica los nombres de las columnas.');
+
+        const { error } = await supabase.from('glosas').upsert(data);
+        if (error) throw error;
+
+        setGlosas(prev => [...data, ...prev]);
+        alert(`¡Éxito! Se importaron ${data.length} glosas correctamente.`);
+      } catch (err: any) {
+        console.error('Error CSV:', err);
+        alert('Error al importar CSV: ' + err.message);
+      } finally {
+        setLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    };
+    reader.readAsText(file, 'UTF-8');
   };
 
   const exportToExcel = () => {
@@ -478,6 +547,23 @@ export default function Home() {
                 <Activity size={14} />
                 DIAGNÓSTICO DATOS
               </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                onClick={() => fileInputRef.current?.click()}
+                className="btn btn-secondary"
+                style={{ padding: '0.6rem 1.25rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#10b981', borderColor: 'rgba(16,185,129,0.2)' }}
+              >
+                <ListChecks size={14} />
+                IMPORTAR EXCEL (CSV)
+              </motion.button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleCSVImport}
+                accept=".csv"
+                style={{ display: 'none' }}
+              />
               <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={exportGlosasToExcel} className="btn btn-secondary" style={{ padding: '0.6rem 1.25rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'rgba(139, 92, 246, 0.1)', borderColor: 'rgba(139, 92, 246, 0.2)', fontWeight: 700 }}>
                 <Download size={14} color="var(--primary)" />
                 EXPORTAR LISTADO
