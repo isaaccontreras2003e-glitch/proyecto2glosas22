@@ -61,13 +61,13 @@ export default function Home() {
         const isMigrated = localStorage.getItem('migrated_to_supabase_deep_v2');
         if (isMigrated === 'true') return;
 
-        console.log('--- INICIANDO ESCANEO PROFUNDO DE RECUPERACIÓN ---');
+        alert('Iniciando escaneo profundo para recuperar datos locales...');
         let recoveredGlosas: any[] = [];
         let recoveredIngresos: any[] = [];
         const foundKeys: string[] = [];
 
         // Llaves específicas encontradas y escaneo general
-        const keysToTry = ['sisfact_glosas', 'sisfact_ingresos', ...Object.keys(localStorage)];
+        const keysToTry = Array.from(new Set(['sisfact_glosas', 'sisfact_ingresos', ...Object.keys(localStorage)]));
 
         for (const key of keysToTry) {
           try {
@@ -79,42 +79,36 @@ export default function Home() {
             if (Array.isArray(parsed) && parsed.length > 0) {
               const first = parsed[0];
 
-              // Si es la llave exacta de glosas o parece una
               if (key === 'sisfact_glosas' || (first.factura && first.valor_glosa !== undefined)) {
                 if (!foundKeys.includes(key)) {
-                  console.log(`¡Datos de glosas encontrados en: "${key}"!`);
                   recoveredGlosas = [...recoveredGlosas, ...parsed];
                   foundKeys.push(key);
                 }
               }
-              // Si es la llave exacta de ingresos o parece una
               else if (key === 'sisfact_ingresos' || (first.factura && first.valor_aceptado !== undefined)) {
                 if (!foundKeys.includes(key)) {
-                  console.log(`¡Datos de ingresos encontrados en: "${key}"!`);
                   recoveredIngresos = [...recoveredIngresos, ...parsed];
                   foundKeys.push(key);
                 }
               }
             }
-          } catch (e) {
-            // No es JSON, ignorar
-          }
+          } catch (e) { }
         }
 
         if (recoveredGlosas.length > 0 || recoveredIngresos.length > 0) {
-          console.log(`Migrando ${recoveredGlosas.length} glosas y ${recoveredIngresos.length} ingresos encontrados...`);
+          setLoading(true);
 
           if (recoveredGlosas.length > 0) {
-            // Limpiar duplicados locales antes de subir (opcional pero recomendado)
-            await supabase.from('glosas').upsert(recoveredGlosas);
+            const { error: gErr } = await supabase.from('glosas').upsert(recoveredGlosas);
+            if (gErr) throw new Error('Error al subir glosas: ' + gErr.message);
           }
           if (recoveredIngresos.length > 0) {
-            await supabase.from('ingresos').upsert(recoveredIngresos);
+            const { error: iErr } = await supabase.from('ingresos').upsert(recoveredIngresos);
+            if (iErr) throw new Error('Error al subir ingresos: ' + iErr.message);
           }
 
           localStorage.setItem('migrated_to_supabase_deep_v2', 'true');
 
-          // Recargar datos
           const [{ data: gData }, { data: iData }] = await Promise.all([
             supabase.from('glosas').select('*').order('fecha', { ascending: false }),
             supabase.from('ingresos').select('*').order('fecha', { ascending: false }),
@@ -122,13 +116,15 @@ export default function Home() {
           if (gData) setGlosas(gData);
           if (iData) setIngresos(iData);
 
-          console.log('Recuperación exitosa de las llaves:', foundKeys.join(', '));
-          alert('¡HEMOS ENCONTRADO TUS DATOS! Se han recuperado ' + recoveredGlosas.length + ' glosas satisfactoriamente.');
+          setLoading(false);
+          alert('¡RECUPERACIÓN EXITOSA!\nDetalles:\n- Glosas: ' + recoveredGlosas.length + '\n- Ingresos: ' + recoveredIngresos.length + '\n\nLos datos ya están en la nube.');
         } else {
-          console.log('No se encontraron datos locales para recuperar.');
+          alert('No se encontraron datos locales para recuperar.');
         }
-      } catch (err) {
+      } catch (err: any) {
+        setLoading(false);
         console.error('Error durante la recuperación:', err);
+        alert('Hubo un problema recuperando los datos: ' + err.message);
       }
     };
 
