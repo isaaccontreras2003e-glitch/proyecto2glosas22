@@ -24,13 +24,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Escuchar cambios en la sesión
+        // 1. Verificar sesión inicial inmediatamente
+        const initAuth = async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                setUser(session?.user ?? null);
+                if (session?.user) {
+                    const { data: profile } = await supabase
+                        .from('perfiles')
+                        .select('rol')
+                        .eq('id', session.user.id)
+                        .single();
+                    if (profile) setRole(profile.rol);
+                }
+            } catch (err) {
+                console.error('Error inicializando auth:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initAuth();
+
+        // 2. Escuchar cambios en la sesión
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             try {
                 setUser(session?.user ?? null);
 
                 if (session?.user) {
-                    // Obtener el rol del perfil con timeout implícito si es posible, o simplemente try-catch
                     const { data: profile, error } = await supabase
                         .from('perfiles')
                         .select('rol')

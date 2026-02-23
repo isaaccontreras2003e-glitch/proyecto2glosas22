@@ -80,11 +80,12 @@ export default function Home() {
 
   const loadData = React.useCallback(async (force = false) => {
     if (!user) return;
+    // Permitir cargar si se fuerza, o si el usuario cambió, o si no hay datos
     if (!force && lastFetchedUserId.current === user.id && glosas.length > 0) return;
 
     try {
       setLoading(true);
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout de conexión')), 10000));
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout de conexión')), 12000));
 
       const fetchPromise = Promise.all([
         supabase.from('glosas').select('*').order('fecha', { ascending: false }),
@@ -94,26 +95,28 @@ export default function Home() {
       const results = await Promise.race([fetchPromise, timeoutPromise]) as any;
       const [gRes, iRes] = results;
 
-      if (gRes.data) {
+      if (gRes && gRes.data) {
         setGlosas(gRes.data);
         lastFetchedUserId.current = user.id;
       }
-      if (iRes.data) setIngresos(iRes.data);
+      if (iRes && iRes.data) setIngresos(iRes.data);
 
-      if (gRes.data || iRes.data) setLastUpdate(new Date());
+      if ((gRes && gRes.data) || (iRes && iRes.data)) setLastUpdate(new Date());
 
     } catch (err) {
       console.error('Error cargando datos:', err);
     } finally {
       setLoading(false);
     }
-  }, [user?.id, glosas.length]);
+  }, [user?.id]); // Quitamos glosas.length para evitar hooks circulares o ruidos
 
-  // Cargar datos desde Supabase al montar
+  // Cargar datos desde Supabase al montar o cambiar usuario
   useEffect(() => {
     setIsMounted(true);
-    if (user) loadData();
-  }, [user?.id, loadData]);
+    if (user && !forcedEntry) {
+      loadData();
+    }
+  }, [user?.id, loadData, forcedEntry]);
 
   // Migración de datos desde localStorage a Supabase (Escaneo Profundo)
   useEffect(() => {
