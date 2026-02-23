@@ -61,7 +61,7 @@ export default function Home() {
         const isMigrated = localStorage.getItem('migrated_to_supabase_deep_v2');
         if (isMigrated === 'true') return;
 
-        alert('Iniciando escaneo profundo para recuperar datos locales...');
+        console.log('--- INICIANDO ESCANEO PROFUNDO DE RECUPERACIÓN ---');
         let recoveredGlosas: any[] = [];
         let recoveredIngresos: any[] = [];
         const foundKeys: string[] = [];
