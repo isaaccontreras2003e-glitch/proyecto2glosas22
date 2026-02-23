@@ -58,7 +58,7 @@ export default function Home() {
   useEffect(() => {
     const migrateData = async () => {
       try {
-        const isMigrated = localStorage.getItem('migrated_to_supabase_deep');
+        const isMigrated = localStorage.getItem('migrated_to_supabase_deep_v2');
         if (isMigrated === 'true') return;
 
         console.log('--- INICIANDO ESCANEO PROFUNDO DE RECUPERACIÓN ---');
@@ -66,29 +66,33 @@ export default function Home() {
         let recoveredIngresos: any[] = [];
         const foundKeys: string[] = [];
 
-        // Escanear TODAS las llaves de localStorage
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (!key) continue;
+        // Llaves específicas encontradas y escaneo general
+        const keysToTry = ['sisfact_glosas', 'sisfact_ingresos', ...Object.keys(localStorage)];
 
+        for (const key of keysToTry) {
           try {
             const val = localStorage.getItem(key);
             if (!val) continue;
 
             const parsed = JSON.parse(val);
 
-            // Detectar si el contenido parece una lista de glosas
             if (Array.isArray(parsed) && parsed.length > 0) {
               const first = parsed[0];
-              // Si tiene campos típicos de glosa
-              if (first.factura && (first.valor_glosa !== undefined || first.valor_aceptado !== undefined)) {
-                console.log(`¡Posible respaldo encontrado en la llave: "${key}"!`);
-                foundKeys.push(key);
 
-                if (first.valor_glosa !== undefined) {
+              // Si es la llave exacta de glosas o parece una
+              if (key === 'sisfact_glosas' || (first.factura && first.valor_glosa !== undefined)) {
+                if (!foundKeys.includes(key)) {
+                  console.log(`¡Datos de glosas encontrados en: "${key}"!`);
                   recoveredGlosas = [...recoveredGlosas, ...parsed];
-                } else if (first.valor_aceptado !== undefined) {
+                  foundKeys.push(key);
+                }
+              }
+              // Si es la llave exacta de ingresos o parece una
+              else if (key === 'sisfact_ingresos' || (first.factura && first.valor_aceptado !== undefined)) {
+                if (!foundKeys.includes(key)) {
+                  console.log(`¡Datos de ingresos encontrados en: "${key}"!`);
                   recoveredIngresos = [...recoveredIngresos, ...parsed];
+                  foundKeys.push(key);
                 }
               }
             }
@@ -101,13 +105,14 @@ export default function Home() {
           console.log(`Migrando ${recoveredGlosas.length} glosas y ${recoveredIngresos.length} ingresos encontrados...`);
 
           if (recoveredGlosas.length > 0) {
+            // Limpiar duplicados locales antes de subir (opcional pero recomendado)
             await supabase.from('glosas').upsert(recoveredGlosas);
           }
           if (recoveredIngresos.length > 0) {
             await supabase.from('ingresos').upsert(recoveredIngresos);
           }
 
-          localStorage.setItem('migrated_to_supabase_deep', 'true');
+          localStorage.setItem('migrated_to_supabase_deep_v2', 'true');
 
           // Recargar datos
           const [{ data: gData }, { data: iData }] = await Promise.all([
@@ -118,6 +123,7 @@ export default function Home() {
           if (iData) setIngresos(iData);
 
           console.log('Recuperación exitosa de las llaves:', foundKeys.join(', '));
+          alert('¡HEMOS ENCONTRADO TUS DATOS! Se han recuperado ' + recoveredGlosas.length + ' glosas satisfactoriamente.');
         } else {
           console.log('No se encontraron datos locales para recuperar.');
         }
