@@ -24,54 +24,57 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // 1. Verificar sesión inicial inmediatamente
+        // 1. Cargar rol desde caché para rapidez inmediata
+        if (typeof window !== 'undefined') {
+            const cachedRole = localStorage.getItem('user_role') as 'admin' | 'visor';
+            if (cachedRole) setRole(cachedRole);
+        }
+
+        // 2. Verificar sesión inicial inmediatamente
         const initAuth = async () => {
             try {
                 const { data: { session } } = await supabase.auth.getSession();
                 setUser(session?.user ?? null);
+
+                // LIBERAMOS el loading aquí para que la App cargue YA
+                setLoading(false);
+
                 if (session?.user) {
                     const { data: profile } = await supabase
                         .from('perfiles')
                         .select('rol')
                         .eq('id', session.user.id)
                         .single();
-                    if (profile) setRole(profile.rol);
+                    if (profile) {
+                        setRole(profile.rol);
+                        localStorage.setItem('user_role', profile.rol);
+                    }
                 }
             } catch (err) {
                 console.error('Error inicializando auth:', err);
-            } finally {
                 setLoading(false);
             }
         };
 
         initAuth();
 
-        // 2. Escuchar cambios en la sesión
+        // 3. Escuchar cambios en la sesión
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            try {
-                setUser(session?.user ?? null);
-
-                if (session?.user) {
-                    const { data: profile, error } = await supabase
-                        .from('perfiles')
-                        .select('rol')
-                        .eq('id', session.user.id)
-                        .single();
-
-                    if (!error && profile) {
-                        setRole(profile.rol);
-                    } else if (error && role === null) {
-                        setRole('visor');
-                    }
-                } else {
-                    setRole(null);
-                }
-            } catch (err) {
-                console.error('Critical Auth State Error:', err);
-                if (role === null) setRole('visor');
-            } finally {
-                setLoading(false);
+            setUser(session?.user ?? null);
+            if (session?.user) {
+                // Sincronizar perfil en segundo plano sin bloquear
+                supabase.from('perfiles').select('rol').eq('id', session.user.id).single()
+                    .then(({ data: profile }) => {
+                        if (profile) {
+                            setRole(profile.rol);
+                            localStorage.setItem('user_role', profile.rol);
+                        }
+                    });
+            } else {
+                setRole(null);
+                localStorage.removeItem('user_role');
             }
+            setLoading(false);
         });
 
         return () => {

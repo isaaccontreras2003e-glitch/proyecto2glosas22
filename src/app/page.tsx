@@ -64,12 +64,12 @@ export default function Home() {
     if (loading || authLoading) {
       timer = setTimeout(() => {
         setShowForceButton(true);
-      }, 5000); // Aparece tras 5 segundos
+      }, 2000); // APARECE TRAS 2 SEGUNDOS
 
       autoKillTimer = setTimeout(() => {
         setForcedEntry(true);
         setLoading(false);
-      }, 15000); // Se quita solo tras 15 segundos (Pánico Final)
+      }, 8000); // SE QUITA SOLO TRAS 8 SEGUNDOS (MUCHO MÁS RÁPIDO)
     } else {
       setShowForceButton(false);
     }
