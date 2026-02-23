@@ -23,9 +23,27 @@ interface GlosaTableProps {
     onUpdateGlosa: (updatedGlosa: Glosa) => void;
     onDeleteGlosa: (id: string) => void;
     onDeleteDuplicates: () => void;
+    searchTerm: string;
+    setSearchTerm: (val: string) => void;
+    filterTipo: string;
+    setFilterTipo: (val: string) => void;
+    filterEstado: string;
+    setFilterEstado: (val: string) => void;
 }
 
-export const GlosaTable = ({ glosas, onUpdateStatus, onUpdateGlosa, onDeleteGlosa, onDeleteDuplicates }: GlosaTableProps) => {
+export const GlosaTable = ({
+    glosas,
+    onUpdateStatus,
+    onUpdateGlosa,
+    onDeleteGlosa,
+    onDeleteDuplicates,
+    searchTerm,
+    setSearchTerm,
+    filterTipo,
+    setFilterTipo,
+    filterEstado,
+    setFilterEstado
+}: GlosaTableProps) => {
     const [selectedGlosa, setSelectedGlosa] = useState<Glosa | null>(null);
     const [editingGlosa, setEditingGlosa] = useState<Glosa | null>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -69,6 +87,114 @@ export const GlosaTable = ({ glosas, onUpdateStatus, onUpdateGlosa, onDeleteGlos
     return (
         <>
             <Card title="Glosas Registradas" className="table-card" style={{ marginTop: 0 }}>
+                {/* Controles de Búsqueda y Filtro */}
+                <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '1rem',
+                    marginBottom: '1.5rem',
+                    padding: '1.25rem',
+                    background: 'rgba(255,255,255,0.02)',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    alignItems: 'flex-end'
+                }}>
+                    <div style={{ flex: '1 1 300px' }}>
+                        <label style={{ display: 'block', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Búsqueda Inteligente</label>
+                        <div style={{ position: 'relative' }}>
+                            <ClipboardList size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+                            <input
+                                type="text"
+                                placeholder="Buscar por factura o servicio..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    background: 'rgba(0,0,0,0.2)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '12px',
+                                    padding: '0.75rem 1rem 0.75rem 2.8rem',
+                                    color: 'white',
+                                    fontSize: '0.85rem',
+                                    outline: 'none',
+                                    transition: 'border-color 0.2s'
+                                }}
+                                onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                            />
+                        </div>
+                    </div>
+
+                    <div style={{ flex: '1 1 150px' }}>
+                        <label style={{ display: 'block', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Tipo de Glosa</label>
+                        <select
+                            value={filterTipo}
+                            onChange={(e) => setFilterTipo(e.target.value)}
+                            style={{
+                                width: '100%',
+                                background: 'rgba(0,0,0,0.2)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '12px',
+                                padding: '0.75rem 1rem',
+                                color: 'white',
+                                fontSize: '0.85rem',
+                                outline: 'none',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <option value="Todos">Todos los tipos</option>
+                            <option value="Tarifas">Tarifas</option>
+                            <option value="Soportes">Soportes</option>
+                            <option value="RIPS">RIPS</option>
+                            <option value="Autorización">Autorización</option>
+                        </select>
+                    </div>
+
+                    <div style={{ flex: '1 1 150px' }}>
+                        <label style={{ display: 'block', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Estado</label>
+                        <select
+                            value={filterEstado}
+                            onChange={(e) => setFilterEstado(e.target.value)}
+                            style={{
+                                width: '100%',
+                                background: 'rgba(0,0,0,0.2)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '12px',
+                                padding: '0.75rem 1rem',
+                                color: 'white',
+                                fontSize: '0.85rem',
+                                outline: 'none',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <option value="Todos">Cualquier estado</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Respondida">Respondida</option>
+                            <option value="Aceptada">Aceptada</option>
+                        </select>
+                    </div>
+
+                    <button
+                        onClick={() => { setSearchTerm(''); setFilterTipo('Todos'); setFilterEstado('Todos'); }}
+                        style={{
+                            padding: '0.75rem 1.25rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '12px',
+                            color: 'rgba(255,255,255,0.6)',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            height: '42px'
+                        }}
+                    >
+                        <X size={14} /> LIMPIAR
+                    </button>
+                </div>
+
                 {/* Barra de duplicados */}
                 {duplicateCount > 0 && (
                     <div style={{

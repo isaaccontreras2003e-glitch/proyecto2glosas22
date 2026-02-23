@@ -54,6 +54,96 @@ export default function Home() {
     loadData();
   }, []);
 
+  // Migración de datos desde localStorage a Supabase (Escaneo Profundo)
+  useEffect(() => {
+    const migrateData = async () => {
+      try {
+        const isMigrated = localStorage.getItem('migrated_to_supabase_deep');
+        if (isMigrated === 'true') return;
+
+        console.log('--- INICIANDO ESCANEO PROFUNDO DE RECUPERACIÓN ---');
+        let recoveredGlosas: any[] = [];
+        let recoveredIngresos: any[] = [];
+        const foundKeys: string[] = [];
+
+        // Escanear TODAS las llaves de localStorage
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key) continue;
+
+          try {
+            const val = localStorage.getItem(key);
+            if (!val) continue;
+
+            const parsed = JSON.parse(val);
+
+            // Detectar si el contenido parece una lista de glosas
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const first = parsed[0];
+              // Si tiene campos típicos de glosa
+              if (first.factura && (first.valor_glosa !== undefined || first.valor_aceptado !== undefined)) {
+                console.log(`¡Posible respaldo encontrado en la llave: "${key}"!`);
+                foundKeys.push(key);
+
+                if (first.valor_glosa !== undefined) {
+                  recoveredGlosas = [...recoveredGlosas, ...parsed];
+                } else if (first.valor_aceptado !== undefined) {
+                  recoveredIngresos = [...recoveredIngresos, ...parsed];
+                }
+              }
+            }
+          } catch (e) {
+            // No es JSON, ignorar
+          }
+        }
+
+        if (recoveredGlosas.length > 0 || recoveredIngresos.length > 0) {
+          console.log(`Migrando ${recoveredGlosas.length} glosas y ${recoveredIngresos.length} ingresos encontrados...`);
+
+          if (recoveredGlosas.length > 0) {
+            await supabase.from('glosas').upsert(recoveredGlosas);
+          }
+          if (recoveredIngresos.length > 0) {
+            await supabase.from('ingresos').upsert(recoveredIngresos);
+          }
+
+          localStorage.setItem('migrated_to_supabase_deep', 'true');
+
+          // Recargar datos
+          const [{ data: gData }, { data: iData }] = await Promise.all([
+            supabase.from('glosas').select('*').order('fecha', { ascending: false }),
+            supabase.from('ingresos').select('*').order('fecha', { ascending: false }),
+          ]);
+          if (gData) setGlosas(gData);
+          if (iData) setIngresos(iData);
+
+          console.log('Recuperación exitosa de las llaves:', foundKeys.join(', '));
+        } else {
+          console.log('No se encontraron datos locales para recuperar.');
+        }
+      } catch (err) {
+        console.error('Error durante la recuperación:', err);
+      }
+    };
+
+    if (isMounted) migrateData();
+  }, [isMounted]);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterTipo, setFilterTipo] = useState('Todos');
+  const [filterEstado, setFilterEstado] = useState('Todos');
+
+  const filteredGlosas = useMemo(() => {
+    return glosas.filter(g => {
+      const matchesSearch = g.factura.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (g.servicio && g.servicio.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (g.descripcion && g.descripcion.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesTipo = filterTipo === 'Todos' || g.tipo_glosa === filterTipo;
+      const matchesEstado = filterEstado === 'Todos' || g.estado === filterEstado;
+      return matchesSearch && matchesTipo && matchesEstado;
+    });
+  }, [glosas, searchTerm, filterTipo, filterEstado]);
+
   const stats = useMemo(() => {
     const totalGlosasValue = glosas.reduce((acc, curr) => acc + curr.valor_glosa, 0);
     const totalAceptadoValue = ingresos.reduce((acc, curr) => acc + curr.valor_aceptado, 0);
@@ -124,10 +214,34 @@ export default function Home() {
     }).sort((a, b) => b.glosado - a.glosado);
   }, [glosas, ingresos]);
 
+  const handleManualImport = async () => {
+    const jsonStr = prompt('Pega aquí el contenido de tu respaldo (JSON):');
+    if (!jsonStr) return;
+    try {
+      const data = JSON.parse(jsonStr);
+      if (Array.isArray(data)) {
+        setLoading(true);
+        const { error } = await supabase.from('glosas').upsert(data);
+        if (!error) {
+          setGlosas(prev => [...data, ...prev]);
+          alert('¡Importación exitosa!');
+        } else {
+          alert('Error al subir a la nube: ' + error.message);
+        }
+        setLoading(false);
+      } else {
+        alert('El formato no es válido. Debe ser una lista [ ... ].');
+      }
+    } catch (e) {
+      alert('Error al leer el JSON: ' + (e as Error).message);
+    }
+  };
+
   const exportToExcel = () => {
-    if (consolidado.length === 0) return;
+    const dataToExport = consolidado; // El consolidado es por factura, así que se mantiene igual o según necesites
+    if (dataToExport.length === 0) return;
     const headers = ['Factura', 'Valor Glosado', 'Valor Aceptado', 'Valor No Aceptado', 'Diferencia'];
-    const rows = consolidado.map(item => [
+    const rows = dataToExport.map(item => [
       item.factura,
       item.glosado.toFixed(2).replace('.', ','),
       item.aceptado.toFixed(2).replace('.', ','),
@@ -144,26 +258,27 @@ export default function Home() {
   };
 
   const exportGlosasToExcel = () => {
-    if (glosas.length === 0) return;
+    const dataToExport = filteredGlosas;
+    if (dataToExport.length === 0) return;
     const headers = ['Factura', 'Servicio', 'Orden Servicio', 'Valor Glosa', 'Tipo Glosa', 'Estado', 'Fecha', 'Descripcion'];
-    const rows = glosas.map(g => [
+    const rows = dataToExport.map(g => [
       g.factura, g.servicio, g.orden_servicio,
       g.valor_glosa.toFixed(2).replace('.', ','),
       g.tipo_glosa, g.estado, g.fecha,
-      `"${g.descripcion.replace(/"/g, '""')}"`
+      `"${g.descripcion ? g.descripcion.replace(/"/g, '""') : ''}"`
     ]);
     const csvContent = "\uFEFF" + [headers.join(';'), ...rows.map(e => e.join(';'))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `LISTADO_GLOSAS_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `LISTADO_GLOSAS_FILTRADO_${new Date().toISOString().split('T')[0]}.csv`);
     link.click();
   };
 
   if (!isMounted) return <div style={{ background: '#06040d', minHeight: '100vh' }}></div>;
 
-  // Cálculos para el Donut Chart
+  // Cálculos para el Donut Chart - Uso los totales reales para las estadísticas globales
   const totalStates = stats.pendingCount + stats.respondedCount + stats.acceptedCount || 1;
   const pPending = (stats.pendingCount / totalStates) * 100;
   const pResponded = (stats.respondedCount / totalStates) * 100;
@@ -171,7 +286,7 @@ export default function Home() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)' }}>
-      {/* Sidebar */}
+      {/* Sidebar - Se mantiene igual */}
       <motion.aside
         initial={{ x: -320 }}
         animate={{ x: 0 }}
@@ -289,7 +404,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Card Valor Total */}
         <motion.div whileHover={{ y: -5 }} className="card" style={{ padding: '1.5rem', marginTop: 'auto', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(6, 4, 13, 0.5))', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
             <Activity size={18} color="var(--primary)" />
@@ -301,7 +415,6 @@ export default function Home() {
         </motion.div>
       </motion.aside>
 
-      {/* Contenido Principal */}
       <main className="container" style={{ flex: 1, margin: 0, maxWidth: 'none', overflowY: 'auto', padding: '2rem 3rem' }}>
         <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3rem' }}>
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
@@ -336,9 +449,29 @@ export default function Home() {
               {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                onClick={() => {
+                  if (confirm('¿Deseas importar datos manualmente desde un archivo JSON o texto de respaldo?')) {
+                    handleManualImport();
+                  } else {
+                    console.log('--- DIAGNÓSTICO DE ALMACENAMIENTO ---');
+                    for (let i = 0; i < localStorage.length; i++) {
+                      const key = localStorage.key(i);
+                      console.log(`Clave: ${key}, Tamaño: ${localStorage.getItem(key!)?.length} caracteres`);
+                    }
+                    alert('Diagnóstico enviado a la consola (F12). Si tienes un código de respaldo, vuelve a presionar este botón y elige "Aceptar" para importarlo.');
+                  }
+                }}
+                className="btn btn-secondary"
+                style={{ padding: '0.6rem 1.25rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#f59e0b', borderColor: 'rgba(245,158,11,0.2)' }}
+              >
+                <Activity size={14} />
+                DIAGNÓSTICO DATOS
+              </motion.button>
               <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={exportGlosasToExcel} className="btn btn-secondary" style={{ padding: '0.6rem 1.25rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'rgba(139, 92, 246, 0.1)', borderColor: 'rgba(139, 92, 246, 0.2)', fontWeight: 700 }}>
                 <Download size={14} color="var(--primary)" />
-                EXPORTAR GLOSAS
+                EXPORTAR LISTADO
               </motion.button>
               <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={exportToExcel} className="btn btn-secondary" style={{ padding: '0.6rem 1.25rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 700 }}>
                 <Download size={14} />
@@ -352,7 +485,7 @@ export default function Home() {
         {loading && (
           <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ width: '40px', height: '40px', border: '3px solid rgba(139,92,246,0.2)', borderTop: '3px solid #8b5cf6', borderRadius: '50%', margin: '0 auto 1rem' }} />
-            <p>Cargando datos desde la nube...</p>
+            <p>Sincronizando con la nube...</p>
           </div>
         )}
 
@@ -372,7 +505,19 @@ export default function Home() {
                 <GlosaForm onAddGlosa={handleAddGlosa} existingGlosas={glosas} />
                 <AnimatePresence mode="popLayout">
                   <motion.div key="table-container" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                    <GlosaTable glosas={glosas} onUpdateStatus={handleUpdateStatus} onUpdateGlosa={handleUpdateGlosa} onDeleteGlosa={handleDeleteGlosa} onDeleteDuplicates={handleDeleteDuplicates} />
+                    <GlosaTable
+                      glosas={filteredGlosas}
+                      onUpdateStatus={handleUpdateStatus}
+                      onUpdateGlosa={handleUpdateGlosa}
+                      onDeleteGlosa={handleDeleteGlosa}
+                      onDeleteDuplicates={handleDeleteDuplicates}
+                      searchTerm={searchTerm}
+                      setSearchTerm={setSearchTerm}
+                      filterTipo={filterTipo}
+                      setFilterTipo={setFilterTipo}
+                      filterEstado={filterEstado}
+                      setFilterEstado={setFilterEstado}
+                    />
                   </motion.div>
                 </AnimatePresence>
               </div>
