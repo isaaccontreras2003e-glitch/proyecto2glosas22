@@ -72,10 +72,16 @@ export default function Home() {
       if (!user) return;
       try {
         setLoading(true);
-        const [{ data: glosasData }, { data: ingresosData }] = await Promise.all([
+        // Timeout de seguridad de 10s para la carga inicial
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout de conexión')), 10000));
+
+        const fetchPromise = Promise.all([
           supabase.from('glosas').select('*').order('fecha', { ascending: false }),
           supabase.from('ingresos').select('*').order('fecha', { ascending: false }),
         ]);
+
+        const [{ data: glosasData }, { data: ingresosData }] = await Promise.race([fetchPromise, timeoutPromise]) as any;
+
         if (glosasData) setGlosas(glosasData);
         if (ingresosData) setIngresos(ingresosData);
       } catch (err) {
@@ -404,7 +410,64 @@ export default function Home() {
   const pAccepted = (stats.acceptedCount / totalStates) * 100;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)', position: 'relative' }}>
+      {/* Loading overlay - Top Level */}
+      <AnimatePresence>
+        {(loading || authLoading) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 20000,
+              background: 'var(--background)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center'
+            }}
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+              style={{
+                width: '40px',
+                height: '40px',
+                border: '3px solid rgba(139,92,246,0.2)',
+                borderTop: '3px solid #8b5cf6',
+                borderRadius: '50%',
+                marginBottom: '1rem'
+              }}
+            />
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Preparando ambiente seguro...</p>
+
+            {showForceButton && (
+              <motion.button
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={() => setLoading(false)}
+                className="btn btn-secondary"
+                style={{
+                  fontSize: '0.75rem',
+                  padding: '0.75rem 1.5rem',
+                  background: 'rgba(139, 92, 246, 0.1)',
+                  border: '1px solid rgba(139,92,246,0.3)',
+                  color: 'white',
+                  fontWeight: 800,
+                  borderRadius: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                ¿PROBLEMAS? FORZAR ENTRADA
+              </motion.button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Sidebar - Se mantiene igual */}
       <motion.aside
         initial={{ x: -320 }}
@@ -610,52 +673,6 @@ export default function Home() {
             </div>
           </motion.div>
         </header>
-
-        {/* Loading overlay */}
-        {(loading || authLoading) && (
-          <div style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 10000,
-            background: 'var(--background)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center'
-          }}>
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-              style={{
-                width: '40px',
-                height: '40px',
-                border: '3px solid rgba(139,92,246,0.2)',
-                borderTop: '3px solid #8b5cf6',
-                borderRadius: '50%',
-                marginBottom: '1rem'
-              }}
-            />
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Preparando ambiente seguro...</p>
-
-            {showForceButton && (
-              <motion.button
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={() => setLoading(false)}
-                className="btn btn-secondary"
-                style={{
-                  fontSize: '0.7rem',
-                  padding: '0.5rem 1rem',
-                  opacity: 0.7,
-                  border: '1px solid rgba(255,255,255,0.1)'
-                }}
-              >
-                ¿PROBLEMAS? FORZAR ENTRADA
-              </motion.button>
-            )}
-          </div>
-        )}
 
         {(!loading && !authLoading && user) && (
           <>
