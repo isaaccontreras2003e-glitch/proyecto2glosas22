@@ -53,17 +53,27 @@ export default function Home() {
     }
   }, [user, authLoading, router]);
 
-  // Temporizador de seguridad para el botón "Forzar Entrada"
+  // Temporizador de seguridad para el botón "Forzar Entrada" y Auto-Kill
   useEffect(() => {
     let timer: NodeJS.Timeout;
+    let autoKillTimer: NodeJS.Timeout;
+
     if (loading || authLoading) {
       timer = setTimeout(() => {
         setShowForceButton(true);
       }, 5000); // Aparece tras 5 segundos
+
+      autoKillTimer = setTimeout(() => {
+        setForcedEntry(true);
+        setLoading(false);
+      }, 15000); // Se quita solo tras 15 segundos (Pánico Final)
     } else {
       setShowForceButton(false);
     }
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(autoKillTimer);
+    };
   }, [loading, authLoading]);
 
   // Cargar datos desde Supabase al montar
