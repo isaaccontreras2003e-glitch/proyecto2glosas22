@@ -220,12 +220,27 @@ export default function Home() {
   const testConnection = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.from('glosas').select('id').limit(1);
-      if (error) throw error;
-      alert('✅ ¡CONEXIÓN EXITOSA! El sistema puede comunicarse con la base de datos.');
+      // Prueba 1: Lectura (GET)
+      const { error: readErr } = await supabase.from('glosas').select('id').limit(1);
+      if (readErr) throw new Error('Error de lectura: ' + readErr.message);
+
+      // Prueba 2: Escritura Trial (POST) - Intentamos insertar un registro temporal
+      const testId = 'test_' + Math.random().toString(36).substr(2, 5);
+      const { error: writeErr } = await supabase.from('glosas').insert([{
+        id: testId,
+        factura: 'TEST_CONEXION',
+        descripcion: 'Eliminar esta fila'
+      }]);
+
+      if (writeErr) throw new Error('Error de escritura: ' + writeErr.message);
+
+      // Limpiamos la prueba
+      await supabase.from('glosas').delete().eq('id', testId);
+
+      alert('✅ ¡CONEXIÓN TOTAL EXITOSA!\nTanto la lectura como la subida de datos funcionan correctamente.');
     } catch (err: any) {
       console.error('Test Connection Error:', err);
-      alert('❌ ERROR DE CONEXIÓN: ' + err.message + '\n\nEsto suele ser un bloqueo de red de la oficina.');
+      alert('❌ ERROR DE CONEXIÓN:\n' + err.message + '\n\nSi el error es "Failed to fetch", es probable que la red de tu oficina bloquee el envío de datos (POST).');
     } finally {
       setLoading(false);
     }
@@ -268,12 +283,16 @@ export default function Home() {
 
         // Detectar separador común en Excel (punto y coma o coma)
         const delimiter = text.includes(';') ? ';' : ',';
-        const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase());
+        // Limpiamos BOM y espacios de los encabezados
+        const headers = lines[0]
+          .replace(/^\ufeff/, '')
+          .split(delimiter)
+          .map(h => h.trim().toLowerCase());
 
         const data = lines.slice(1).map(line => {
           const values = line.split(delimiter).map(v => v.trim());
           const obj: any = {
-            id: Math.random().toString(36).substr(2, 9),
+            id: 'csv_' + Math.random().toString(36).substr(2, 9),
             factura: '',
             servicio: '',
             orden_servicio: '',
