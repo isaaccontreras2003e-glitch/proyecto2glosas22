@@ -109,9 +109,13 @@ export default function Home() {
 
         if (gRes && gRes.data) {
           setGlosas(gRes.data);
+          localStorage.setItem('cached_glosas', JSON.stringify(gRes.data));
           lastFetchedUserId.current = user.id;
         }
-        if (iRes && iRes.data) setIngresos(iRes.data);
+        if (iRes && iRes.data) {
+          setIngresos(iRes.data);
+          localStorage.setItem('cached_ingresos', JSON.stringify(iRes.data));
+        }
 
         setLastUpdate(new Date());
         setSupabaseError(null);
@@ -134,7 +138,21 @@ export default function Home() {
     await attemptFetch();
   }, [user?.id]);
 
-  // Cargar datos desde Supabase al montar o cambiar usuario (FIJO: No bloqueamos por forcedEntry)
+  // Cargar datos desde caché local (INSTANTÁNEO)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const g = localStorage.getItem('cached_glosas');
+      const i = localStorage.getItem('cached_ingresos');
+      if (g) setGlosas(JSON.parse(g));
+      if (i) setIngresos(JSON.parse(i));
+      if (g || i) {
+        setLoading(false); // Quitar loader si hay caché
+        setLastUpdate(new Date());
+      }
+    }
+  }, []);
+
+  // Cargar datos desde Supabase al montar o cambiar usuario
   useEffect(() => {
     setIsMounted(true);
     if (user) {
@@ -231,23 +249,44 @@ export default function Home() {
   }, [glosas, ingresos]);
 
   const handleAddGlosa = async (newGlosa: Glosa) => {
+    // Optimista: Actualizar UI y Caché primero
+    const updatedGlosas = [newGlosa, ...glosas];
+    setGlosas(updatedGlosas);
+    localStorage.setItem('cached_glosas', JSON.stringify(updatedGlosas));
+
+    // Segundo plano: Sincronizar con Supabase
     const { error } = await supabase.from('glosas').insert([newGlosa]);
-    if (!error) setGlosas(prev => [newGlosa, ...prev]);
+    if (error) {
+      console.error('Error sincronizando nueva glosa:', error);
+      // Opcional: Notificar error persistente o intentar colar después
+    }
   };
 
   const handleUpdateStatus = async (id: string, newEstado: string) => {
+    const updatedGlosas = glosas.map(g => g.id === id ? { ...g, estado: newEstado } : g);
+    setGlosas(updatedGlosas);
+    localStorage.setItem('cached_glosas', JSON.stringify(updatedGlosas));
+
     const { error } = await supabase.from('glosas').update({ estado: newEstado }).eq('id', id);
-    if (!error) setGlosas(prev => prev.map(g => g.id === id ? { ...g, estado: newEstado } : g));
+    if (error) console.error('Error actualizando estado:', error);
   };
 
   const handleUpdateGlosa = async (updatedGlosa: Glosa) => {
+    const updatedGlosas = glosas.map(g => g.id === updatedGlosa.id ? updatedGlosa : g);
+    setGlosas(updatedGlosas);
+    localStorage.setItem('cached_glosas', JSON.stringify(updatedGlosas));
+
     const { error } = await supabase.from('glosas').update(updatedGlosa).eq('id', updatedGlosa.id);
-    if (!error) setGlosas(prev => prev.map(g => g.id === updatedGlosa.id ? updatedGlosa : g));
+    if (error) console.error('Error actualizando glosa:', error);
   };
 
   const handleDeleteGlosa = async (id: string) => {
+    const updatedGlosas = glosas.filter(g => g.id !== id);
+    setGlosas(updatedGlosas);
+    localStorage.setItem('cached_glosas', JSON.stringify(updatedGlosas));
+
     const { error } = await supabase.from('glosas').delete().eq('id', id);
-    if (!error) setGlosas(prev => prev.filter(g => g.id !== id));
+    if (error) console.error('Error eliminando glosa:', error);
   };
 
   const handleDeleteDuplicates = async () => {
@@ -268,13 +307,21 @@ export default function Home() {
   };
 
   const handleAddIngreso = async (newIngreso: Ingreso) => {
+    const updatedIngresos = [newIngreso, ...ingresos];
+    setIngresos(updatedIngresos);
+    localStorage.setItem('cached_ingresos', JSON.stringify(updatedIngresos));
+
     const { error } = await supabase.from('ingresos').insert([newIngreso]);
-    if (!error) setIngresos(prev => [newIngreso, ...prev]);
+    if (error) console.error('Error sincronizando ingreso:', error);
   };
 
   const handleDeleteIngreso = async (id: string) => {
+    const updatedIngresos = ingresos.filter(i => i.id !== id);
+    setIngresos(updatedIngresos);
+    localStorage.setItem('cached_ingresos', JSON.stringify(updatedIngresos));
+
     const { error } = await supabase.from('ingresos').delete().eq('id', id);
-    if (!error) setIngresos(prev => prev.filter(i => i.id !== id));
+    if (error) console.error('Error eliminando ingreso:', error);
   };
 
   const consolidado = useMemo(() => {
