@@ -37,18 +37,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         .eq('id', session.user.id)
                         .single();
 
-                    if (error) {
-                        console.warn('Error fetching profile, defaulting to visor:', error);
+                    if (!error && profile) {
+                        setRole(profile.rol);
+                    } else if (error && role === null) {
                         setRole('visor');
-                    } else {
-                        setRole(profile?.rol ?? 'visor');
                     }
                 } else {
                     setRole(null);
                 }
             } catch (err) {
                 console.error('Critical Auth State Error:', err);
-                setRole('visor'); // Fallback seguro
+                if (role === null) setRole('visor');
             } finally {
                 setLoading(false);
             }

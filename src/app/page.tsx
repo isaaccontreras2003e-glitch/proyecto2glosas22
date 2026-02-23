@@ -5,7 +5,7 @@ import { Dashboard } from '@/components/Dashboard';
 import { GlosaForm } from '@/components/GlosaForm';
 import { GlosaTable } from '@/components/GlosaTable';
 import { supabase } from '@/lib/supabase';
-import { LayoutDashboard, TrendingUp, Wallet, Activity, Trash2, Download, ListChecks, PieChart, ChevronUp } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Wallet, Activity, Trash2, Download, ListChecks, PieChart, ChevronUp, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -42,6 +42,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [forcedEntry, setForcedEntry] = useState(false);
   const [showForceButton, setShowForceButton] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const lastFetchedUserId = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, role, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
@@ -76,33 +78,42 @@ export default function Home() {
     };
   }, [loading, authLoading]);
 
+  const loadData = React.useCallback(async (force = false) => {
+    if (!user) return;
+    if (!force && lastFetchedUserId.current === user.id && glosas.length > 0) return;
+
+    try {
+      setLoading(true);
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout de conexión')), 10000));
+
+      const fetchPromise = Promise.all([
+        supabase.from('glosas').select('*').order('fecha', { ascending: false }),
+        supabase.from('ingresos').select('*').order('fecha', { ascending: false }),
+      ]);
+
+      const results = await Promise.race([fetchPromise, timeoutPromise]) as any;
+      const [gRes, iRes] = results;
+
+      if (gRes.data) {
+        setGlosas(gRes.data);
+        lastFetchedUserId.current = user.id;
+      }
+      if (iRes.data) setIngresos(iRes.data);
+
+      if (gRes.data || iRes.data) setLastUpdate(new Date());
+
+    } catch (err) {
+      console.error('Error cargando datos:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, glosas.length]);
+
   // Cargar datos desde Supabase al montar
   useEffect(() => {
     setIsMounted(true);
-    const loadData = async () => {
-      if (!user) return;
-      try {
-        setLoading(true);
-        // Timeout de seguridad de 10s para la carga inicial
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout de conexión')), 10000));
-
-        const fetchPromise = Promise.all([
-          supabase.from('glosas').select('*').order('fecha', { ascending: false }),
-          supabase.from('ingresos').select('*').order('fecha', { ascending: false }),
-        ]);
-
-        const [{ data: glosasData }, { data: ingresosData }] = await Promise.race([fetchPromise, timeoutPromise]) as any;
-
-        if (glosasData) setGlosas(glosasData);
-        if (ingresosData) setIngresos(ingresosData);
-      } catch (err) {
-        console.error('Error cargando datos:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     if (user) loadData();
-  }, [user]);
+  }, [user?.id, loadData]);
 
   // Migración de datos desde localStorage a Supabase (Escaneo Profundo)
   useEffect(() => {
@@ -641,8 +652,23 @@ export default function Home() {
             </div>
           </motion.div>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <p style={{ fontWeight: 700, color: 'white', marginBottom: '0.25rem', fontSize: '1.1rem' }}>
+            <p style={{ fontWeight: 700, color: 'white', marginBottom: '0.25rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'flex-end' }}>
               {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {lastUpdate && (
+                <span style={{ fontSize: '0.75rem', color: 'rgba(139, 92, 246, 0.7)', background: 'rgba(139, 92, 246, 0.1)', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(139, 92, 246, 0.2)', fontWeight: 600 }}>
+                  <RefreshCw size={12} style={{ marginRight: '5px', verticalAlign: 'middle', display: 'inline' }} />
+                  {lastUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
+              <motion.button
+                whileHover={{ scale: 1.1, rotate: 180 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => loadData(true)}
+                title="Sincronizar Datos"
+                style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.2)', color: '#8b5cf6', cursor: 'pointer', borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <RefreshCw size={16} />
+              </motion.button>
             </p>
             <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', justifyContent: 'flex-end' }}>
               <p style={{
