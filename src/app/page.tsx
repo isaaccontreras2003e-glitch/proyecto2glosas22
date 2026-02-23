@@ -275,9 +275,9 @@ export default function Home() {
             if (!val) return;
 
             if (header.includes('factura')) obj.factura = val;
-            if (header.includes('servicio') && !header.includes('orden')) obj.servicio = val;
             if (header.includes('orden')) obj.orden_servicio = val;
-            if (header.includes('valor') || header.includes('glosa')) {
+            if (header.includes('servicio') && !header.includes('orden')) obj.servicio = val;
+            if (header.includes('valor')) {
               // Limpiar formato de moneda si existe (quitar $ y puntos de miles)
               const numericVal = val.replace(/[$. ]/g, '').replace(',', '.');
               obj.valor_glosa = parseFloat(numericVal) || 0;
@@ -285,7 +285,7 @@ export default function Home() {
             if (header.includes('tipo')) obj.tipo_glosa = val;
             if (header.includes('estado')) obj.estado = val;
             if (header.includes('fecha')) obj.fecha = val;
-            if (header.includes('descripcion')) obj.descripcion = val;
+            if (header.includes('descrip')) obj.descripcion = val;
           });
           return obj;
         }).filter(item => item.factura);
