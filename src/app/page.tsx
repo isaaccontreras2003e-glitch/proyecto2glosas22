@@ -217,6 +217,20 @@ export default function Home() {
     }).sort((a, b) => b.glosado - a.glosado);
   }, [glosas, ingresos]);
 
+  const testConnection = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.from('glosas').select('id').limit(1);
+      if (error) throw error;
+      alert('✅ ¡CONEXIÓN EXITOSA! El sistema puede comunicarse con la base de datos.');
+    } catch (err: any) {
+      console.error('Test Connection Error:', err);
+      alert('❌ ERROR DE CONEXIÓN: ' + err.message + '\n\nEsto suele ser un bloqueo de red de la oficina.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleManualImport = async () => {
     const jsonStr = prompt('Pega aquí el contenido de tu respaldo (JSON):');
     if (!jsonStr) return;
@@ -546,6 +560,16 @@ export default function Home() {
               >
                 <Activity size={14} />
                 DIAGNÓSTICO DATOS
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                onClick={testConnection}
+                className="btn btn-secondary"
+                style={{ padding: '0.6rem 1.25rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#60a5fa', borderColor: 'rgba(96,165,250,0.2)' }}
+              >
+                <Activity size={14} />
+                PROBAR CONEXIÓN
               </motion.button>
 
               <motion.button
