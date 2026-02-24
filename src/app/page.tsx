@@ -231,6 +231,7 @@ export default function Home() {
   const [filterTipo, setFilterTipo] = useState('Todos');
   const [filterEstado, setFilterEstado] = useState('Todos');
   const [filterInterno, setFilterInterno] = useState('Todos');
+  const [searchTermIngresos, setSearchTermIngresos] = useState('');
 
   const filteredGlosas = useMemo(() => {
     return glosas.filter(g => {
@@ -257,6 +258,12 @@ export default function Home() {
     const { error } = await supabase.from('glosas').update({ registrada_internamente: newStatus }).eq('id', id);
     if (error) console.error('Error actualizando registro interno:', error);
   };
+
+  const filteredIngresos = useMemo(() => {
+    return ingresos.filter(i =>
+      i.factura.toLowerCase().includes(searchTermIngresos.toLowerCase())
+    );
+  }, [ingresos, searchTermIngresos]);
 
   const stats = useMemo(() => {
     const totalGlosasValue = glosas.reduce((acc, curr) => acc + curr.valor_glosa, 0);
@@ -920,7 +927,13 @@ export default function Home() {
                   <IngresoForm onAddIngreso={handleAddIngreso} isAdmin={role === 'admin'} />
                 </div>
                 <div>
-                  <IngresoList ingresos={ingresos} onDelete={handleDeleteIngreso} isAdmin={role === 'admin'} />
+                  <IngresoList
+                    ingresos={filteredIngresos}
+                    onDelete={handleDeleteIngreso}
+                    isAdmin={role === 'admin'}
+                    searchTerm={searchTermIngresos}
+                    setSearchTerm={setSearchTermIngresos}
+                  />
                 </div>
               </motion.div>
             )}
@@ -1093,21 +1106,57 @@ const IngresoForm = ({ onAddIngreso, isAdmin }: { onAddIngreso: (ingreso: Ingres
   );
 };
 
-const IngresoList = ({ ingresos, onDelete, isAdmin }: { ingresos: Ingreso[], onDelete: (id: string) => void, isAdmin: boolean }) => {
+const IngresoList = ({
+  ingresos,
+  onDelete,
+  isAdmin,
+  searchTerm,
+  setSearchTerm
+}: {
+  ingresos: Ingreso[],
+  onDelete: (id: string) => void,
+  isAdmin: boolean,
+  searchTerm: string,
+  setSearchTerm: (val: string) => void
+}) => {
   const totalAceptado = ingresos.reduce((acc, i) => acc + i.valor_aceptado, 0);
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem' }}>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', flex: 1, gap: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h3 style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 800 }}>
           <ListChecks size={22} />
-          Historial de Gestión ({ingresos.length})
+          Historial ({ingresos.length})
         </h3>
         <div style={{ textAlign: 'right' }}>
           <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Aceptado</p>
           <p style={{ fontSize: '1.5rem', fontWeight: 950, color: '#ef4444' }}>${formatPesos(totalAceptado)}</p>
         </div>
       </div>
-      <div style={{ flex: 1, maxHeight: '800px', overflowY: 'auto', paddingRight: '0.75rem', minHeight: '300px' }} className="custom-scrollbar">
+
+      <div style={{ position: 'relative' }}>
+        <ClipboardList size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+        <input
+          type="text"
+          placeholder="Buscar factura en pagos..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            width: '100%',
+            background: 'rgba(0,0,0,0.2)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '12px',
+            padding: '0.75rem 1rem 0.75rem 2.8rem',
+            color: 'white',
+            fontSize: '0.85rem',
+            outline: 'none',
+            transition: 'border-color 0.2s'
+          }}
+          onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+          onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+        />
+      </div>
+
+      <div style={{ flex: 1, maxHeight: '600px', overflowY: 'auto', paddingRight: '0.75rem', minHeight: '300px' }} className="custom-scrollbar">
         <AnimatePresence>
           {ingresos.length === 0 ? (
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '3rem', fontSize: '0.9rem' }}>
