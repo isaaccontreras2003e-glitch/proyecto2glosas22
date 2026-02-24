@@ -856,6 +856,7 @@ export default function Home() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+                <ConsolidadoTable data={consolidado} />
                 <IngresoForm onAddIngreso={handleAddIngreso} isAdmin={role === 'admin'} />
                 <IngresoList ingresos={ingresos} onDelete={handleDeleteIngreso} isAdmin={role === 'admin'} />
               </div>
@@ -1078,6 +1079,47 @@ const IngresoList = ({ ingresos, onDelete, isAdmin }: { ingresos: Ingreso[], onD
             ))
           )}
         </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+};
+const ConsolidadoTable = ({ data }: { data: any[] }) => {
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="card" style={{ padding: '2rem', border: '1px solid rgba(139, 92, 246, 0.15)' }}>
+      <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '1.1rem', color: '#8b5cf6', fontWeight: 800 }}>
+        <ListChecks size={22} />
+        CONSOLIDADO POR FACTURA
+      </h3>
+      <div style={{ maxHeight: '400px', overflowY: 'auto' }} className="custom-scrollbar">
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+              <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Factura</th>
+              <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Último Ingreso</th>
+              <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Glosado</th>
+              <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Aceptado</th>
+              <th style={{ padding: '0.75rem', color: 'var(--text-secondary)', textAlign: 'right' }}>Diferencia</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.slice(0, 10).map((item, idx) => (
+              <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <td style={{ padding: '0.75rem', fontWeight: 700, color: 'white' }}>{item.factura}</td>
+                <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{item.fecha}</td>
+                <td style={{ padding: '0.75rem' }}>${formatPesos(item.glosado)}</td>
+                <td style={{ padding: '0.75rem', color: '#10b981' }}>${formatPesos(item.aceptado)}</td>
+                <td style={{ padding: '0.75rem', textAlign: 'right', color: item.diferencia > 0 ? '#ef4444' : '#10b981', fontWeight: 800 }}>
+                  ${formatPesos(item.diferencia)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {data.length > 10 && (
+          <p style={{ textAlign: 'center', padding: '1rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}>
+            Mostrando top 10 facturas. Usa "Exportar Consolidado" para ver el resto.
+          </p>
+        )}
       </div>
     </motion.div>
   );
