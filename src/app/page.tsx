@@ -467,6 +467,40 @@ export default function Home() {
     }
   };
 
+  const handleDeepRecovery = () => {
+    try {
+      // Intentamos buscar en todas las llaves posibles
+      const keys = ['cached_glosas', 'sisfact_glosas', 'cached_glosas_backup', 'glosas_backup'];
+      let foundMarks = 0;
+      let recoveredGlosas = [...glosas];
+
+      keys.forEach(key => {
+        const data = JSON.parse(localStorage.getItem(key) || '[]');
+        if (Array.isArray(data)) {
+          data.forEach(g => {
+            if (g.registrada_internamente) {
+              const target = recoveredGlosas.find(rg => rg.id === g.id || (rg.factura === g.factura && rg.valor_glosa === g.valor_glosa));
+              if (target && !target.registrada_internamente) {
+                target.registrada_internamente = true;
+                foundMarks++;
+              }
+            }
+          });
+        }
+      });
+
+      if (foundMarks > 0) {
+        setGlosas([...recoveredGlosas]);
+        localStorage.setItem('cached_glosas', JSON.stringify(recoveredGlosas));
+        alert(`🎉 ¡RECUERACIÓN EXITOSA! Se encontraron ${foundMarks} marcas en el historial del navegador. Ahora dale al botón de "SINCRONIZAR MARCAS" para asegurar que se guarden en la nube.`);
+      } else {
+        alert('❌ No se encontraron rastros de marcas en el historial de este navegador. Si usaste otra computadora, intenta lo mismo en ella.');
+      }
+    } catch (e) {
+      alert('Error en recuperación: ' + (e as Error).message);
+    }
+  };
+
   const handleManualImport = async () => {
     const jsonStr = prompt('Pega aquí el contenido de tu respaldo (JSON):');
     if (!jsonStr) return;
@@ -1113,6 +1147,16 @@ export default function Home() {
                   >
                     <RefreshCw size={12} />
                     SINCRONIZAR MARCAS
+                  </motion.button>
+
+                  <motion.button
+                    whileHover={{ scale: 1.05, opacity: 1 }}
+                    onClick={handleDeepRecovery}
+                    className="btn btn-secondary"
+                    style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b' }}
+                  >
+                    <Activity size={12} />
+                    BUSCAR MARCAS PERDIDAS
                   </motion.button>
                 </div>
               )}
