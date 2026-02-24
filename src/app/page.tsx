@@ -36,6 +36,7 @@ interface Ingreso {
 }
 
 export default function Home() {
+  const [activeSection, setActiveSection] = useState<'dashboard' | 'ingreso' | 'consolidado' | 'valores'>('dashboard');
   const [glosas, setGlosas] = useState<Glosa[]>([]);
   const [ingresos, setIngresos] = useState<Ingreso[]>([]);
   const [isMounted, setIsMounted] = useState(false);
@@ -580,133 +581,95 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Sidebar - Se mantiene igual */}
+      {/* Sidebar - Rediseñado como Navegación */}
       <motion.aside
-        initial={{ x: -320 }}
+        initial={{ x: -280 }}
         animate={{ x: 0 }}
         transition={{ duration: 0.8, ease: "circOut" }}
         style={{
-          width: '320px',
+          width: '280px',
           borderRight: '1px solid var(--border)',
-          padding: '2rem 1.5rem',
+          padding: '2rem 1rem',
           display: 'flex',
           flexDirection: 'column',
-          gap: '2rem',
+          gap: '1rem',
           position: 'sticky',
           top: 0,
           height: '100vh',
-          overflowY: 'auto',
-          background: 'rgba(6, 4, 13, 0.95)',
-          backdropFilter: 'blur(30px)',
-          zIndex: 50
+          background: 'rgba(6, 4, 13, 0.98)',
+          backdropFilter: 'blur(40px)',
+          zIndex: 100
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-          <motion.div
-            animate={{ rotate: [0, 10, -10, 0] }}
-            transition={{ repeat: Infinity, duration: 4 }}
-            style={{ padding: '8px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '10px' }}
-          >
-            <Activity size={20} color="var(--primary)" />
-          </motion.div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Estadísticas</h2>
-        </div>
-
-        {/* Categorías con Porcentajes */}
-        <div className="card" style={{ padding: '1.25rem', border: '1px solid rgba(139, 92, 246, 0.15)', overflow: 'hidden' }}>
-          <p className="label" style={{ marginBottom: '1.25rem', fontSize: '0.7rem' }}>Categorías Glosas (%)</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {['Tarifas', 'Soportes', 'RIPS', 'Autorización'].map((tipo, idx) => {
-              const count = glosas.filter(g => g.tipo_glosa === tipo).length;
-              const total = glosas.length || 1;
-              const percent = Math.round((count / total) * 100);
-              return (
-                <div key={tipo}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.6rem' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>{tipo}</span>
-                    <span style={{ color: 'white', fontWeight: 700 }}>{count} ({percent}%)</span>
-                  </div>
-                  <div style={{ height: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${percent}%` }}
-                      transition={{ duration: 1.5, delay: idx * 0.1, ease: "circOut" }}
-                      style={{ height: '100%', background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)', boxShadow: '0 0 15px rgba(139, 92, 246, 0.5)', position: 'relative' }}
-                    >
-                      <motion.div
-                        animate={{ x: ['-100%', '200%'] }}
-                        transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                        style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)' }}
-                      />
-                    </motion.div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Donut Chart */}
-        <div className="card" style={{ padding: '1.5rem', border: '1px solid rgba(139, 92, 246, 0.15)', background: 'rgba(255,255,255,0.01)' }}>
-          <p className="label" style={{ marginBottom: '1.75rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <PieChart size={14} />
-            ESTADO DE GESTIÓN DINÁMICO
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
-            <div style={{ position: 'relative', width: '150px', height: '150px' }}>
-              <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)', filter: 'drop-shadow(0 0 10px rgba(0,0,0,0.5))' }}>
-                <defs>
-                  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="1.5" result="blur" />
-                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                  </filter>
-                  <linearGradient id="gradPending" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#8b5cf6" /><stop offset="100%" stopColor="#a78bfa" />
-                  </linearGradient>
-                  <linearGradient id="gradResponded" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#10b981" /><stop offset="100%" stopColor="#34d399" />
-                  </linearGradient>
-                  <linearGradient id="gradAccepted" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#ef4444" /><stop offset="100%" stopColor="#f87171" />
-                  </linearGradient>
-                </defs>
-                <circle cx="50" cy="50" r="40" fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
-                <motion.circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#gradPending)" strokeWidth="8" strokeLinecap="round" initial={{ strokeDasharray: "0 251.2" }} animate={{ strokeDasharray: `${(pPending / 100) * 251.2} 251.2` }} transition={{ duration: 1.5, ease: "circOut" }} filter="url(#glow)" />
-                <motion.circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#gradResponded)" strokeWidth="8" strokeLinecap="round" strokeDashoffset={-((pPending / 100) * 251.2)} initial={{ strokeDasharray: "0 251.2" }} animate={{ strokeDasharray: `${(pResponded / 100) * 251.2} 251.2` }} transition={{ duration: 1.5, delay: 0.3, ease: "circOut" }} filter="url(#glow)" />
-                <motion.circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#gradAccepted)" strokeWidth="8" strokeLinecap="round" strokeDashoffset={-(((pPending + pResponded) / 100) * 251.2)} initial={{ strokeDasharray: "0 251.2" }} animate={{ strokeDasharray: `${(pAccepted / 100) * 251.2} 251.2` }} transition={{ duration: 1.5, delay: 0.6, ease: "circOut" }} filter="url(#glow)" />
-              </svg>
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
-                <p style={{ fontSize: '1.75rem', fontWeight: 900, color: 'white', margin: 0 }}>{glosas.length}</p>
-                <p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total Glosas</p>
-              </div>
+        <div style={{ padding: '0 1rem', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+            <div style={{ padding: '8px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '10px' }}>
+              <Activity size={20} color="var(--primary)" />
             </div>
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              {[
-                { label: 'Pendiente', count: stats.pendingCount, color: '#8b5cf6', p: pPending },
-                { label: 'Respondida', count: stats.respondedCount, color: '#10b981', p: pResponded },
-                { label: 'Aceptada', count: stats.acceptedCount, color: '#ef4444', p: pAccepted }
-              ].map((st, idx) => (
-                <motion.div key={st.label} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.8 + (idx * 0.1) }} whileHover={{ scale: 1.05, x: 5 }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem', borderRadius: '8px', cursor: 'default' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: st.color, boxShadow: `0 0 10px ${st.color}55` }}></div>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{st.label}</span>
-                  </div>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'white' }}>{st.count} <small style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>({Math.round(st.p)}%)</small></span>
-                </motion.div>
-              ))}
-            </div>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>NAVIGACIÓN</h2>
           </div>
         </div>
 
-        <motion.div whileHover={{ y: -5 }} className="card" style={{ padding: '1.5rem', marginTop: 'auto', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(6, 4, 13, 0.5))', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            <Activity size={18} color="var(--primary)" />
-            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase' }}>Valor Auditado</span>
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {[
+            { id: 'dashboard', label: 'DASHBOARD', icon: LayoutDashboard },
+            { id: 'ingreso', label: 'INGRESO GLOSAS', icon: PieChart },
+            { id: 'consolidado', label: 'CONSOLIDADO', icon: ListChecks },
+            { id: 'valores', label: 'VALORES ACEPTADOS', icon: Wallet },
+          ].map((item) => {
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+            return (
+              <motion.button
+                key={item.id}
+                whileHover={{ x: 5, background: 'rgba(255,255,255,0.03)' }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setActiveSection(item.id as any)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  padding: '1rem 1.25rem',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: isActive ? 'linear-gradient(90deg, rgba(139, 92, 246, 0.15), transparent)' : 'transparent',
+                  color: isActive ? 'white' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.3s ease',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="activePill"
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      top: '20%',
+                      bottom: '20%',
+                      width: '4px',
+                      background: 'var(--primary)',
+                      borderRadius: '0 4px 4px 0',
+                      boxShadow: '0 0 10px var(--primary)'
+                    }}
+                  />
+                )}
+                <Icon size={18} style={{ color: isActive ? 'var(--primary)' : 'inherit' }} />
+                <span style={{ fontSize: '0.8rem', fontWeight: isActive ? 800 : 600, letterSpacing: '0.05em' }}>{item.label}</span>
+              </motion.button>
+            );
+          })}
+        </nav>
+
+        {/* Mini Stats persistentes en Sidebar (Opcional) */}
+        <div style={{ marginTop: 'auto', padding: '1rem' }}>
+          <div className="card" style={{ padding: '1rem', background: 'rgba(139, 92, 246, 0.05)', border: '1px solid rgba(139, 92, 246, 0.1)' }}>
+            <p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>TOTAL AUDITADO</p>
+            <p style={{ fontSize: '1.2rem', fontWeight: 900, color: 'white' }}>${formatPesos(stats.totalValue)}</p>
           </div>
-          <p style={{ fontSize: '1.75rem', fontWeight: 950, color: 'white', letterSpacing: '-0.02em' }}>
-            ${formatPesos(stats.totalValue)}
-          </p>
-        </motion.div>
+        </div>
       </motion.aside>
 
       <main className="container" style={{ flex: 1, margin: 0, maxWidth: 'none', overflowY: 'auto', padding: '2rem 3rem' }}>
@@ -822,46 +785,163 @@ export default function Home() {
         </header>
 
         {((!loading && !authLoading) || forcedEntry) && user && (
-          <>
-            <Dashboard
-              totalCount={stats.totalCount}
-              totalValue={stats.totalValue}
-              pendingCount={stats.pendingCount}
-              respondedCount={stats.respondedCount}
-              acceptedCount={stats.acceptedCount}
-              totalIngresos={stats.totalIngresos}
-            />
+          <AnimatePresence mode="wait">
+            {activeSection === 'dashboard' && (
+              <motion.div
+                key="dashboard"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Dashboard
+                  totalCount={stats.totalCount}
+                  totalValue={stats.totalValue}
+                  pendingCount={stats.pendingCount}
+                  respondedCount={stats.respondedCount}
+                  acceptedCount={stats.acceptedCount}
+                  totalIngresos={stats.totalIngresos}
+                />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '2.5rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+                {/* Stats Detalladas que antes estaban en el Sidebar */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '2rem' }}>
+                  <div className="card" style={{ padding: '2rem' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <PieChart size={20} color="var(--primary)" />
+                      DISTRIBUCIÓN POR CATEGORÍA
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                      {['Tarifas', 'Soportes', 'RIPS', 'Autorización'].map((tipo, idx) => {
+                        const count = glosas.filter(g => g.tipo_glosa === tipo).length;
+                        const total = glosas.length || 1;
+                        const percent = Math.round((count / total) * 100);
+                        return (
+                          <div key={tipo}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.6rem' }}>
+                              <span style={{ color: 'var(--text-secondary)' }}>{tipo}</span>
+                              <span style={{ color: 'white', fontWeight: 700 }}>{count} registros ({percent}%)</span>
+                            </div>
+                            <div style={{ height: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', overflow: 'hidden' }}>
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${percent}%` }}
+                                transition={{ duration: 1 }}
+                                style={{ height: '100%', background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)' }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1.5rem', alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <Activity size={20} color="var(--primary)" />
+                      RESUMEN DE GESTIÓN
+                    </h3>
+                    <div style={{ position: 'relative', width: '200px', height: '200px' }}>
+                      <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
+                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
+                        <motion.circle cx="50" cy="50" r="40" fill="transparent" stroke="#8b5cf6" strokeWidth="8" strokeLinecap="round" initial={{ strokeDasharray: "0 251.2" }} animate={{ strokeDasharray: `${(pPending / 100) * 251.2} 251.2` }} transition={{ duration: 1 }} />
+                        <motion.circle cx="50" cy="50" r="40" fill="transparent" stroke="#10b981" strokeWidth="8" strokeLinecap="round" strokeDashoffset={-((pPending / 100) * 251.2)} initial={{ strokeDasharray: "0 251.2" }} animate={{ strokeDasharray: `${(pResponded / 100) * 251.2} 251.2` }} transition={{ duration: 1, delay: 0.2 }} />
+                        <motion.circle cx="50" cy="50" r="40" fill="transparent" stroke="#ef4444" strokeWidth="8" strokeLinecap="round" strokeDashoffset={-(((pPending + pResponded) / 100) * 251.2)} initial={{ strokeDasharray: "0 251.2" }} animate={{ strokeDasharray: `${(pAccepted / 100) * 251.2} 251.2` }} transition={{ duration: 1, delay: 0.4 }} />
+                      </svg>
+                    </div>
+                    <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.5rem' }}>
+                      <div style={{ textAlign: 'center' }}><p style={{ color: '#8b5cf6', fontWeight: 900, margin: 0 }}>{Math.round(pPending)}%</p><p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', margin: 0 }}>Pend.</p></div>
+                      <div style={{ textAlign: 'center' }}><p style={{ color: '#10b981', fontWeight: 900, margin: 0 }}>{Math.round(pResponded)}%</p><p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', margin: 0 }}>Resp.</p></div>
+                      <div style={{ textAlign: 'center' }}><p style={{ color: '#ef4444', fontWeight: 900, margin: 0 }}>{Math.round(pAccepted)}%</p><p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', margin: 0 }}>Acept.</p></div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {activeSection === 'ingreso' && (
+              <motion.div
+                key="ingreso"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                style={{ maxWidth: '1000px', margin: '0 auto' }}
+              >
+                <div style={{ marginBottom: '2rem' }}>
+                  <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>Registrar Nueva Glosa</h2>
+                  <p style={{ color: 'var(--text-secondary)' }}>Complete el siguiente formulario para ingresar una nueva glosa al sistema.</p>
+                </div>
                 <GlosaForm onAddGlosa={handleAddGlosa} existingGlosas={glosas} isAdmin={role === 'admin'} />
-                <AnimatePresence mode="popLayout">
-                  <motion.div key="table-container" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                    <GlosaTable
-                      glosas={filteredGlosas}
-                      onUpdateStatus={handleUpdateStatus}
-                      onUpdateGlosa={handleUpdateGlosa}
-                      onDeleteGlosa={handleDeleteGlosa}
-                      onDeleteDuplicates={handleDeleteDuplicates}
-                      searchTerm={searchTerm}
-                      setSearchTerm={setSearchTerm}
-                      filterTipo={filterTipo}
-                      setFilterTipo={setFilterTipo}
-                      filterEstado={filterEstado}
-                      setFilterEstado={setFilterEstado}
-                      isAdmin={role === 'admin'}
-                    />
-                  </motion.div>
-                </AnimatePresence>
-              </div>
+              </motion.div>
+            )}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+            {activeSection === 'consolidado' && (
+              <motion.div
+                key="consolidado"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                  <div>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>Consolidado y Auditoría</h2>
+                    <p style={{ color: 'var(--text-secondary)' }}>Visualización general de facturas, comparativas y estados de respuesta.</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <motion.button whileHover={{ scale: 1.05 }} onClick={exportToExcel} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(139,92,246,0.1)', color: 'var(--primary)' }}>
+                      <Download size={16} /> CONSOLIDADO CSV
+                    </motion.button>
+                  </div>
+                </div>
+
                 <ConsolidadoTable data={consolidado} />
-                <IngresoForm onAddIngreso={handleAddIngreso} isAdmin={role === 'admin'} />
-                <IngresoList ingresos={ingresos} onDelete={handleDeleteIngreso} isAdmin={role === 'admin'} />
-              </div>
-            </div>
-          </>
+
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '2.5rem' }}>
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'white' }}>Listado Detallado</h3>
+                  </div>
+                  <GlosaTable
+                    glosas={filteredGlosas}
+                    onUpdateStatus={handleUpdateStatus}
+                    onUpdateGlosa={handleUpdateGlosa}
+                    onDeleteGlosa={handleDeleteGlosa}
+                    onDeleteDuplicates={handleDeleteDuplicates}
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    filterTipo={filterTipo}
+                    setFilterTipo={setFilterTipo}
+                    filterEstado={filterEstado}
+                    setFilterEstado={setFilterEstado}
+                    isAdmin={role === 'admin'}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {activeSection === 'valores' && (
+              <motion.div
+                key="valores"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem' }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                  <div>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>Gestión de Valores</h2>
+                    <p style={{ color: 'var(--text-secondary)' }}>Registre los pagos aceptados y no aceptados para conciliar facturas.</p>
+                  </div>
+                  <IngresoForm onAddIngreso={handleAddIngreso} isAdmin={role === 'admin'} />
+                </div>
+                <div>
+                  <IngresoList ingresos={ingresos} onDelete={handleDeleteIngreso} isAdmin={role === 'admin'} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         )}
 
         <footer style={{ marginTop: '8rem', padding: '6rem 0', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
