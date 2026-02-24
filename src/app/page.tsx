@@ -333,9 +333,16 @@ export default function Home() {
     const facturas = new Set([...glosas.map(g => g.factura), ...ingresos.map(i => i.factura)].filter(f => f && f.trim() !== ''));
     return Array.from(facturas).map(f => {
       const glosado = glosas.filter(g => g.factura === f).reduce((acc, g) => acc + g.valor_glosa, 0);
-      const aceptado = ingresos.filter(i => i.factura === f).reduce((acc, i) => acc + i.valor_aceptado, 0);
-      const noAceptado = ingresos.filter(i => i.factura === f).reduce((acc, i) => acc + i.valor_no_aceptado, 0);
-      return { factura: f, glosado, aceptado, noAceptado, diferencia: glosado - aceptado - noAceptado };
+      const factIngresos = ingresos.filter(i => i.factura === f);
+      const aceptado = factIngresos.reduce((acc, i) => acc + i.valor_aceptado, 0);
+      const noAceptado = factIngresos.reduce((acc, i) => acc + i.valor_no_aceptado, 0);
+
+      // Obtener la fecha del ingreso más reciente para esta factura
+      const fechaIngreso = factIngresos.length > 0
+        ? factIngresos.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())[0].fecha
+        : '---';
+
+      return { factura: f, glosado, aceptado, noAceptado, fecha: fechaIngreso, diferencia: glosado - aceptado - noAceptado };
     }).sort((a, b) => b.glosado - a.glosado);
   }, [glosas, ingresos]);
 
@@ -464,11 +471,12 @@ export default function Home() {
   };
 
   const exportToExcel = () => {
-    const dataToExport = consolidado; // El consolidado es por factura, así que se mantiene igual o según necesites
+    const dataToExport = consolidado;
     if (dataToExport.length === 0) return;
-    const headers = ['Factura', 'Valor Glosado', 'Valor Aceptado', 'Valor No Aceptado', 'Diferencia'];
+    const headers = ['Factura', 'Fecha Ingreso', 'Valor Glosado', 'Valor Aceptado', 'Valor No Aceptado', 'Diferencia'];
     const rows = dataToExport.map(item => [
       item.factura,
+      item.fecha,
       item.glosado.toFixed(2).replace('.', ','),
       item.aceptado.toFixed(2).replace('.', ','),
       item.noAceptado.toFixed(2).replace('.', ','),
