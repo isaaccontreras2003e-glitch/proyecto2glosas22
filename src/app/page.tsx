@@ -1037,7 +1037,7 @@ const IngresoList = ({ ingresos, onDelete, isAdmin }: { ingresos: Ingreso[], onD
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem' }}>
         <h3 style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 800 }}>
           <ListChecks size={22} />
-          Historial de Gestión
+          Historial de Gestión ({ingresos.length})
         </h3>
         <div style={{ textAlign: 'right' }}>
           <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Aceptado</p>
@@ -1088,9 +1088,9 @@ const ConsolidadoTable = ({ data }: { data: any[] }) => {
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="card" style={{ padding: '2rem', border: '1px solid rgba(139, 92, 246, 0.15)' }}>
       <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '1.1rem', color: '#8b5cf6', fontWeight: 800 }}>
         <ListChecks size={22} />
-        CONSOLIDADO POR FACTURA
+        CONSOLIDADO POR FACTURA ({data.length})
       </h3>
-      <div style={{ maxHeight: '400px', overflowY: 'auto' }} className="custom-scrollbar">
+      <div style={{ maxHeight: '600px', overflowY: 'auto' }} className="custom-scrollbar">
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
@@ -1102,7 +1102,7 @@ const ConsolidadoTable = ({ data }: { data: any[] }) => {
             </tr>
           </thead>
           <tbody>
-            {data.slice(0, 10).map((item, idx) => (
+            {data.map((item, idx) => (
               <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <td style={{ padding: '0.75rem', fontWeight: 700, color: 'white' }}>{item.factura}</td>
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{item.fecha}</td>
@@ -1115,11 +1115,6 @@ const ConsolidadoTable = ({ data }: { data: any[] }) => {
             ))}
           </tbody>
         </table>
-        {data.length > 10 && (
-          <p style={{ textAlign: 'center', padding: '1rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}>
-            Mostrando top 10 facturas. Usa "Exportar Consolidado" para ver el resto.
-          </p>
-        )}
       </div>
     </motion.div>
   );
