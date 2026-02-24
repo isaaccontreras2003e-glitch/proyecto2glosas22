@@ -469,35 +469,49 @@ export default function Home() {
 
   const handleDeepRecovery = () => {
     try {
-      // Intentamos buscar en todas las llaves posibles
-      const keys = ['cached_glosas', 'sisfact_glosas', 'cached_glosas_backup', 'glosas_backup'];
       let foundMarks = 0;
-      let recoveredGlosas = [...glosas];
+      const recoveredGlosas = [...glosas];
 
-      keys.forEach(key => {
-        const data = JSON.parse(localStorage.getItem(key) || '[]');
-        if (Array.isArray(data)) {
-          data.forEach(g => {
-            if (g.registrada_internamente) {
-              const target = recoveredGlosas.find(rg => rg.id === g.id || (rg.factura === g.factura && rg.valor_glosa === g.valor_glosa));
+      // ESCANEO TOTAL: Revisamos absolutamente todas las llaves en el navegador
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key) continue;
+
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw || !raw.includes('registrada_internamente')) continue;
+
+          const data = JSON.parse(raw);
+          const dataArray = Array.isArray(data) ? data : [data];
+
+          dataArray.forEach((g: any) => {
+            if (g && g.registrada_internamente) {
+              // Intentar encontrar la glosa por ID, o por coincidencia de Factura + Valor + Servicio
+              const target = recoveredGlosas.find(rg =>
+                rg.id === g.id ||
+                (rg.factura === g.factura && rg.valor_glosa === g.valor_glosa && rg.servicio === g.servicio)
+              );
+
               if (target && !target.registrada_internamente) {
                 target.registrada_internamente = true;
                 foundMarks++;
               }
             }
           });
+        } catch (e) {
+          // Ignorar errores de llaves que no sean JSON
         }
-      });
+      }
 
       if (foundMarks > 0) {
         setGlosas([...recoveredGlosas]);
         localStorage.setItem('cached_glosas', JSON.stringify(recoveredGlosas));
-        alert(`🎉 ¡RECUERACIÓN EXITOSA! Se encontraron ${foundMarks} marcas en el historial del navegador. Ahora dale al botón de "SINCRONIZAR MARCAS" para asegurar que se guarden en la nube.`);
+        alert(`🎉 ¡ÉXITO! Se han recuperado ${foundMarks} marcas del historial oculto del navegador.\n\nIMPORTANTE: Ahora haz clic en el botón verde "SINCRONIZAR MARCAS" para que se guarden en la base de datos permanentemente.`);
       } else {
-        alert('❌ No se encontraron rastros de marcas en el historial de este navegador. Si usaste otra computadora, intenta lo mismo en ella.');
+        alert('❌ No se encontró ningún rastro técnico de marcas en este navegador.\n\nTips:\n1. Si usaste otro computador, inténtalo allá.\n2. Si borraste el historial o cookies recientemente, la memoria se pudo haber limpiado.\n3. Asegúrate de estar en la misma cuenta de usuario.');
       }
-    } catch (e) {
-      alert('Error en recuperación: ' + (e as Error).message);
+    } catch (e: any) {
+      alert('Error en búsqueda profunda: ' + e.message);
     }
   };
 
@@ -620,11 +634,12 @@ export default function Home() {
   const exportGlosasToExcel = () => {
     const dataToExport = filteredGlosas;
     if (dataToExport.length === 0) return;
-    const headers = ['Factura', 'Servicio', 'Orden Servicio', 'Valor Glosa', 'Tipo Glosa', 'Estado', 'Fecha', 'Descripcion'];
+    const headers = ['Factura', 'Servicio', 'Orden Servicio', 'Valor Glosa', 'Tipo Glosa', 'Estado', 'Fecha', 'Registro Interno', 'Descripcion'];
     const rows = dataToExport.map(g => [
       g.factura, g.servicio, g.orden_servicio,
       g.valor_glosa.toFixed(2).replace('.', ','),
       g.tipo_glosa, g.estado, g.fecha,
+      g.registrada_internamente ? 'SÍ' : 'NO',
       `"${g.descripcion ? g.descripcion.replace(/"/g, '""') : ''}"`
     ]);
     const csvContent = "\uFEFF" + [headers.join(';'), ...rows.map(e => e.join(';'))].join('\n');
