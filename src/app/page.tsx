@@ -5,7 +5,7 @@ import { Dashboard } from '@/components/Dashboard';
 import { GlosaForm } from '@/components/GlosaForm';
 import { GlosaTable } from '@/components/GlosaTable';
 import { supabase } from '@/lib/supabase';
-import { LayoutDashboard, TrendingUp, Wallet, Activity, Trash2, Download, ListChecks, PieChart, ChevronUp, RefreshCw } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Wallet, Activity, Trash2, Download, ListChecks, PieChart, ChevronUp, RefreshCw, ClipboardList } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -110,11 +110,19 @@ export default function Home() {
         if (iRes?.error) throw iRes.error;
 
         if (gRes && gRes.data) {
-          // SOLO sobrescribir caché si recibimos datos, para evitar borrar todo por culpa de RLS/Errores
-          if (gRes.data.length > 0 || glosas.length === 0) {
-            setGlosas(gRes.data);
-            localStorage.setItem('cached_glosas', JSON.stringify(gRes.data));
-          }
+          // RECUPERACIÓN: Si tenemos marcas locales que no están en la nube (ej: antes de la columna)
+          // intentamos mezclarlas solo si el registro de la nube viene sin ese campo o en falso
+          const localGlosas = JSON.parse(localStorage.getItem('cached_glosas') || '[]');
+          const mergedGlosas = gRes.data.map((cloudG: any) => {
+            const localG = localGlosas.find((lg: any) => lg.id === cloudG.id);
+            if (localG?.registrada_internamente && !cloudG.registrada_internamente) {
+              return { ...cloudG, registrada_internamente: true };
+            }
+            return cloudG;
+          });
+
+          setGlosas(mergedGlosas);
+          localStorage.setItem('cached_glosas', JSON.stringify(mergedGlosas));
           lastFetchedUserId.current = user.id;
         }
         if (iRes && iRes.data) {
@@ -232,6 +240,7 @@ export default function Home() {
   const [filterEstado, setFilterEstado] = useState('Todos');
   const [filterInterno, setFilterInterno] = useState('Todos');
   const [searchTermIngresos, setSearchTermIngresos] = useState('');
+  const [searchTermConsolidado, setSearchTermConsolidado] = useState('');
 
   const filteredGlosas = useMemo(() => {
     return glosas.filter(g => {
@@ -256,7 +265,10 @@ export default function Home() {
     localStorage.setItem('cached_glosas', JSON.stringify(updatedGlosas));
 
     const { error } = await supabase.from('glosas').update({ registrada_internamente: newStatus }).eq('id', id);
-    if (error) console.error('Error actualizando registro interno:', error);
+    if (error) {
+      console.error('Error actualizando registro interno:', error);
+      alert('Error al guardar en la nube. Por favor, asegúrate de haber ejecutado el comando SQL en Supabase.');
+    }
   };
 
   const filteredIngresos = useMemo(() => {
@@ -390,6 +402,12 @@ export default function Home() {
       };
     }).sort((a, b) => b.timestamp - a.timestamp);
   }, [glosas, ingresos]);
+
+  const filteredConsolidado = useMemo(() => {
+    return (consolidado || []).filter(item =>
+      item.factura.toLowerCase().includes(searchTermConsolidado.toLowerCase())
+    );
+  }, [consolidado, searchTermConsolidado]);
 
   const testConnection = async () => {
     try {
@@ -871,19 +889,46 @@ export default function Home() {
                 transition={{ duration: 0.3 }}
                 style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
                   <div>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>Consolidado y Auditoría</h2>
                     <p style={{ color: 'var(--text-secondary)' }}>Visualización general de facturas, comparativas y estados de respuesta.</p>
                   </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: '1.25rem', border: '1px solid rgba(255,255,255,0.05)', gap: '1rem' }}>
+                  <div style={{ flex: '1', maxWidth: '400px' }}>
+                    <div style={{ position: 'relative' }}>
+                      <ClipboardList size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+                      <input
+                        type="text"
+                        placeholder="Buscar factura en consolidado..."
+                        value={searchTermConsolidado}
+                        onChange={(e) => setSearchTermConsolidado(e.target.value)}
+                        style={{
+                          width: '100%',
+                          background: 'rgba(0,0,0,0.2)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '12px',
+                          padding: '0.75rem 1rem 0.75rem 2.8rem',
+                          color: 'white',
+                          fontSize: '0.85rem',
+                          outline: 'none',
+                          transition: 'all 0.2s'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                        onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                      />
+                    </div>
+                  </div>
                   <div style={{ display: 'flex', gap: '1rem' }}>
-                    <motion.button whileHover={{ scale: 1.05 }} onClick={exportToExcel} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(139,92,246,0.1)', color: 'var(--primary)' }}>
+                    <motion.button whileHover={{ scale: 1.05 }} onClick={exportToExcel} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(139,92,246,0.1)', color: 'var(--primary)', height: '42px' }}>
                       <Download size={16} /> CONSOLIDADO CSV
                     </motion.button>
                   </div>
                 </div>
 
-                <ConsolidadoTable data={consolidado} />
+                <ConsolidadoTable data={filteredConsolidado} />
 
                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: '2.5rem' }}>
                   <div style={{ marginBottom: '1.5rem' }}>
