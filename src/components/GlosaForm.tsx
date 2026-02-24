@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Save, Plus, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './Card';
 
 interface Glosa {
@@ -33,6 +34,22 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, isAdmin = true }: GlosaF
         estado: 'Pendiente'
     });
     const [forceSubmit, setForceSubmit] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
+
+    // Cálculos de control diario
+    const todayStr = useMemo(() => new Date().toLocaleDateString('es-ES'), []);
+
+    const dailyStats = useMemo(() => {
+        const todayGlosas = existingGlosas.filter(g => g.fecha === todayStr);
+        const uniqueFacturas = new Set(todayGlosas.map(g => g.factura)).size;
+        const totalValue = todayGlosas.reduce((acc, g) => acc + g.valor_glosa, 0);
+
+        return {
+            count: todayGlosas.length,
+            facturas: uniqueFacturas,
+            value: totalValue
+        };
+    }, [existingGlosas, todayStr]);
 
     // Detectar si la factura ya existe
     const facturaMatch = useMemo(() => {
@@ -62,8 +79,12 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, isAdmin = true }: GlosaF
             ...formData,
             id: Math.random().toString(36).substr(2, 9),
             valor_glosa: parseFloat(formData.valor_glosa),
-            fecha: new Date().toLocaleDateString('es-ES')
+            fecha: todayStr
         });
+
+        // Mostrar éxito
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 5000);
 
         setFormData({
             factura: '',
@@ -82,6 +103,33 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, isAdmin = true }: GlosaF
 
     return (
         <Card title="Registrar Gestión de Glosa">
+            <AnimatePresence>
+                {showSuccess && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                        animate={{ opacity: 1, height: 'auto', marginBottom: '1.5rem' }}
+                        exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                        style={{ overflow: 'hidden' }}
+                    >
+                        <div style={{
+                            background: 'rgba(16, 185, 129, 0.1)',
+                            border: '1px solid rgba(16, 185, 129, 0.2)',
+                            color: '#10b981',
+                            padding: '1rem',
+                            borderRadius: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.75rem',
+                            fontWeight: 700,
+                            fontSize: '0.9rem'
+                        }}>
+                            <CheckCircle2 size={20} />
+                            ¡Glosa registrada con éxito el día {todayStr}!
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <form onSubmit={handleSubmit}>
                 <div style={{
                     display: 'grid',
@@ -240,6 +288,30 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, isAdmin = true }: GlosaF
                         </button>
                     )
                 )}
+
+                {/* Indicadores de Control Diario */}
+                <div style={{
+                    marginTop: '2.5rem',
+                    padding: '1.5rem',
+                    background: 'rgba(0,0,0,0.2)',
+                    borderRadius: '1.5rem',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '1.5rem'
+                }}>
+                    <div style={{ borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem' }}>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>FACTURAS HOY</p>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{dailyStats.facturas}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>({dailyStats.count} registros)</span>
+                        </div>
+                    </div>
+                    <div>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>VALOR TOTAL HOY</p>
+                        <p style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--primary)', textShadow: '0 0 20px rgba(139, 92, 246, 0.3)' }}>${new Intl.NumberFormat('es-CO').format(dailyStats.value)}</p>
+                    </div>
+                </div>
             </form>
         </Card>
     );
