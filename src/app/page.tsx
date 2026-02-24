@@ -694,7 +694,7 @@ export default function Home() {
               </svg>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingTop: '15px' }}>
-              <h1 style={{ fontSize: '2.8rem', color: '#ffffff', fontWeight: 900, lineHeight: 1.1, margin: 0 }}>Sistema Auditoría Glosas</h1>
+              <h1 style={{ fontSize: '2.8rem', color: '#ffffff', fontWeight: 900, lineHeight: 1.1, margin: 0 }}>Sistema en Gestión de Glosas</h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', letterSpacing: '0.05em', fontWeight: 600, margin: 0, marginTop: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Activity size={18} color="rgba(255,255,255,0.3)" />
