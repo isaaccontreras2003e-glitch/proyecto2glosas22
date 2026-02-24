@@ -247,7 +247,9 @@ export default function Home() {
   }, [glosas, searchTerm, filterTipo, filterEstado, filterInterno]);
 
   const handleToggleInternalRegistry = async (id: string, currentStatus: boolean) => {
-    const newStatus = !currentStatus;
+    if (currentStatus) return; // Si ya está registrado, no permitir desmarcar
+
+    const newStatus = true;
     const updatedGlosas = glosas.map(g => g.id === id ? { ...g, registrada_internamente: newStatus } : g);
     setGlosas(updatedGlosas);
     localStorage.setItem('cached_glosas', JSON.stringify(updatedGlosas));

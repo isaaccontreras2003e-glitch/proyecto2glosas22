@@ -314,20 +314,22 @@ export const GlosaTable = ({
                                         >
                                             <td style={{ padding: '1.25rem 1rem', textAlign: 'center' }}>
                                                 <motion.button
-                                                    whileHover={{ scale: 1.2 }}
-                                                    whileTap={{ scale: 0.9 }}
+                                                    whileHover={glosa.registrada_internamente ? {} : { scale: 1.2 }}
+                                                    whileTap={glosa.registrada_internamente ? {} : { scale: 0.9 }}
                                                     onClick={() => onToggleInternalRegistry(glosa.id, !!glosa.registrada_internamente)}
+                                                    disabled={glosa.registrada_internamente}
                                                     style={{
                                                         background: 'none',
                                                         border: 'none',
-                                                        cursor: 'pointer',
+                                                        cursor: glosa.registrada_internamente ? 'default' : 'pointer',
                                                         color: glosa.registrada_internamente ? '#10b981' : 'rgba(255,255,255,0.1)',
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
-                                                        width: '100%'
+                                                        width: '100%',
+                                                        opacity: glosa.registrada_internamente ? 1 : 0.6
                                                     }}
-                                                    title={glosa.registrada_internamente ? "Marcado como registrado en sistema interno" : "Marcar como registrado en sistema interno"}
+                                                    title={glosa.registrada_internamente ? "Registro permanente en sistema interno" : "Marcar como registrado en sistema interno"}
                                                 >
                                                     <CheckCircle2 size={20} fill={glosa.registrada_internamente ? "rgba(16,185,129,0.1)" : "none"} />
                                                 </motion.button>
