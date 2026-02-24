@@ -815,22 +815,49 @@ export default function Home() {
       <main className="container" style={{ flex: 1, margin: 0, maxWidth: 'none', overflowY: 'auto', padding: '2rem 3rem' }}>
         <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3rem' }}>
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', transition: 'transform 0.3s ease' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
-              <svg width="260" height="110" viewBox="0 0 260 110" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+              <svg width="280" height="85" viewBox="0 0 280 85" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
-                  <linearGradient id="viu-radial-grad-corporate-exact" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#4361ee" />
-                    <stop offset="60%" stopColor="#4895ef" />
-                    <stop offset="100%" stopColor="#4cc9f0" />
+                  <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#8b5cf6" />
+                    <stop offset="100%" stopColor="#4361ee" />
+                  </linearGradient>
+                  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                  <linearGradient id="icon-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#a78bfa" />
+                    <stop offset="100%" stopColor="#3b82f6" />
                   </linearGradient>
                 </defs>
-                <g transform="translate(45,40)">
-                  {[...Array(38)].map((_, i) => (
-                    <rect key={i} x="-1.1" y="14" width="2.2" height="16" rx="1.1" fill="url(#viu-radial-grad-corporate-exact)" transform={`rotate(${i * (360 / 38)})`} />
-                  ))}
+
+                {/* Icono de precisión / Iris Estilizado */}
+                <g transform="translate(0, 5)">
+                  <circle cx="35" cy="35" r="32" stroke="url(#logo-grad)" strokeWidth="0.5" strokeDasharray="4 2" opacity="0.3" />
+                  <circle cx="35" cy="35" r="25" stroke="url(#logo-grad)" strokeWidth="1.5" opacity="0.6" />
+                  <motion.path
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 1 }}
+                    transition={{ duration: 1.5, ease: "easeInOut" }}
+                    d="M35 15C46.0457 15 55 23.9543 55 35C55 46.0457 46.0457 55 35 55C23.9543 55 15 46.0457 15 35"
+                    stroke="url(#icon-grad)"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    filter="url(#glow)"
+                  />
+                  <circle cx="35" cy="35" r="8" fill="url(#logo-grad)" filter="url(#glow)" />
                 </g>
-                <text x="80" y="60" fontFamily="Arial Black, Helvetica, sans-serif" fontWeight="900" fontSize="60" fill="white" textAnchor="start" style={{ letterSpacing: '-3px' }}>VIU</text>
-                <text x="130" y="95" fontFamily="Arial, sans-serif" fontSize="11" fill="white" textAnchor="middle" fontWeight="700" style={{ letterSpacing: '0.5px' }}>Clínica Oftalmológica Internacional</text>
+
+                {/* Texto COI */}
+                <text x="85" y="55" fontFamily="Inter, system-ui, sans-serif" fontWeight="900" fontSize="58" fill="white" letterSpacing="-4">
+                  COI
+                </text>
+
+                {/* Subtexto */}
+                <text x="87" y="78" fontFamily="Inter, sans-serif" fontSize="9.5" fill="rgba(255,255,255,0.4)" fontWeight="700" letterSpacing="1.5">
+                  CLÍNICA OFTALMOLÓGICA INTERNACIONAL
+                </text>
               </svg>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingTop: '15px' }}>
