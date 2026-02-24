@@ -249,7 +249,7 @@ export default function Home() {
       totalValue: totalGlosasValue,
       pendingCount: glosas.filter(g => g.estado === 'Pendiente').length,
       respondedCount: glosas.filter(g => g.estado === 'Respondida').length,
-      acceptedCount: glosas.filter(g => g.estado === 'Aceptada').length,
+      acceptedCount: glosas.filter(g => g.estado === 'Aceptada' || ingresos.some(i => i.factura === g.factura)).length,
       totalIngresos: totalAceptadoValue,
     };
   }, [glosas, ingresos]);
@@ -331,20 +331,40 @@ export default function Home() {
   };
 
   const consolidado = useMemo(() => {
+    const parseDate = (d: string) => {
+      if (!d || d === '---') return 0;
+      const parts = d.split('/');
+      if (parts.length < 3) return new Date(d).getTime() || 0;
+      return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
+    };
+
     const facturas = new Set([...glosas.map(g => g.factura), ...ingresos.map(i => i.factura)].filter(f => f && f.trim() !== ''));
+
     return Array.from(facturas).map(f => {
-      const glosado = glosas.filter(g => g.factura === f).reduce((acc, g) => acc + g.valor_glosa, 0);
+      const factGlosas = glosas.filter(g => g.factura === f);
       const factIngresos = ingresos.filter(i => i.factura === f);
+
+      const glosado = factGlosas.reduce((acc, g) => acc + g.valor_glosa, 0);
       const aceptado = factIngresos.reduce((acc, i) => acc + i.valor_aceptado, 0);
       const noAceptado = factIngresos.reduce((acc, i) => acc + i.valor_no_aceptado, 0);
 
-      // Obtener la fecha del ingreso más reciente para esta factura
-      const fechaIngreso = factIngresos.length > 0
-        ? factIngresos.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())[0].fecha
-        : '---';
+      const fechasGlosas = factGlosas.map(g => parseDate(g.fecha));
+      const fechasIngresos = factIngresos.map(i => parseDate(i.fecha));
+      const todasLasFechas = [...fechasGlosas, ...fechasIngresos].filter(Boolean);
 
-      return { factura: f, glosado, aceptado, noAceptado, fecha: fechaIngreso, diferencia: glosado - aceptado - noAceptado };
-    }).sort((a, b) => b.glosado - a.glosado);
+      const maxFechaTimestamp = todasLasFechas.length > 0 ? Math.max(...todasLasFechas) : 0;
+      const fechaActividad = maxFechaTimestamp > 0 ? new Date(maxFechaTimestamp).toLocaleDateString('es-ES') : '---';
+
+      return {
+        factura: f,
+        glosado,
+        aceptado,
+        noAceptado,
+        fecha: fechaActividad,
+        timestamp: maxFechaTimestamp,
+        diferencia: glosado - aceptado - noAceptado
+      };
+    }).sort((a, b) => b.timestamp - a.timestamp);
   }, [glosas, ingresos]);
 
   const testConnection = async () => {
@@ -474,7 +494,7 @@ export default function Home() {
   const exportToExcel = () => {
     const dataToExport = consolidado;
     if (dataToExport.length === 0) return;
-    const headers = ['Factura', 'Fecha Ingreso', 'Valor Glosado', 'Valor Aceptado', 'Valor No Aceptado', 'Diferencia'];
+    const headers = ['Factura', 'Última Actividad', 'Valor Glosado', 'Valor Aceptado', 'Valor No Aceptado', 'Diferencia'];
     const rows = dataToExport.map(item => [
       item.factura,
       item.fecha,
@@ -1118,7 +1138,7 @@ const ConsolidadoTable = ({ data }: { data: any[] }) => {
           <thead>
             <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
               <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Factura</th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Último Ingreso</th>
+              <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Última Actividad</th>
               <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Glosado</th>
               <th style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>Aceptado</th>
               <th style={{ padding: '0.75rem', color: 'var(--text-secondary)', textAlign: 'right' }}>Diferencia</th>
