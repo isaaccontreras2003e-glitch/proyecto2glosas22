@@ -25,6 +25,7 @@ interface Glosa {
   tipo_glosa: string;
   estado: string;
   fecha: string;
+  registrada_internamente?: boolean;
 }
 
 interface Ingreso {
@@ -229,6 +230,7 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('Todos');
   const [filterEstado, setFilterEstado] = useState('Todos');
+  const [filterInterno, setFilterInterno] = useState('Todos');
 
   const filteredGlosas = useMemo(() => {
     return glosas.filter(g => {
@@ -237,9 +239,22 @@ export default function Home() {
         (g.descripcion && g.descripcion.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesTipo = filterTipo === 'Todos' || g.tipo_glosa === filterTipo;
       const matchesEstado = filterEstado === 'Todos' || g.estado === filterEstado;
-      return matchesSearch && matchesTipo && matchesEstado;
+      const matchesInterno = filterInterno === 'Todos' ||
+        (filterInterno === 'Registrado' ? g.registrada_internamente : !g.registrada_internamente);
+
+      return matchesSearch && matchesTipo && matchesEstado && matchesInterno;
     });
-  }, [glosas, searchTerm, filterTipo, filterEstado]);
+  }, [glosas, searchTerm, filterTipo, filterEstado, filterInterno]);
+
+  const handleToggleInternalRegistry = async (id: string, currentStatus: boolean) => {
+    const newStatus = !currentStatus;
+    const updatedGlosas = glosas.map(g => g.id === id ? { ...g, registrada_internamente: newStatus } : g);
+    setGlosas(updatedGlosas);
+    localStorage.setItem('cached_glosas', JSON.stringify(updatedGlosas));
+
+    const { error } = await supabase.from('glosas').update({ registrada_internamente: newStatus }).eq('id', id);
+    if (error) console.error('Error actualizando registro interno:', error);
+  };
 
   const stats = useMemo(() => {
     const totalGlosasValue = glosas.reduce((acc, curr) => acc + curr.valor_glosa, 0);
@@ -871,12 +886,15 @@ export default function Home() {
                     onUpdateGlosa={handleUpdateGlosa}
                     onDeleteGlosa={handleDeleteGlosa}
                     onDeleteDuplicates={handleDeleteDuplicates}
+                    onToggleInternalRegistry={handleToggleInternalRegistry}
                     searchTerm={searchTerm}
                     setSearchTerm={setSearchTerm}
                     filterTipo={filterTipo}
                     setFilterTipo={setFilterTipo}
                     filterEstado={filterEstado}
                     setFilterEstado={setFilterEstado}
+                    filterInterno={filterInterno}
+                    setFilterInterno={setFilterInterno}
                     isAdmin={role === 'admin'}
                   />
                 </div>

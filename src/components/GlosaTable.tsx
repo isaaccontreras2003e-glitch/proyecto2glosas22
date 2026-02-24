@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Card } from './Card';
-import { Eye, X, ClipboardList, Calendar, Info, Tag, Hash, Activity, Pencil, Save, DollarSign, Trash2, AlertTriangle, Copy } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Eye, X, ClipboardList, Calendar, Info, Tag, Hash, Activity, Pencil, Save, DollarSign, Trash2, AlertTriangle, Copy, CheckCircle2 } from 'lucide-react';
 
 const formatPesos = (value: number): string =>
     Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -15,6 +16,7 @@ interface Glosa {
     tipo_glosa: string;
     estado: string;
     fecha: string;
+    registrada_internamente?: boolean;
 }
 
 interface GlosaTableProps {
@@ -23,12 +25,15 @@ interface GlosaTableProps {
     onUpdateGlosa: (updatedGlosa: Glosa) => void;
     onDeleteGlosa: (id: string) => void;
     onDeleteDuplicates: () => void;
+    onToggleInternalRegistry: (id: string, currentStatus: boolean) => void;
     searchTerm: string;
     setSearchTerm: (val: string) => void;
     filterTipo: string;
     setFilterTipo: (val: string) => void;
     filterEstado: string;
     setFilterEstado: (val: string) => void;
+    filterInterno: string;
+    setFilterInterno: (val: string) => void;
     isAdmin?: boolean;
 }
 
@@ -38,12 +43,15 @@ export const GlosaTable = ({
     onUpdateGlosa,
     onDeleteGlosa,
     onDeleteDuplicates,
+    onToggleInternalRegistry,
     searchTerm,
     setSearchTerm,
     filterTipo,
     setFilterTipo,
     filterEstado,
     setFilterEstado,
+    filterInterno,
+    setFilterInterno,
     isAdmin = true
 }: GlosaTableProps) => {
     const [selectedGlosa, setSelectedGlosa] = useState<Glosa | null>(null);
@@ -176,8 +184,31 @@ export const GlosaTable = ({
                         </select>
                     </div>
 
+                    <div style={{ flex: '1 1 150px' }}>
+                        <label style={{ display: 'block', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Registro Interno</label>
+                        <select
+                            value={filterInterno}
+                            onChange={(e) => setFilterInterno(e.target.value)}
+                            style={{
+                                width: '100%',
+                                background: 'rgba(0,0,0,0.2)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '12px',
+                                padding: '0.75rem 1rem',
+                                color: 'white',
+                                fontSize: '0.85rem',
+                                outline: 'none',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <option value="Todos">Todos</option>
+                            <option value="Registrado">Registrado</option>
+                            <option value="Pendiente">Sin Registrar</option>
+                        </select>
+                    </div>
+
                     <button
-                        onClick={() => { setSearchTerm(''); setFilterTipo('Todos'); setFilterEstado('Todos'); }}
+                        onClick={() => { setSearchTerm(''); setFilterTipo('Todos'); setFilterEstado('Todos'); setFilterInterno('Todos'); }}
                         style={{
                             padding: '0.75rem 1.25rem',
                             background: 'rgba(255,255,255,0.05)',
@@ -253,6 +284,7 @@ export const GlosaTable = ({
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
                             <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                <th style={{ padding: '1.25rem 1rem', color: 'var(--primary)', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', width: '60px', textAlign: 'center' }}>Check</th>
                                 <th style={{ padding: '1.25rem 1rem', color: 'var(--primary)', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Factura</th>
                                 <th style={{ padding: '1.25rem 1rem', color: 'var(--primary)', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Servicio</th>
                                 <th style={{ padding: '1.25rem 1rem', color: 'var(--primary)', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Valor</th>
@@ -276,11 +308,31 @@ export const GlosaTable = ({
                                             style={{
                                                 borderBottom: '1px solid rgba(255,255,255,0.05)',
                                                 transition: 'background 0.2s',
-                                                background: isDupe ? 'rgba(239,68,68,0.05)' : undefined,
-                                                borderLeft: isDupe ? '3px solid rgba(239,68,68,0.5)' : '3px solid transparent'
+                                                background: glosa.registrada_internamente ? 'rgba(16,185,129,0.03)' : (isDupe ? 'rgba(239,68,68,0.05)' : undefined),
+                                                borderLeft: glosa.registrada_internamente ? '3px solid #10b981' : (isDupe ? '3px solid rgba(239,68,68,0.5)' : '3px solid transparent')
                                             }}
                                         >
-                                            <td style={{ padding: '1.25rem 1rem', fontWeight: 600, color: isDupe ? '#f87171' : 'white' }}>
+                                            <td style={{ padding: '1.25rem 1rem', textAlign: 'center' }}>
+                                                <motion.button
+                                                    whileHover={{ scale: 1.2 }}
+                                                    whileTap={{ scale: 0.9 }}
+                                                    onClick={() => onToggleInternalRegistry(glosa.id, !!glosa.registrada_internamente)}
+                                                    style={{
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        color: glosa.registrada_internamente ? '#10b981' : 'rgba(255,255,255,0.1)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        width: '100%'
+                                                    }}
+                                                    title={glosa.registrada_internamente ? "Marcado como registrado en sistema interno" : "Marcar como registrado en sistema interno"}
+                                                >
+                                                    <CheckCircle2 size={20} fill={glosa.registrada_internamente ? "rgba(16,185,129,0.1)" : "none"} />
+                                                </motion.button>
+                                            </td>
+                                            <td style={{ padding: '1.25rem 1rem', fontWeight: 600, color: glosa.registrada_internamente ? '#10b981' : (isDupe ? '#f87171' : 'white') }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                                     {isDupe && <Copy size={13} style={{ flexShrink: 0 }} />}
                                                     {glosa.factura}

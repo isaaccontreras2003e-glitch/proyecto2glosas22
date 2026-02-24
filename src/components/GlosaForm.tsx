@@ -15,6 +15,7 @@ interface Glosa {
     tipo_glosa: string;
     estado: string;
     fecha: string;
+    registrada_internamente?: boolean;
 }
 
 interface GlosaFormProps {
@@ -79,7 +80,8 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, isAdmin = true }: GlosaF
             ...formData,
             id: Math.random().toString(36).substr(2, 9),
             valor_glosa: parseFloat(formData.valor_glosa),
-            fecha: todayStr
+            fecha: todayStr,
+            registrada_internamente: false
         });
 
         // Mostrar éxito
