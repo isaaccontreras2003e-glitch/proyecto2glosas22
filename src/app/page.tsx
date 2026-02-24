@@ -1107,8 +1107,8 @@ const ConsolidadoTable = ({ data }: { data: any[] }) => {
                 <td style={{ padding: '0.75rem', fontWeight: 700, color: 'white' }}>{item.factura}</td>
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{item.fecha}</td>
                 <td style={{ padding: '0.75rem' }}>${formatPesos(item.glosado)}</td>
-                <td style={{ padding: '0.75rem', color: '#10b981' }}>${formatPesos(item.aceptado)}</td>
-                <td style={{ padding: '0.75rem', textAlign: 'right', color: item.diferencia > 0 ? '#ef4444' : '#10b981', fontWeight: 800 }}>
+                <td style={{ padding: '0.75rem', color: '#ef4444' }}>${formatPesos(item.aceptado)}</td>
+                <td style={{ padding: '0.75rem', textAlign: 'right', color: item.diferencia > 0 ? '#10b981' : 'rgba(255,255,255,0.5)', fontWeight: 800 }}>
                   ${formatPesos(item.diferencia)}
                 </td>
               </tr>
