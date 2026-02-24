@@ -606,7 +606,7 @@ export default function Home() {
             <div style={{ padding: '8px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>NAVIGACIÓN</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>NAVEGACIÓN</h2>
           </div>
         </div>
 
@@ -795,66 +795,9 @@ export default function Home() {
                 transition={{ duration: 0.3 }}
               >
                 <Dashboard
-                  totalCount={stats.totalCount}
-                  totalValue={stats.totalValue}
-                  pendingCount={stats.pendingCount}
-                  respondedCount={stats.respondedCount}
-                  acceptedCount={stats.acceptedCount}
+                  glosas={glosas}
                   totalIngresos={stats.totalIngresos}
                 />
-
-                {/* Stats Detalladas que antes estaban en el Sidebar */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '2rem' }}>
-                  <div className="card" style={{ padding: '2rem' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <PieChart size={20} color="var(--primary)" />
-                      DISTRIBUCIÓN POR CATEGORÍA
-                    </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                      {['Tarifas', 'Soportes', 'RIPS', 'Autorización'].map((tipo, idx) => {
-                        const count = glosas.filter(g => g.tipo_glosa === tipo).length;
-                        const total = glosas.length || 1;
-                        const percent = Math.round((count / total) * 100);
-                        return (
-                          <div key={tipo}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.6rem' }}>
-                              <span style={{ color: 'var(--text-secondary)' }}>{tipo}</span>
-                              <span style={{ color: 'white', fontWeight: 700 }}>{count} registros ({percent}%)</span>
-                            </div>
-                            <div style={{ height: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', overflow: 'hidden' }}>
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${percent}%` }}
-                                transition={{ duration: 1 }}
-                                style={{ height: '100%', background: 'linear-gradient(90deg, #8b5cf6, #3b82f6)' }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1.5rem', alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <Activity size={20} color="var(--primary)" />
-                      RESUMEN DE GESTIÓN
-                    </h3>
-                    <div style={{ position: 'relative', width: '200px', height: '200px' }}>
-                      <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
-                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
-                        <motion.circle cx="50" cy="50" r="40" fill="transparent" stroke="#8b5cf6" strokeWidth="8" strokeLinecap="round" initial={{ strokeDasharray: "0 251.2" }} animate={{ strokeDasharray: `${(pPending / 100) * 251.2} 251.2` }} transition={{ duration: 1 }} />
-                        <motion.circle cx="50" cy="50" r="40" fill="transparent" stroke="#10b981" strokeWidth="8" strokeLinecap="round" strokeDashoffset={-((pPending / 100) * 251.2)} initial={{ strokeDasharray: "0 251.2" }} animate={{ strokeDasharray: `${(pResponded / 100) * 251.2} 251.2` }} transition={{ duration: 1, delay: 0.2 }} />
-                        <motion.circle cx="50" cy="50" r="40" fill="transparent" stroke="#ef4444" strokeWidth="8" strokeLinecap="round" strokeDashoffset={-(((pPending + pResponded) / 100) * 251.2)} initial={{ strokeDasharray: "0 251.2" }} animate={{ strokeDasharray: `${(pAccepted / 100) * 251.2} 251.2` }} transition={{ duration: 1, delay: 0.4 }} />
-                      </svg>
-                    </div>
-                    <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.5rem' }}>
-                      <div style={{ textAlign: 'center' }}><p style={{ color: '#8b5cf6', fontWeight: 900, margin: 0 }}>{Math.round(pPending)}%</p><p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', margin: 0 }}>Pend.</p></div>
-                      <div style={{ textAlign: 'center' }}><p style={{ color: '#10b981', fontWeight: 900, margin: 0 }}>{Math.round(pResponded)}%</p><p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', margin: 0 }}>Resp.</p></div>
-                      <div style={{ textAlign: 'center' }}><p style={{ color: '#ef4444', fontWeight: 900, margin: 0 }}>{Math.round(pAccepted)}%</p><p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', margin: 0 }}>Acept.</p></div>
-                    </div>
-                  </div>
-                </div>
               </motion.div>
             )}
 
