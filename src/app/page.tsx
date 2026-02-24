@@ -438,6 +438,35 @@ export default function Home() {
     }
   };
 
+  const handleSyncLocalCheckpoints = async () => {
+    try {
+      setLoading(true);
+      const localGlosas = JSON.parse(localStorage.getItem('cached_glosas') || '[]');
+      const markedLocally = localGlosas.filter((lg: any) => lg.registrada_internamente);
+
+      if (markedLocally.length === 0) {
+        alert('ℹ️ No se detectaron marcas locales pendientes de sincronizar.');
+        return;
+      }
+
+      if (!confirm(`Se encontraron ${markedLocally.length} glosas marcadas localmente. ¿Deseas subirlas a la nube para que sean permanentes?`)) return;
+
+      let synced = 0;
+      for (const g of markedLocally) {
+        const { error } = await supabase.from('glosas').update({ registrada_internamente: true }).eq('id', g.id);
+        if (!error) synced++;
+      }
+
+      alert(`✅ Sincronización completa: ${synced} marcas se han subido a la base de datos.`);
+      loadData(true);
+    } catch (err: any) {
+      console.error('Error en sincronización:', err);
+      alert('❌ Error al sincronizar marcas: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleManualImport = async () => {
     const jsonStr = prompt('Pega aquí el contenido de tu respaldo (JSON):');
     if (!jsonStr) return;
@@ -1074,6 +1103,16 @@ export default function Home() {
                   >
                     <Activity size={12} />
                     TEST NUBE
+                  </motion.button>
+
+                  <motion.button
+                    whileHover={{ scale: 1.05, opacity: 1 }}
+                    onClick={handleSyncLocalCheckpoints}
+                    className="btn btn-secondary"
+                    style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10b981' }}
+                  >
+                    <RefreshCw size={12} />
+                    SINCRONIZAR MARCAS
                   </motion.button>
                 </div>
               )}
