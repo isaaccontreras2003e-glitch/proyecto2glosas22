@@ -532,6 +532,7 @@ export const GlosaTable = ({
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 <DetailItem icon={<DollarSign size={16} />} label="Valor Glosado" value={`$${formatPesos(selectedGlosa.valor_glosa)}`} isHighlight />
                                 <DetailItem icon={<Calendar size={16} />} label="Fecha de Registro" value={selectedGlosa.fecha} />
+                                {/* Build Sync: Timestamp V1.0 */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estado Actual</span>
                                     <span style={{ padding: '0.4rem 1rem', borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 800, width: 'fit-content', ...getStatusStyle(selectedGlosa.estado) }}>{selectedGlosa.estado}</span>

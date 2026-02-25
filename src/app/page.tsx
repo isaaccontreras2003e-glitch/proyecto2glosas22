@@ -384,7 +384,9 @@ function Home() {
   const consolidado = useMemo(() => {
     const parseDate = (d: string) => {
       if (!d || d === '---') return 0;
-      const parts = d.split('/');
+      // Handle "DD/MM/YYYY, HH:mm:ss" or "DD/MM/YYYY"
+      const [datePart] = d.split(',');
+      const parts = datePart.split('/');
       if (parts.length < 3) return new Date(d).getTime() || 0;
       return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
     };
@@ -583,7 +585,7 @@ function Home() {
             valor_glosa: 0,
             tipo_glosa: 'Tarifas',
             estado: 'Pendiente',
-            fecha: new Date().toLocaleDateString('es-ES'),
+            fecha: new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
             descripcion: ''
           };
 
@@ -1249,7 +1251,7 @@ const IngresoForm = ({ onAddIngreso, isAdmin }: { onAddIngreso: (ingreso: Ingres
       factura: formData.factura,
       valor_aceptado: parseFloat(formData.valor_aceptado) || 0,
       valor_no_aceptado: parseFloat(formData.valor_no_aceptado) || 0,
-      fecha: new Date().toLocaleDateString('es-ES')
+      fecha: new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
     });
     setFormData({ factura: '', valor_aceptado: '', valor_no_aceptado: '' });
   };

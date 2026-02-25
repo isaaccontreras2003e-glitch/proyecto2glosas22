@@ -41,9 +41,17 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, isAdmin = true }: GlosaF
 
     // Cálculos de control diario
     const todayStr = useMemo(() => new Date().toLocaleDateString('es-ES'), []);
+    const nowTimestamp = () => new Date().toLocaleString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
 
     const dailyStats = useMemo(() => {
-        const todayGlosas = existingGlosas.filter(g => g.fecha === todayStr);
+        const todayGlosas = existingGlosas.filter(g => g.fecha?.split(',')[0] === todayStr);
         const uniqueFacturas = new Set(todayGlosas.map(g => g.factura)).size;
         const totalValue = todayGlosas.reduce((acc, g) => acc + g.valor_glosa, 0);
 
@@ -99,7 +107,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, isAdmin = true }: GlosaF
             servicio,
             id: Math.random().toString(36).substr(2, 9),
             valor_glosa: valor,
-            fecha: todayStr,
+            fecha: nowTimestamp(),
             registrada_internamente: false
         });
 
