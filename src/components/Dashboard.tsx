@@ -136,10 +136,10 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
                 gap: '1.5rem',
             }}>
                 {[
-                    { label: 'Valor Total Aceptado', value: `$${formatPesos(executiveStats.totalAceptado)}`, icon: <TrendingUp size={22} />, color: '#10b981', sub: `${executiveStats.percentAceptado}% de recuperación` },
-                    { label: 'Valor de Glosa Total', value: `$${formatPesos(executiveStats.totalGlosado)}`, icon: <DollarSign size={22} />, color: '#8b5cf6', sub: 'Monto total en glosas' },
-                    { label: 'Total Facturas', value: executiveStats.totalCount, icon: <FileText size={22} />, color: '#3b82f6', sub: 'Cantidad total de registros' },
-                    { label: 'Total Facturas Aceptadas', value: executiveStats.acceptedCount, icon: <CheckCircle size={22} />, color: '#00d2ff', sub: 'Cantidad de facturas con pago' },
+                    { label: 'VALOR ACEPTADO', value: `$${formatPesos(executiveStats.totalAceptado)}`, icon: <TrendingUp size={22} />, color: '#10b981', sub: `${executiveStats.percentAceptado}% de recuperación` },
+                    { label: 'VALOR DE GLOSA TOTAL', value: `$${formatPesos(executiveStats.totalGlosado)}`, icon: <DollarSign size={22} />, color: '#8b5cf6', sub: 'Monto total en glosas' },
+                    { label: 'TOTAL FACTURAS', value: executiveStats.totalCount, icon: <FileText size={22} />, color: '#3b82f6', sub: 'Cantidad total de registros' },
+                    { label: 'TOTAL FACTURAS ACEPTADAS', value: executiveStats.acceptedCount, icon: <CheckCircle size={22} />, color: '#00d2ff', sub: 'Facturas gestionadas con éxito' },
                 ].map((stat, index) => (
                     <Card key={index} className="stat-card" style={{ borderLeft: `4px solid ${stat.color}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
