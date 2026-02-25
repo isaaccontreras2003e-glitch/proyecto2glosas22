@@ -136,20 +136,20 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
                 gap: '1.5rem',
             }}>
                 {[
-                    { label: 'VALOR TOTAL EN GLOSA', value: `$${formatPesos(executiveStats.totalGlosado)} `, icon: <DollarSign size={22} />, color: '#8b5cf6', sub: 'MONTO HISTÓRICO TOTAL' },
+                    { label: 'VALOR TOTAL EN GLOSA', value: `$${formatPesos(executiveStats.totalGlosado)}`, icon: <DollarSign size={22} />, color: '#8b5cf6', sub: 'MONTO HISTÓRICO TOTAL' },
                     { label: 'CANTIDAD FACTURAS', value: executiveStats.totalCount, icon: <FileText size={22} />, color: '#3b82f6', sub: 'REGISTROS EN SISTEMA' },
-                    { label: 'TOTAL VALOR ACEPTADO', value: `$${formatPesos(executiveStats.totalAceptado)} `, icon: <AlertTriangle size={22} />, color: '#f87171', sub: `${executiveStats.percentAceptado}% DE IMPACTO FINANCIERO` },
+                    { label: 'TOTAL VALOR ACEPTADO', value: `$${formatPesos(executiveStats.totalAceptado)}`, icon: <AlertTriangle size={22} />, color: '#f87171', sub: `${executiveStats.percentAceptado}% DE IMPACTO FINANCIERO` },
                     { label: 'TOTAL FACTURAS ACEPTADAS', value: executiveStats.acceptedCount, icon: <CheckCircle size={22} />, color: '#f87171', sub: 'GESTIONES CON ÉXITO' },
                 ].map((stat, index) => (
-                    <Card key={index} className="stat-card" style={{ borderLeft: `4px solid ${stat.color} ` }}>
+                    <Card key={index} className="stat-card" style={{ borderLeft: `4px solid ${stat.color}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
                             <div style={{
-                                background: `${stat.color} 15`,
+                                background: `${stat.color}15`,
                                 color: stat.color,
                                 padding: '1rem',
                                 borderRadius: '1rem',
                                 display: 'flex',
-                                border: `1px solid ${stat.color} 25`
+                                border: `1px solid ${stat.color}25`
                             }}>
                                 {stat.icon}
                             </div>
