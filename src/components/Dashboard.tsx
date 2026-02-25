@@ -22,9 +22,17 @@ interface Glosa {
 interface DashboardProps {
     glosas: Glosa[];
     totalIngresos: number;
+    stats: {
+        totalGlosado: number;
+        totalAceptado: number;
+        totalPendiente: number;
+        totalRegistradoInterno: number;
+        percentAceptado: number;
+        percentRegistrado: number;
+    };
 }
 
-export const Dashboard = ({ glosas, totalIngresos }: DashboardProps) => {
+export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: DashboardProps) => {
     const [filterServicio, setFilterServicio] = useState('Todos');
     const [filterTipo, setFilterTipo] = useState('Todos');
 
@@ -120,34 +128,33 @@ export const Dashboard = ({ glosas, totalIngresos }: DashboardProps) => {
                 </div>
             </motion.div>
 
-            {/* Main Stats Grid */}
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
                 gap: '1.5rem',
             }}>
                 {[
-                    { label: 'Glosas Filtradas', value: stats.total, icon: <FileText size={22} />, color: '#8b5cf6' },
-                    { label: 'Valor Glosado', value: `$${formatPesos(stats.value)}`, icon: <DollarSign size={22} />, color: '#3b82f6' },
-                    { label: 'Recuperado (Aceptado)', value: `$${formatPesos(totalIngresos)}`, icon: <TrendingUp size={22} />, color: '#ef4444' },
-                    { label: 'Gestión Finalizada', value: stats.resolved, icon: <CheckCircle size={22} />, color: '#10b981' },
+                    { label: 'Valor Total Glosado', value: `$${formatPesos(executiveStats.totalGlosado)}`, icon: <TrendingUp size={22} />, color: '#8b5cf6', sub: 'Total histórico' },
+                    { label: 'Valor Aceptado', value: `$${formatPesos(executiveStats.totalAceptado)}`, icon: <CheckCircle size={22} />, color: '#10b981', sub: `${executiveStats.percentAceptado}% de efectividad` },
+                    { label: 'Valores en Pendiente', value: `$${formatPesos(executiveStats.totalPendiente)}`, icon: <Clock size={22} />, color: '#f59e0b', sub: 'Por conciliar' },
+                    { label: 'Facturas Registradas', value: `$${formatPesos(executiveStats.totalRegistradoInterno)}`, icon: <FileText size={22} />, color: '#3b82f6', sub: `${executiveStats.percentRegistrado}% en sistema interno` },
                 ].map((stat, index) => (
-                    <Card key={index} className="stat-card">
+                    <Card key={index} className="stat-card" style={{ borderLeft: `4px solid ${stat.color}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
                             <div style={{
-                                background: `linear-gradient(135deg, ${stat.color}20, ${stat.color}05)`,
+                                background: `${stat.color}15`,
                                 color: stat.color,
                                 padding: '1rem',
                                 borderRadius: '1rem',
                                 display: 'flex',
-                                boxShadow: `0 0 15px ${stat.color}15`,
-                                border: `1px solid ${stat.color}20`
+                                border: `1px solid ${stat.color}25`
                             }}>
                                 {stat.icon}
                             </div>
                             <div>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{stat.label}</p>
-                                <p style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white' }}>{stat.value}</p>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.2rem' }}>{stat.label}</p>
+                                <p style={{ fontSize: '1.4rem', fontWeight: 900, color: 'white', lineHeight: 1 }}>{stat.value}</p>
+                                <p style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', marginTop: '0.4rem' }}>{stat.sub}</p>
                             </div>
                         </div>
                     </Card>

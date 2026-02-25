@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Save, Plus, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './Card';
+import { useToast } from '@/lib/contexts/ToastContext';
 
 interface Glosa {
     id: string;
@@ -34,6 +35,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, isAdmin = true }: GlosaF
         tipo_glosa: 'Tarifas',
         estado: 'Pendiente'
     });
+    const { showToast } = useToast();
     const [forceSubmit, setForceSubmit] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
 
@@ -73,13 +75,30 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, isAdmin = true }: GlosaF
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.factura || !formData.servicio || !formData.valor_glosa) return;
+
+        // VALIDACIÓN SENIOR: Protección de integridad de datos
+        const factura = formData.factura.trim();
+        const servicio = formData.servicio.trim();
+        const valor = parseFloat(formData.valor_glosa);
+
+        if (!factura || !servicio || isNaN(valor)) {
+            showToast('❌ CAMPOS REQUERIDOS: Completa Factura, Servicio y Valor.', 'error');
+            return;
+        }
+
+        if (valor < 0) {
+            showToast('❌ ERROR: El valor no puede ser negativo.', 'error');
+            return;
+        }
+
         if (isDuplicateExact && !forceSubmit) return; // Bloquear si es duplicado exacto sin confirmación
 
         onAddGlosa({
             ...formData,
+            factura, // Usamos la versión sanitizada (con trim)
+            servicio,
             id: Math.random().toString(36).substr(2, 9),
-            valor_glosa: parseFloat(formData.valor_glosa),
+            valor_glosa: valor,
             fecha: todayStr,
             registrada_internamente: false
         });

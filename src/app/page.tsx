@@ -10,6 +10,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ToastProvider, useToast } from '@/lib/contexts/ToastContext';
+import { ExecutiveReport } from '@/components/ExecutiveReport';
 
 const formatPesos = (value: number): string => {
   return Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -36,7 +39,7 @@ interface Ingreso {
   fecha: string;
 }
 
-export default function Home() {
+function Home() {
   const [activeSection, setActiveSection] = useState<'dashboard' | 'ingreso' | 'consolidado' | 'valores'>('dashboard');
   const [glosas, setGlosas] = useState<Glosa[]>([]);
   const [ingresos, setIngresos] = useState<Ingreso[]>([]);
@@ -49,6 +52,7 @@ export default function Home() {
   const lastFetchedUserId = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, role, loading: authLoading, signOut } = useAuth();
+  const { showToast } = useToast();
   const router = useRouter();
 
   // Redirección si no está autenticado
@@ -267,7 +271,7 @@ export default function Home() {
     const { error } = await supabase.from('glosas').update({ registrada_internamente: newStatus }).eq('id', id);
     if (error) {
       console.error('Error actualizando registro interno:', error);
-      alert('Error al guardar en la nube. Por favor, asegúrate de haber ejecutado el comando SQL en Supabase.');
+      showToast('Error al guardar en la nube. Verifica tu conexión.', 'error');
     }
   };
 
@@ -278,15 +282,28 @@ export default function Home() {
   }, [ingresos, searchTermIngresos]);
 
   const stats = useMemo(() => {
-    const totalGlosasValue = glosas.reduce((acc, curr) => acc + curr.valor_glosa, 0);
+    const totalGlosadoValue = glosas.reduce((acc, curr) => acc + curr.valor_glosa, 0);
     const totalAceptadoValue = ingresos.reduce((acc, curr) => acc + curr.valor_aceptado, 0);
+    const totalNoAceptadoValue = ingresos.reduce((acc, curr) => acc + curr.valor_no_aceptado, 0);
+    const totalRegistradoInternoValue = glosas.filter(g => g.registrada_internamente).reduce((acc, curr) => acc + curr.valor_glosa, 0);
+
+    const pendingValue = totalGlosadoValue - totalAceptadoValue - totalNoAceptadoValue;
+
     return {
       totalCount: glosas.length,
-      totalValue: totalGlosasValue,
+      totalGlosado: totalGlosadoValue,
+      totalAceptado: totalAceptadoValue,
+      totalPendiente: Math.max(0, pendingValue),
+      totalRegistradoInterno: totalRegistradoInternoValue,
+      percentAceptado: totalGlosadoValue > 0 ? Math.round((totalAceptadoValue / totalGlosadoValue) * 100) : 0,
+      percentRegistrado: totalGlosadoValue > 0 ? Math.round((totalRegistradoInternoValue / totalGlosadoValue) * 100) : 0,
+
+      // Legacy fields to support other UI parts
+      totalValue: totalGlosadoValue,
+      totalIngresos: totalAceptadoValue,
       pendingCount: glosas.filter(g => g.estado === 'Pendiente').length,
       respondedCount: glosas.filter(g => g.estado === 'Respondida').length,
       acceptedCount: glosas.filter(g => g.estado === 'Aceptada' || ingresos.some(i => i.factura === g.factura)).length,
-      totalIngresos: totalAceptadoValue,
     };
   }, [glosas, ingresos]);
 
@@ -429,10 +446,10 @@ export default function Home() {
       // Limpiamos la prueba
       await supabase.from('glosas').delete().eq('id', testId);
 
-      alert('✅ ¡CONEXIÓN TOTAL EXITOSA!\nTanto la lectura como la subida de datos funcionan correctamente.');
+      showToast('✅ ¡CONEXIÓN TOTAL EXITOSA! Todo funciona correctamente.', 'success');
     } catch (err: any) {
       console.error('Test Connection Error:', err);
-      alert('❌ ERROR DE CONEXIÓN:\n' + err.message + '\n\nSi el error es "Failed to fetch", es probable que la red de tu oficina bloquee el envío de datos (POST).');
+      showToast('❌ ERROR DE CONEXIÓN: ' + err.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -457,11 +474,11 @@ export default function Home() {
         if (!error) synced++;
       }
 
-      alert(`✅ Sincronización completa: ${synced} marcas se han subido a la base de datos.`);
+      showToast(`✅ Sincronización completa: ${synced} marcas subidas.`, 'success');
       loadData(true);
     } catch (err: any) {
       console.error('Error en sincronización:', err);
-      alert('❌ Error al sincronizar marcas: ' + err.message);
+      showToast('❌ Error al sincronizar: ' + err.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -506,12 +523,12 @@ export default function Home() {
       if (foundMarks > 0) {
         setGlosas([...recoveredGlosas]);
         localStorage.setItem('cached_glosas', JSON.stringify(recoveredGlosas));
-        alert(`🎉 ¡ÉXITO! Se han recuperado ${foundMarks} marcas del historial oculto del navegador.\n\nIMPORTANTE: Ahora haz clic en el botón verde "SINCRONIZAR MARCAS" para que se guarden en la base de datos permanentemente.`);
+        showToast(`🎉 ¡ÉXITO! Se han recuperado ${foundMarks} marcas.`, 'success');
       } else {
-        alert('❌ No se encontró ningún rastro técnico de marcas en este navegador.\n\nTips:\n1. Si usaste otro computador, inténtalo allá.\n2. Si borraste el historial o cookies recientemente, la memoria se pudo haber limpiado.\n3. Asegúrate de estar en la misma cuenta de usuario.');
+        showToast('❌ No se encontró rastro de marcas en este navegador.', 'info');
       }
     } catch (e: any) {
-      alert('Error en búsqueda profunda: ' + e.message);
+      showToast('Error en recuperación: ' + e.message, 'error');
     }
   };
 
@@ -525,16 +542,16 @@ export default function Home() {
         const { error } = await supabase.from('glosas').upsert(data);
         if (!error) {
           setGlosas(prev => [...data, ...prev]);
-          alert('¡Importación exitosa!');
+          showToast('✅ ¡Importación exitosa!', 'success');
         } else {
-          alert('Error al subir a la nube: ' + error.message);
+          showToast('❌ Error al subir: ' + error.message, 'error');
         }
         setLoading(false);
       } else {
-        alert('El formato no es válido. Debe ser una lista [ ... ].');
+        showToast('El formato JSON no es válido.', 'error');
       }
-    } catch (e) {
-      alert('Error al leer el JSON: ' + (e as Error).message);
+    } catch (e: any) {
+      showToast('Error al leer el JSON: ' + e.message, 'error');
     }
   };
 
@@ -592,16 +609,16 @@ export default function Home() {
           return obj;
         }).filter(item => item.factura);
 
-        if (data.length === 0) throw new Error('No se encontraron registros válidos por factura. Verifica los nombres de las columnas.');
+        if (data.length === 0) throw new Error('No se encontraron registros válidos por factura.');
 
         const { error } = await supabase.from('glosas').upsert(data);
         if (error) throw error;
 
         setGlosas(prev => [...data, ...prev]);
-        alert(`¡Éxito! Se importaron ${data.length} glosas correctamente.`);
+        showToast(`✅ CSV Importado: ${data.length} registros subidos.`, 'success');
       } catch (err: any) {
-        console.error('Error CSV:', err);
-        alert('Error al importar CSV: ' + err.message);
+        console.error('CSV Error:', err);
+        showToast('❌ Error leyendo CSV: ' + err.message, 'error');
       } finally {
         setLoading(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -964,6 +981,7 @@ export default function Home() {
                 <Dashboard
                   glosas={glosas}
                   totalIngresos={stats.totalIngresos}
+                  stats={stats}
                 />
               </motion.div>
             )}
@@ -1401,3 +1419,13 @@ const ConsolidadoTable = ({ data }: { data: any[] }) => {
     </motion.div>
   );
 };
+
+export default function HomeWithBoundary() {
+  return (
+    <ErrorBoundary>
+      <ToastProvider>
+        <Home />
+      </ToastProvider>
+    </ErrorBoundary>
+  );
+}
