@@ -164,44 +164,53 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
             </div>
 
             {/* Detailed Charts Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2rem' }}>
-                <Card style={{ padding: '2rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: '2rem' }}>
+                <Card style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                             <Activity size={20} color="var(--primary)" />
                             DISTRIBUCIÓN POR CATEGORÍA
                         </h3>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        {['Tarifas', 'Soportes', 'RIPS', 'Autorización'].map((tipo) => {
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        {['Tarifas', 'Soportes', 'RIPS', 'Autorización'].map((tipo, idx) => {
                             const count = filteredData.filter(g => g.tipo_glosa === tipo).length;
                             const total = filteredData.length || 1;
                             const percent = Math.round((count / total) * 100);
                             return (
-                                <div key={tipo}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.7rem' }}>
-                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{tipo}</span>
-                                        <span style={{ color: 'white', fontWeight: 700 }}>{count} ({percent}%)</span>
+                                <motion.div
+                                    key={tipo}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.6rem' }}>
+                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 700, letterSpacing: '0.05em' }}>{tipo.toUpperCase()}</span>
+                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'baseline' }}>
+                                            <span style={{ color: 'white', fontWeight: 900, fontSize: '1rem' }}>{count}</span>
+                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>({percent}%)</span>
+                                        </div>
                                     </div>
-                                    <div style={{ height: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', overflow: 'hidden' }}>
+                                    <div style={{ height: '6px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
                                         <motion.div
                                             initial={{ width: 0 }}
-                                            animate={{ width: `${percent}% ` }}
-                                            transition={{ duration: 1, ease: "easeOut" }}
+                                            animate={{ width: `${percent}%` }}
+                                            transition={{ duration: 1.2, ease: "circOut" }}
                                             style={{
                                                 height: '100%',
-                                                background: `linear - gradient(90deg, var(--primary), #3b82f6)`,
-                                                boxShadow: '0 0 10px rgba(139, 92, 246, 0.3)'
+                                                background: `linear-gradient(90deg, var(--primary), #3b82f6)`,
+                                                boxShadow: '0 0 15px rgba(139, 92, 246, 0.4)',
+                                                borderRadius: '10px'
                                             }}
                                         />
                                     </div>
-                                </div>
+                                </motion.div>
                             );
                         })}
                     </div>
                 </Card>
 
-                <Card style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                <Card style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                     <div style={{ position: 'absolute', top: '2rem', left: '2rem' }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                             <PieChart size={20} color="var(--primary)" />
@@ -210,49 +219,59 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
                     </div>
 
                     <div style={{ position: 'relative', width: '220px', height: '220px', marginTop: '2rem' }}>
-                        <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)', filter: 'drop-shadow(0 0 10px rgba(139, 92, 246, 0.2))' }}>
+                        <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
                             <defs>
+                                <filter id="glow">
+                                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
                                 <linearGradient id="gradPending" x1="0%" y1="0%" x2="100%" y2="100%">
                                     <stop offset="0%" stopColor="#8b5cf6" />
                                     <stop offset="100%" stopColor="#6366f1" />
                                 </linearGradient>
                                 <linearGradient id="gradResponded" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stopColor="#10b981" />
-                                    <stop offset="100%" stopColor="#059669" />
+                                    <stop offset="0%" stopColor="#3b82f6" />
+                                    <stop offset="100%" stopColor="#2dd4bf" />
                                 </linearGradient>
                                 <linearGradient id="gradAccepted" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stopColor="#ef4444" />
-                                    <stop offset="100%" stopColor="#dc2626" />
+                                    <stop offset="0%" stopColor="#f87171" />
+                                    <stop offset="100%" stopColor="#ef4444" />
                                 </linearGradient>
                             </defs>
-                            <circle cx="50" cy="50" r="40" fill="transparent" stroke="rgba(255,255,255,0.02)" strokeWidth="10" />
+
+                            {/* Background Circle */}
+                            <circle cx="50" cy="50" r="42" fill="transparent" stroke="rgba(255,255,255,0.02)" strokeWidth="8" />
 
                             {/* Pendiente */}
                             <motion.circle
-                                cx="50" cy="50" r="40" fill="transparent"
-                                stroke="url(#gradPending)" strokeWidth="10" strokeLinecap="round"
-                                initial={{ strokeDasharray: "0 251.2" }}
-                                animate={{ strokeDasharray: `${(pPending / 100) * 251.2} 251.2` }}
+                                cx="50" cy="50" r="42" fill="transparent"
+                                stroke="url(#gradPending)" strokeWidth="8" strokeLinecap="round"
+                                filter="url(#glow)"
+                                initial={{ strokeDasharray: "0 263.8" }}
+                                animate={{ strokeDasharray: `${(pPending / 100) * 263.8} 263.8` }}
                                 transition={{ duration: 1.5, ease: "circOut" }}
                             />
 
                             {/* Respondida */}
                             <motion.circle
-                                cx="50" cy="50" r="40" fill="transparent"
-                                stroke="url(#gradResponded)" strokeWidth="10" strokeLinecap="round"
-                                strokeDashoffset={-((pPending / 100) * 251.2)}
-                                initial={{ strokeDasharray: "0 251.2" }}
-                                animate={{ strokeDasharray: `${(pResponded / 100) * 251.2} 251.2` }}
+                                cx="50" cy="50" r="42" fill="transparent"
+                                stroke="url(#gradResponded)" strokeWidth="8" strokeLinecap="round"
+                                strokeDashoffset={-((pPending / 100) * 263.8)}
+                                initial={{ strokeDasharray: "0 263.8" }}
+                                animate={{ strokeDasharray: `${(pResponded / 100) * 263.8} 263.8` }}
                                 transition={{ duration: 1.5, delay: 0.2, ease: "circOut" }}
                             />
 
                             {/* Aceptada */}
                             <motion.circle
-                                cx="50" cy="50" r="40" fill="transparent"
-                                stroke="url(#gradAccepted)" strokeWidth="10" strokeLinecap="round"
-                                strokeDashoffset={-(((pPending + pResponded) / 100) * 251.2)}
-                                initial={{ strokeDasharray: "0 251.2" }}
-                                animate={{ strokeDasharray: `${(pAccepted / 100) * 251.2} 251.2` }}
+                                cx="50" cy="50" r="42" fill="transparent"
+                                stroke="url(#gradAccepted)" strokeWidth="8" strokeLinecap="round"
+                                strokeDashoffset={-(((pPending + pResponded) / 100) * 263.8)}
+                                initial={{ strokeDasharray: "0 263.8" }}
+                                animate={{ strokeDasharray: `${(pAccepted / 100) * 263.8} 263.8` }}
                                 transition={{ duration: 1.5, delay: 0.4, ease: "circOut" }}
                             />
                         </svg>
@@ -262,35 +281,38 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
                             top: '50%',
                             left: '50%',
                             transform: 'translate(-50%, -50%)',
-                            textAlign: 'center'
+                            textAlign: 'center',
+                            zIndex: 1
                         }}>
-                            <p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 700, margin: 0, letterSpacing: '0.1em' }}>TOTAL</p>
-                            <p style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white', margin: 0, lineHeight: 1 }}>{stats.total}</p>
+                            <motion.div
+                                initial={{ scale: 0.5, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ delay: 0.6 }}
+                            >
+                                <p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 800, margin: 0, letterSpacing: '0.15em' }}>REGISTROS</p>
+                                <p style={{ fontSize: '2.2rem', fontWeight: 950, color: 'white', margin: 0, lineHeight: 1, textShadow: '0 0 20px rgba(139, 92, 246, 0.3)' }}>{stats.total}</p>
+                            </motion.div>
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '1.5rem', marginTop: '2.5rem' }}>
-                        <div style={{ textAlign: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
-                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#8b5cf6' }} />
-                                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Pend.</span>
-                            </div>
-                            <p style={{ color: 'white', fontWeight: 900, margin: 0 }}>{Math.round(pPending)}%</p>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
-                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
-                                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Resp.</span>
-                            </div>
-                            <p style={{ color: 'white', fontWeight: 900, margin: 0 }}>{Math.round(pResponded)}%</p>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
-                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }} />
-                                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Acept.</span>
-                            </div>
-                            <p style={{ color: 'white', fontWeight: 900, margin: 0 }}>{Math.round(pAccepted)}%</p>
-                        </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', width: '100%', marginTop: '2rem' }}>
+                        {[
+                            { label: 'PEND.', val: Math.round(pPending), color: '#8b5cf6' },
+                            { label: 'RESP.', val: Math.round(pResponded), color: '#3b82f6' },
+                            { label: 'ACEPT.', val: Math.round(pAccepted), color: '#f87171' }
+                        ].map((item, idx) => (
+                            <motion.div
+                                key={idx}
+                                style={{ textAlign: 'center', padding: '0.6rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}
+                                whileHover={{ scale: 1.05, background: 'rgba(255,255,255,0.04)' }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
+                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: item.color, boxShadow: `0 0 10px ${item.color}` }} />
+                                    <span style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', fontWeight: 800 }}>{item.label}</span>
+                                </div>
+                                <p style={{ color: 'white', fontSize: '1rem', fontWeight: 950, margin: 0 }}>{item.val}%</p>
+                            </motion.div>
+                        ))}
                     </div>
                 </Card>
             </div>
