@@ -1,29 +1,29 @@
 :root {
-  --background: #06040d;
+  --background: #0a0a0c;
   --foreground: #f8fafc;
-  --surface: rgba(15, 12, 33, 0.7);
-  --surface-hover: rgba(25, 20, 50, 0.8);
+  --surface: rgba(15, 15, 18, 0.6);
+  --surface-hover: rgba(25, 25, 30, 0.8);
 
   --primary: #8b5cf6;
   --primary-hover: #7c3aed;
-  --primary-glow: rgba(139, 92, 246, 0.3);
+  --primary-glow: rgba(139, 92, 246, 0.5);
 
   --secondary: #3b82f6;
   --secondary-hover: #2563eb;
 
   --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
+  --text-secondary: rgba(255, 255, 255, 0.5);
 
-  --border: rgba(139, 92, 246, 0.2);
-  --border-focus: rgba(139, 92, 246, 0.5);
+  --border: rgba(255, 255, 255, 0.05);
+  --border-focus: rgba(139, 92, 246, 0.4);
 
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.02);
+  --glass-border: rgba(255, 255, 255, 0.05);
 
-  --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.15);
+  --shadow-glow: 0 0 30px rgba(139, 92, 246, 0.1);
 
-  --radius-md: 1rem;
-  --radius-lg: 1.5rem;
+  --radius-md: 1.25rem;
+  --radius-lg: 2rem;
 
   --success: #10b981;
   --warning: #f59e0b;
