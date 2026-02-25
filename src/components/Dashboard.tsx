@@ -29,6 +29,8 @@ interface DashboardProps {
         totalRegistradoInterno: number;
         percentAceptado: number;
         percentRegistrado: number;
+        totalCount: number;
+        acceptedCount: number;
     };
 }
 
@@ -134,10 +136,10 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
                 gap: '1.5rem',
             }}>
                 {[
-                    { label: 'Valor Total Glosado', value: `$${formatPesos(executiveStats.totalGlosado)}`, icon: <TrendingUp size={22} />, color: '#8b5cf6', sub: 'Total histórico' },
-                    { label: 'Valor Aceptado', value: `$${formatPesos(executiveStats.totalAceptado)}`, icon: <CheckCircle size={22} />, color: '#10b981', sub: `${executiveStats.percentAceptado}% de efectividad` },
-                    { label: 'Valores en Pendiente', value: `$${formatPesos(executiveStats.totalPendiente)}`, icon: <Clock size={22} />, color: '#f59e0b', sub: 'Por conciliar' },
-                    { label: 'Facturas Registradas', value: `$${formatPesos(executiveStats.totalRegistradoInterno)}`, icon: <FileText size={22} />, color: '#3b82f6', sub: `${executiveStats.percentRegistrado}% en sistema interno` },
+                    { label: 'Valor Total Aceptado', value: `$${formatPesos(executiveStats.totalAceptado)}`, icon: <TrendingUp size={22} />, color: '#10b981', sub: `${executiveStats.percentAceptado}% de recuperación` },
+                    { label: 'Valor de Glosa Total', value: `$${formatPesos(executiveStats.totalGlosado)}`, icon: <DollarSign size={22} />, color: '#8b5cf6', sub: 'Monto total en glosas' },
+                    { label: 'Total Facturas', value: executiveStats.totalCount, icon: <FileText size={22} />, color: '#3b82f6', sub: 'Cantidad total de registros' },
+                    { label: 'Total Facturas Aceptadas', value: executiveStats.acceptedCount, icon: <CheckCircle size={22} />, color: '#00d2ff', sub: 'Cantidad de facturas con pago' },
                 ].map((stat, index) => (
                     <Card key={index} className="stat-card" style={{ borderLeft: `4px solid ${stat.color}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
