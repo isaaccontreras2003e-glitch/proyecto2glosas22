@@ -42,7 +42,11 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
     const [showSuccess, setShowSuccess] = useState(false);
 
     // Cálculos de control diario
-    const todayStr = useMemo(() => new Date().toLocaleDateString('es-ES'), []);
+    const todayStr = useMemo(() => new Date().toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    }), []);
     const nowTimestamp = () => new Date().toLocaleString('es-ES', {
         day: '2-digit',
         month: '2-digit',
