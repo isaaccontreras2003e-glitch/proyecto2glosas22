@@ -172,187 +172,206 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
             </AnimatePresence>
 
             <form onSubmit={handleSubmit}>
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                    gap: '1.25rem',
-                    marginBottom: '1.5rem'
-                }}>
-                    <div className="input-group">
-                        <label className="label">Número de Factura</label>
-                        <input
-                            type="text"
-                            className="input"
-                            placeholder="Ej: FAC-10020"
-                            value={formData.factura}
-                            style={{
-                                borderColor: isDuplicateExact
-                                    ? 'rgba(239,68,68,0.6)'
-                                    : facturaExiste
-                                        ? 'rgba(245,158,11,0.6)'
-                                        : undefined
-                            }}
-                            onChange={(e) => {
-                                setFormData({ ...formData, factura: e.target.value });
-                                setForceSubmit(false);
-                            }}
-                        />
-                        {/* Alerta de factura existente */}
-                        {facturaExiste && (
-                            <div style={{
-                                marginTop: '0.5rem',
-                                padding: '0.6rem 0.85rem',
-                                borderRadius: '10px',
-                                background: `rgba(${isDuplicateExact ? '239,68,68' : '245,158,11'},0.08)`,
-                                border: `1px solid rgba(${isDuplicateExact ? '239,68,68' : '245,158,11'},0.25)`,
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: '0.6rem',
-                                fontSize: '0.72rem',
-                                color: alertColor,
-                                lineHeight: 1.4
-                            }}>
-                                <AlertTriangle size={14} style={{ marginTop: '1px', flexShrink: 0 }} />
-                                <div>
-                                    {isDuplicateExact
-                                        ? <><strong>⚠ DUPLICADO EXACTO:</strong> Esta factura ya tiene registrado el mismo servicio y valor.</>
-                                        : <><strong>Factura ya ingresada</strong> con {facturaMatch!.length} registro(s): {facturaMatch!.map(g => g.servicio).join(', ')}.</>
-                                    }
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.1em', marginBottom: '1rem', textTransform: 'uppercase' }}>1. Información de la Factura</p>
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '1rem',
+                        padding: '1.25rem',
+                        background: 'rgba(255,255,255,0.02)',
+                        borderRadius: '16px',
+                        border: '1px solid rgba(255,255,255,0.05)'
+                    }}>
+                        <div className="input-group">
+                            <label className="label">Número de Factura</label>
+                            <input
+                                type="text"
+                                className="input"
+                                placeholder="Ej: FAC-10020"
+                                value={formData.factura}
+                                style={{
+                                    borderColor: isDuplicateExact
+                                        ? 'rgba(239,68,68,0.6)'
+                                        : facturaExiste
+                                            ? 'rgba(245,158,11,0.6)'
+                                            : undefined
+                                }}
+                                onChange={(e) => {
+                                    setFormData({ ...formData, factura: e.target.value });
+                                    setForceSubmit(false);
+                                }}
+                            />
+                            {/* Alerta de factura existente */}
+                            {facturaExiste && (
+                                <div style={{
+                                    marginTop: '0.5rem',
+                                    padding: '0.6rem 0.85rem',
+                                    borderRadius: '10px',
+                                    background: `rgba(${isDuplicateExact ? '239,68,68' : '245,158,11'},0.08)`,
+                                    border: `1px solid rgba(${isDuplicateExact ? '239,68,68' : '245,158,11'},0.25)`,
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '0.6rem',
+                                    fontSize: '0.72rem',
+                                    color: alertColor,
+                                    lineHeight: 1.4
+                                }}>
+                                    <AlertTriangle size={14} style={{ marginTop: '1px', flexShrink: 0 }} />
+                                    <div>
+                                        {isDuplicateExact
+                                            ? <><strong>⚠ DUPLICADO EXACTO:</strong> Esta factura ya tiene registrado el mismo servicio y valor.</>
+                                            : <><strong>Factura ya ingresada</strong> con {facturaMatch!.length} registro(s): {facturaMatch!.map(g => g.servicio).join(', ')}.</>
+                                        }
+                                    </div>
                                 </div>
+                            )}
+                        </div>
+                        <div className="input-group">
+                            <label className="label">Servicio</label>
+                            <input
+                                type="text"
+                                className="input"
+                                placeholder="Ej: Consulta Externa"
+                                value={formData.servicio}
+                                onChange={(e) => setFormData({ ...formData, servicio: e.target.value })}
+                            />
+                        </div>
+                        <div className="input-group">
+                            <label className="label">Orden de Servicio</label>
+                            <input
+                                type="text"
+                                className="input"
+                                placeholder="Ej: OS-9988"
+                                value={formData.orden_servicio}
+                                onChange={(e) => setFormData({ ...formData, orden_servicio: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <p style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.1em', marginBottom: '1rem', textTransform: 'uppercase' }}>2. Clasificación y Estado</p>
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '1rem',
+                        padding: '1.25rem',
+                        background: 'rgba(255,255,255,0.02)',
+                        borderRadius: '16px',
+                        border: '1px solid rgba(255,255,255,0.05)'
+                    }}>
+                        <div className="input-group">
+                            <label className="label">Valor Glosa</label>
+                            <input
+                                type="number"
+                                className="input"
+                                placeholder="0.00"
+                                value={formData.valor_glosa}
+                                onChange={(e) => setFormData({ ...formData, valor_glosa: e.target.value })}
+                            />
+                        </div>
+                        <div className="input-group">
+                            <label className="label">Tipo de Glosa</label>
+                            <select
+                                className="input"
+                                value={formData.tipo_glosa}
+                                onChange={(e) => setFormData({ ...formData, tipo_glosa: e.target.value })}
+                            >
+                                <option value="Tarifas">Tarifas</option>
+                                <option value="Soportes">Soportes</option>
+                                <option value="RIPS">RIPS</option>
+                                <option value="Autorización">Autorización</option>
+                            </select>
+                        </div>
+                        <div className="input-group">
+                            <label className="label">Estado Inicial</label>
+                            <select
+                                className="input"
+                                value={formData.estado}
+                                onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                            >
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Respondida">Respondida</option>
+                                <option value="Aceptada">Aceptada</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div className="input-group" style={{ marginTop: '1.5rem' }}>
+                        <label className="label">Descripción Adicional</label>
+                        <textarea
+                            className="input"
+                            style={{ minHeight: '80px', resize: 'vertical' }}
+                            placeholder="Detalles sobre el motivo de la glosa..."
+                            value={formData.descripcion}
+                            onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                            disabled={!isAdmin}
+                        />
+                    </div>
+
+                    {!isAdmin && (
+                        <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.1)', marginTop: '1rem' }}>
+                            Cuenta en modo <strong>LECTURA</strong>. No puedes realizar registros.
+                        </div>
+                    )}
+
+                    {/* Botón principal o botón de confirmación si es duplicado exacto */}
+                    {isAdmin && (
+                        isDuplicateExact && !forceSubmit ? (
+                            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, factura: '', servicio: '', valor_glosa: '' })}
+                                    className="btn btn-secondary"
+                                    style={{ flex: 1, gap: '0.5rem' }}
+                                >
+                                    Limpiar Formulario
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setForceSubmit(true)}
+                                    className="btn btn-primary"
+                                    style={{ flex: 1, gap: '0.5rem', background: 'rgba(239,68,68,0.8)', fontSize: '0.8rem' }}
+                                >
+                                    <AlertTriangle size={16} />
+                                    Registrar de todas formas
+                                </button>
                             </div>
-                        )}
-                    </div>
-                    <div className="input-group">
-                        <label className="label">Servicio</label>
-                        <input
-                            type="text"
-                            className="input"
-                            placeholder="Ej: Consulta Externa"
-                            value={formData.servicio}
-                            onChange={(e) => setFormData({ ...formData, servicio: e.target.value })}
-                        />
-                    </div>
-                    <div className="input-group">
-                        <label className="label">Orden de Servicio</label>
-                        <input
-                            type="text"
-                            className="input"
-                            placeholder="Ej: OS-9988"
-                            value={formData.orden_servicio}
-                            onChange={(e) => setFormData({ ...formData, orden_servicio: e.target.value })}
-                        />
-                    </div>
-                    <div className="input-group">
-                        <label className="label">Valor Glosa</label>
-                        <input
-                            type="number"
-                            className="input"
-                            placeholder="0.00"
-                            value={formData.valor_glosa}
-                            onChange={(e) => setFormData({ ...formData, valor_glosa: e.target.value })}
-                        />
-                    </div>
-                    <div className="input-group">
-                        <label className="label">Tipo de Glosa</label>
-                        <select
-                            className="input"
-                            value={formData.tipo_glosa}
-                            onChange={(e) => setFormData({ ...formData, tipo_glosa: e.target.value })}
-                        >
-                            <option value="Tarifas">Tarifas</option>
-                            <option value="Soportes">Soportes</option>
-                            <option value="RIPS">RIPS</option>
-                            <option value="Autorización">Autorización</option>
-                        </select>
-                    </div>
-                    <div className="input-group">
-                        <label className="label">Estado Inicial</label>
-                        <select
-                            className="input"
-                            value={formData.estado}
-                            onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-                        >
-                            <option value="Pendiente">Pendiente</option>
-                            <option value="Respondida">Respondida</option>
-                            <option value="Aceptada">Aceptada</option>
-                        </select>
-                    </div>
-                </div>
-                <div className="input-group">
-                    <label className="label">Descripción Adicional</label>
-                    <textarea
-                        className="input"
-                        style={{ minHeight: '100px', resize: 'vertical' }}
-                        placeholder="Detalles sobre el motivo de la glosa..."
-                        value={formData.descripcion}
-                        onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                        disabled={!isAdmin}
-                    />
-                </div>
-
-                {!isAdmin && (
-                    <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.1)', marginTop: '1rem' }}>
-                        Cuenta en modo <strong>LECTURA</strong>. No puedes realizar registros.
-                    </div>
-                )}
-
-                {/* Botón principal o botón de confirmación si es duplicado exacto */}
-                {isAdmin && (
-                    isDuplicateExact && !forceSubmit ? (
-                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                        ) : (
                             <button
-                                type="button"
-                                onClick={() => setFormData({ ...formData, factura: '', servicio: '', valor_glosa: '' })}
-                                className="btn btn-secondary"
-                                style={{ flex: 1, gap: '0.5rem' }}
-                            >
-                                Limpiar Formulario
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setForceSubmit(true)}
+                                type="submit"
                                 className="btn btn-primary"
-                                style={{ flex: 1, gap: '0.5rem', background: 'rgba(239,68,68,0.8)', fontSize: '0.8rem' }}
+                                style={{ width: '100%', gap: '0.75rem', marginTop: '1rem' }}
                             >
-                                <AlertTriangle size={16} />
-                                Registrar de todas formas
+                                {forceSubmit ? <AlertTriangle size={18} /> : <Plus size={18} />}
+                                {forceSubmit ? 'Confirmar Registro Duplicado' : 'Guardar Registro'}
                             </button>
-                        </div>
-                    ) : (
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            style={{ width: '100%', gap: '0.75rem', marginTop: '1rem' }}
-                        >
-                            {forceSubmit ? <AlertTriangle size={18} /> : <Plus size={18} />}
-                            {forceSubmit ? 'Confirmar Registro Duplicado' : 'Guardar Registro'}
-                        </button>
-                    )
-                )}
+                        )
+                    )}
 
-                {/* Indicadores de Control Diario */}
-                <div style={{
-                    marginTop: '2.5rem',
-                    padding: '1.5rem',
-                    background: 'rgba(0,0,0,0.2)',
-                    borderRadius: '1.5rem',
-                    border: '1px solid rgba(255,255,255,0.05)',
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '1.5rem'
-                }}>
-                    <div style={{ borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem' }}>
-                        <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>FACTURAS HOY</p>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                            <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{dailyStats.facturas}</span>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>({dailyStats.count} registros)</span>
+                    {/* Indicadores de Control Diario */}
+                    <div style={{
+                        marginTop: '2.5rem',
+                        padding: '1.5rem',
+                        background: 'rgba(0,0,0,0.2)',
+                        borderRadius: '1.5rem',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '1.5rem'
+                    }}>
+                        <div style={{ borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem' }}>
+                            <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>FACTURAS HOY</p>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                                <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{dailyStats.facturas}</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>({dailyStats.count} registros)</span>
+                            </div>
+                        </div>
+                        <div>
+                            <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>VALOR TOTAL HOY</p>
+                            <p style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--primary)', textShadow: '0 0 20px rgba(139, 92, 246, 0.3)' }}>${new Intl.NumberFormat('es-CO').format(dailyStats.value)}</p>
                         </div>
                     </div>
-                    <div>
-                        <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>VALOR TOTAL HOY</p>
-                        <p style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--primary)', textShadow: '0 0 20px rgba(139, 92, 246, 0.3)' }}>${new Intl.NumberFormat('es-CO').format(dailyStats.value)}</p>
-                    </div>
-                </div>
             </form>
         </Card>
     );
