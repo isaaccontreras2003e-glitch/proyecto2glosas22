@@ -308,70 +308,71 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
                             disabled={!isAdmin}
                         />
                     </div>
+                </div>
 
-                    {!isAdmin && (
-                        <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.1)', marginTop: '1rem' }}>
-                            Cuenta en modo <strong>LECTURA</strong>. No puedes realizar registros.
-                        </div>
-                    )}
+                {!isAdmin && (
+                    <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.1)', marginTop: '1rem' }}>
+                        Cuenta en modo <strong>LECTURA</strong>. No puedes realizar registros.
+                    </div>
+                )}
 
-                    {/* Botón principal o botón de confirmación si es duplicado exacto */}
-                    {isAdmin && (
-                        isDuplicateExact && !forceSubmit ? (
-                            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, factura: '', servicio: '', valor_glosa: '' })}
-                                    className="btn btn-secondary"
-                                    style={{ flex: 1, gap: '0.5rem' }}
-                                >
-                                    Limpiar Formulario
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setForceSubmit(true)}
-                                    className="btn btn-primary"
-                                    style={{ flex: 1, gap: '0.5rem', background: 'rgba(239,68,68,0.8)', fontSize: '0.8rem' }}
-                                >
-                                    <AlertTriangle size={16} />
-                                    Registrar de todas formas
-                                </button>
-                            </div>
-                        ) : (
+                {/* Botón principal o botón de confirmación si es duplicado exacto */}
+                {isAdmin && (
+                    isDuplicateExact && !forceSubmit ? (
+                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
                             <button
-                                type="submit"
-                                className="btn btn-primary"
-                                style={{ width: '100%', gap: '0.75rem', marginTop: '1rem' }}
+                                type="button"
+                                onClick={() => setFormData({ ...formData, factura: '', servicio: '', valor_glosa: '' })}
+                                className="btn btn-secondary"
+                                style={{ flex: 1, gap: '0.5rem' }}
                             >
-                                {forceSubmit ? <AlertTriangle size={18} /> : <Plus size={18} />}
-                                {forceSubmit ? 'Confirmar Registro Duplicado' : 'Guardar Registro'}
+                                Limpiar Formulario
                             </button>
-                        )
-                    )}
-
-                    {/* Indicadores de Control Diario */}
-                    <div style={{
-                        marginTop: '2.5rem',
-                        padding: '1.5rem',
-                        background: 'rgba(0,0,0,0.2)',
-                        borderRadius: '1.5rem',
-                        border: '1px solid rgba(255,255,255,0.05)',
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
-                        gap: '1.5rem'
-                    }}>
-                        <div style={{ borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem' }}>
-                            <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>FACTURAS HOY</p>
-                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                                <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{dailyStats.facturas}</span>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>({dailyStats.count} registros)</span>
-                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setForceSubmit(true)}
+                                className="btn btn-primary"
+                                style={{ flex: 1, gap: '0.5rem', background: 'rgba(239,68,68,0.8)', fontSize: '0.8rem' }}
+                            >
+                                <AlertTriangle size={16} />
+                                Registrar de todas formas
+                            </button>
                         </div>
-                        <div>
-                            <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>VALOR TOTAL HOY</p>
-                            <p style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--primary)', textShadow: '0 0 20px rgba(139, 92, 246, 0.3)' }}>${new Intl.NumberFormat('es-CO').format(dailyStats.value)}</p>
+                    ) : (
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            style={{ width: '100%', gap: '0.75rem', marginTop: '1rem' }}
+                        >
+                            {forceSubmit ? <AlertTriangle size={18} /> : <Plus size={18} />}
+                            {forceSubmit ? 'Confirmar Registro Duplicado' : 'Guardar Registro'}
+                        </button>
+                    )
+                )}
+
+                {/* Indicadores de Control Diario */}
+                <div style={{
+                    marginTop: '2.5rem',
+                    padding: '1.5rem',
+                    background: 'rgba(0,0,0,0.2)',
+                    borderRadius: '1.5rem',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '1.5rem'
+                }}>
+                    <div style={{ borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem' }}>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>FACTURAS HOY</p>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{dailyStats.facturas}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>({dailyStats.count} registros)</span>
                         </div>
                     </div>
+                    <div>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>VALOR TOTAL HOY</p>
+                        <p style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--primary)', textShadow: '0 0 20px rgba(139, 92, 246, 0.3)' }}>${new Intl.NumberFormat('es-CO').format(dailyStats.value)}</p>
+                    </div>
+                </div>
             </form>
         </Card>
     );
