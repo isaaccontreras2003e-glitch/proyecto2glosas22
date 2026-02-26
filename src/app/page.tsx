@@ -27,6 +27,7 @@ interface Glosa {
   estado: string;
   fecha: string;
   registrada_internamente?: boolean;
+  seccion?: string;
 }
 
 interface Ingreso {
@@ -604,7 +605,8 @@ function Home() {
             tipo_glosa: 'Tarifas',
             estado: 'Pendiente',
             fecha: new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-            descripcion: ''
+            descripcion: '',
+            seccion: currentMainSection
           };
 
           headers.forEach((header, index) => {

@@ -17,6 +17,7 @@ interface Glosa {
     estado: string;
     fecha: string;
     registrada_internamente?: boolean;
+    seccion?: string;
 }
 
 interface GlosaFormProps {
