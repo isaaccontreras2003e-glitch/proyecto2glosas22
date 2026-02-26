@@ -196,9 +196,9 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
             }}>
                 {[
                     { label: 'IMPORTE TOTAL GLOSADO', value: `$${formatPesos(executiveStats.totalGlosado)}`, icon: <DollarSign size={20} />, color: '#8b5cf6', trend: getTrend('value') },
-                    { label: 'NÚMERO DE RECLAMACIONES', value: executiveStats.totalCount, icon: <FileText size={20} />, color: '#3b82f6', trend: getTrend('count') },
-                    { label: 'RECAUDO / VALOR ACEPTADO', value: `$${formatPesos(executiveStats.totalAceptado)}`, icon: <CheckCircle size={20} />, color: '#10b981', trend: getTrend('accepted') },
-                    { label: 'GESTIÓN FINALIZADA (FACTURAS)', value: executiveStats.acceptedCount, icon: <Activity size={20} />, color: '#f59e0b', trend: getTrend('acceptedCount') },
+                    { label: 'TOTAL FACTURAS', value: executiveStats.totalCount, icon: <FileText size={20} />, color: '#3b82f6', trend: getTrend('count') },
+                    { label: 'VALORES ACEPTADOS', value: `$${formatPesos(executiveStats.totalAceptado)}`, icon: <CheckCircle size={20} />, color: '#ef4444', trend: getTrend('accepted') },
+                    { label: 'TOTAL FACTURAS ACEPTADAS', value: executiveStats.acceptedCount, icon: <Activity size={20} />, color: '#f59e0b', trend: getTrend('acceptedCount') },
                 ].map((stat, index) => (
                     <Card key={index} style={{
                         padding: '1.75rem',
@@ -351,7 +351,7 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
 
                             <motion.circle
                                 cx="50" cy="50" r="44" fill="transparent"
-                                stroke="#f87171" strokeWidth="6" strokeLinecap="round"
+                                stroke="#ef4444" strokeWidth="6" strokeLinecap="round"
                                 strokeDashoffset={-(((pPending + pResponded) / 100) * 276.4)}
                                 initial={{ strokeDasharray: "0 276.4" }}
                                 animate={{ strokeDasharray: `${(pAccepted / 100) * 276.4} 276.4` }}
@@ -382,7 +382,7 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
                         {[
                             { label: 'PEND.', val: Math.round(pPending), color: '#8b5cf6' },
                             { label: 'RESP.', val: Math.round(pResponded), color: '#3b82f6' },
-                            { label: 'ACEPT.', val: Math.round(pAccepted), color: '#f87171' }
+                            { label: 'ACEPT.', val: Math.round(pAccepted), color: '#ef4444' }
                         ].map((item, idx) => (
                             <motion.div
                                 key={idx}

@@ -287,6 +287,10 @@ function Home() {
     });
   }, [ingresos, currentMainSection, searchTermIngresos]);
 
+  const currentSectionGlosas = useMemo(() => {
+    return glosas.filter(g => (g as any).seccion === currentMainSection || (!(g as any).seccion && currentMainSection === 'GLOSAS'));
+  }, [glosas, currentMainSection]);
+
   const stats = useMemo(() => {
     const sectionGlosas = glosas.filter(g => (g as any).seccion === currentMainSection || (!(g as any).seccion && currentMainSection === 'GLOSAS'));
     const sectionIngresos = ingresos.filter(i => (i as any).seccion === currentMainSection || (!(i as any).seccion && currentMainSection === 'GLOSAS'));
@@ -780,10 +784,6 @@ function Home() {
             <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>NAVEGACIÓN V2</h2>
           </div>
 
-          {/* Debug Box - Visible para troubleshooting */}
-          <div style={{ padding: '8px', background: 'rgba(255,0,0,0.1)', border: '1px solid rgba(255,0,0,0.2)', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)' }}>
-            DEBUG: ROL={role || 'NULL'} | SEC={seccion_asignada || 'NULL'}
-          </div>
 
           {/* Selector de Sección Principal (Visible para Admins) */}
           {role === 'admin' ? (
@@ -1046,7 +1046,7 @@ function Home() {
                 transition={{ duration: 0.3 }}
               >
                 <Dashboard
-                  glosas={glosas}
+                  glosas={currentSectionGlosas}
                   totalIngresos={stats.totalIngresos}
                   stats={stats}
                 />

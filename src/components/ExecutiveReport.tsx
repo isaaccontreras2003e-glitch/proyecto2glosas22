@@ -29,10 +29,10 @@ export const ExecutiveReport = ({ stats }: ExecutiveReportProps) => {
             description: 'Total acumulado de glosas registradas'
         },
         {
-            title: 'VALOR ACEPTADO',
+            title: 'VALORES ACEPTADOS',
             value: formatCurrency(stats.totalAceptado),
             icon: <CheckCircle size={24} />,
-            color: '#10b981',
+            color: '#ef4444',
             description: `${stats.percentAceptado}% de efectividad en respuesta`
         },
         {
@@ -43,7 +43,7 @@ export const ExecutiveReport = ({ stats }: ExecutiveReportProps) => {
             description: 'Saldo pendiente por gestionar/conciliar'
         },
         {
-            title: 'FACTURAS REGISTRADAS',
+            title: 'TOTAL FACTURAS ACEPTADAS',
             value: formatCurrency(stats.totalRegistradoInterno),
             icon: <FileText size={24} />,
             color: '#3b82f6',
