@@ -52,7 +52,11 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
     });
 
     const dailyStats = useMemo(() => {
-        const todayGlosas = existingGlosas.filter(g => g.fecha?.split(',')[0] === todayStr);
+        const todayGlosas = existingGlosas.filter(g => {
+            const matchesDate = g.fecha?.split(',')[0] === todayStr;
+            const matchesSection = (g as any).seccion === currentSeccion || (!(g as any).seccion && currentSeccion === 'GLOSAS');
+            return matchesDate && matchesSection;
+        });
         const uniqueFacturas = new Set(todayGlosas.map(g => g.factura)).size;
         const totalValue = todayGlosas.reduce((acc, g) => acc + g.valor_glosa, 0);
 
@@ -61,7 +65,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
             facturas: uniqueFacturas,
             value: totalValue
         };
-    }, [existingGlosas, todayStr]);
+    }, [existingGlosas, todayStr, currentSeccion]);
 
     // Detectar si la factura ya existe
     const facturaMatch = useMemo(() => {
@@ -129,11 +133,12 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
         setForceSubmit(false);
     };
 
+    const formTitle = currentSeccion === 'MEDICAMENTOS' ? 'Registrar Medicamentos' : 'Registrar Gestión de Glosa';
     const facturaExiste = facturaMatch && facturaMatch.length > 0;
     const alertColor = isDuplicateExact ? '#ef4444' : '#f59e0b';
 
     return (
-        <Card title="Registrar Gestión de Glosa">
+        <Card title={formTitle}>
             <AnimatePresence>
                 {showSuccess && (
                     <motion.div
@@ -155,7 +160,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
                             fontSize: '0.9rem'
                         }}>
                             <CheckCircle2 size={20} />
-                            ¡Glosa registrada con éxito el día {todayStr}!
+                            Registro exitoso el día {todayStr} en la sección {currentSeccion}.
                         </div>
                     </motion.div>
                 )}
