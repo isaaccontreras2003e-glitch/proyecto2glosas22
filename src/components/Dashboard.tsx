@@ -125,11 +125,11 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <h2 style={{ fontSize: '2rem', fontWeight: 950, color: 'white', letterSpacing: '-0.025em', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                             <LayoutDashboard size={28} color="var(--primary)" />
-                            MARKET OVERVIEW
+                            TABLERO DE MANDO - AUDITORÍA MÉDICA
                         </h2>
-                        <span style={{ fontSize: '0.6rem', background: 'rgba(139, 92, 246, 0.1)', color: 'var(--primary)', padding: '2px 8px', borderRadius: '4px', fontWeight: 900, border: '1px solid rgba(139, 92, 246, 0.2)' }}>TERMINAL V2.0</span>
+                        <span style={{ fontSize: '0.6rem', background: 'rgba(139, 92, 246, 0.1)', color: 'var(--primary)', padding: '2px 8px', borderRadius: '4px', fontWeight: 900, border: '1px solid rgba(139, 92, 246, 0.2)' }}>COI V3.0</span>
                     </div>
-                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', fontWeight: 700, marginTop: '0.3rem', letterSpacing: '0.05em' }}>Métricas en Tiempo Real y Estado de Auditoría</p>
+                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', fontWeight: 700, marginTop: '0.3rem', letterSpacing: '0.05em' }}>Métricas en Tiempo Real | Control de Glosas y Conciliación</p>
                 </div>
 
                 <div style={{ display: 'flex', gap: '1rem', background: 'rgba(255,255,255,0.02)', padding: '0.5rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)' }}>
@@ -195,10 +195,10 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
                 gap: '1.5rem',
             }}>
                 {[
-                    { label: 'VALOR TOTAL EN GLOSA', value: `$${formatPesos(executiveStats.totalGlosado)}`, icon: <DollarSign size={20} />, color: '#8b5cf6', trend: getTrend('value') },
-                    { label: 'CANTIDAD FACTURAS', value: executiveStats.totalCount, icon: <FileText size={20} />, color: '#3b82f6', trend: getTrend('count') },
-                    { label: 'TOTAL VALOR ACEPTADO', value: `$${formatPesos(executiveStats.totalAceptado)}`, icon: <AlertTriangle size={20} />, color: '#f87171', trend: getTrend('accepted') },
-                    { label: 'TOTAL FACTURAS ACEPTADAS', value: executiveStats.acceptedCount, icon: <CheckCircle size={20} />, color: '#f87171', trend: getTrend('acceptedCount') },
+                    { label: 'IMPORTE TOTAL GLOSADO', value: `$${formatPesos(executiveStats.totalGlosado)}`, icon: <DollarSign size={20} />, color: '#8b5cf6', trend: getTrend('value') },
+                    { label: 'NÚMERO DE RECLAMACIONES', value: executiveStats.totalCount, icon: <FileText size={20} />, color: '#3b82f6', trend: getTrend('count') },
+                    { label: 'RECAUDO / VALOR ACEPTADO', value: `$${formatPesos(executiveStats.totalAceptado)}`, icon: <CheckCircle size={20} />, color: '#10b981', trend: getTrend('accepted') },
+                    { label: 'GESTIÓN FINALIZADA (FACTURAS)', value: executiveStats.acceptedCount, icon: <Activity size={20} />, color: '#f59e0b', trend: getTrend('acceptedCount') },
                 ].map((stat, index) => (
                     <Card key={index} style={{
                         padding: '1.75rem',

@@ -35,10 +35,12 @@ interface Ingreso {
   valor_aceptado: number;
   valor_no_aceptado: number;
   fecha: string;
+  seccion?: string;
 }
 
 function Home() {
   const [activeSection, setActiveSection] = useState<'dashboard' | 'ingreso' | 'consolidado' | 'valores'>('dashboard');
+  const [currentMainSection, setCurrentMainSection] = useState<'GLOSAS' | 'RATIFICADAS' | 'MEDICAMENTOS'>('GLOSAS');
   const [glosas, setGlosas] = useState<Glosa[]>([]);
   const [ingresos, setIngresos] = useState<Ingreso[]>([]);
   const [isMounted, setIsMounted] = useState(false);
@@ -49,7 +51,7 @@ function Home() {
   const [supabaseError, setSupabaseError] = useState<string | null>(null);
   const lastFetchedUserId = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { user, role, loading: authLoading, signOut } = useAuth();
+  const { user, role, seccion_asignada, loading: authLoading, signOut } = useAuth();
   const { showToast } = useToast();
   const router = useRouter();
 
@@ -58,7 +60,11 @@ function Home() {
     if (!authLoading && !user) {
       router.push('/login');
     }
-  }, [user, authLoading, router]);
+    // Si el usuario tiene una sección asignada y no es admin, forzar esa sección
+    if (user && role !== 'admin' && seccion_asignada) {
+      setCurrentMainSection(seccion_asignada as any);
+    }
+  }, [user, authLoading, router, role, seccion_asignada]);
 
   // Temporizador de seguridad para el botón "Forzar Entrada" y Auto-Kill
   useEffect(() => {
@@ -246,6 +252,7 @@ function Home() {
 
   const filteredGlosas = useMemo(() => {
     return glosas.filter(g => {
+      const matchesSection = (g as any).seccion === currentMainSection || (!(g as any).seccion && currentMainSection === 'GLOSAS');
       const matchesSearch = g.factura.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (g.servicio && g.servicio.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (g.descripcion && g.descripcion.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -254,9 +261,9 @@ function Home() {
       const matchesInterno = filterInterno === 'Todos' ||
         (filterInterno === 'Registrado' ? g.registrada_internamente : !g.registrada_internamente);
 
-      return matchesSearch && matchesTipo && matchesEstado && matchesInterno;
+      return matchesSection && matchesSearch && matchesTipo && matchesEstado && matchesInterno;
     });
-  }, [glosas, searchTerm, filterTipo, filterEstado, filterInterno]);
+  }, [glosas, currentMainSection, searchTerm, filterTipo, filterEstado, filterInterno]);
 
   const handleToggleInternalRegistry = async (id: string, currentStatus: boolean) => {
     if (currentStatus) return; // Si ya está registrado, no permitir desmarcar
@@ -274,21 +281,25 @@ function Home() {
   };
 
   const filteredIngresos = useMemo(() => {
-    return ingresos.filter(i =>
-      i.factura.toLowerCase().includes(searchTermIngresos.toLowerCase())
-    );
-  }, [ingresos, searchTermIngresos]);
+    return ingresos.filter(i => {
+      const matchesSection = (i as any).seccion === currentMainSection || (!(i as any).seccion && currentMainSection === 'GLOSAS');
+      return matchesSection && i.factura.toLowerCase().includes(searchTermIngresos.toLowerCase());
+    });
+  }, [ingresos, currentMainSection, searchTermIngresos]);
 
   const stats = useMemo(() => {
-    const totalGlosadoValue = glosas.reduce((acc, curr) => acc + curr.valor_glosa, 0);
-    const totalAceptadoValue = ingresos.reduce((acc, curr) => acc + curr.valor_aceptado, 0);
-    const totalNoAceptadoValue = ingresos.reduce((acc, curr) => acc + curr.valor_no_aceptado, 0);
-    const totalRegistradoInternoValue = glosas.filter(g => g.registrada_internamente).reduce((acc, curr) => acc + curr.valor_glosa, 0);
+    const sectionGlosas = glosas.filter(g => (g as any).seccion === currentMainSection || (!(g as any).seccion && currentMainSection === 'GLOSAS'));
+    const sectionIngresos = ingresos.filter(i => (i as any).seccion === currentMainSection || (!(i as any).seccion && currentMainSection === 'GLOSAS'));
+
+    const totalGlosadoValue = sectionGlosas.reduce((acc, curr) => acc + curr.valor_glosa, 0);
+    const totalAceptadoValue = sectionIngresos.reduce((acc, curr) => acc + curr.valor_aceptado, 0);
+    const totalNoAceptadoValue = sectionIngresos.reduce((acc, curr) => acc + curr.valor_no_aceptado, 0);
+    const totalRegistradoInternoValue = sectionGlosas.filter(g => g.registrada_internamente).reduce((acc, curr) => acc + curr.valor_glosa, 0);
 
     const pendingValue = totalGlosadoValue - totalAceptadoValue - totalNoAceptadoValue;
 
     return {
-      totalCount: glosas.length,
+      totalCount: sectionGlosas.length,
       totalGlosado: totalGlosadoValue,
       totalAceptado: totalAceptadoValue,
       totalPendiente: Math.max(0, pendingValue),
@@ -299,11 +310,11 @@ function Home() {
       // Legacy fields to support other UI parts
       totalValue: totalGlosadoValue,
       totalIngresos: totalAceptadoValue,
-      pendingCount: glosas.filter(g => g.estado === 'Pendiente').length,
-      respondedCount: glosas.filter(g => g.estado === 'Respondida').length,
-      acceptedCount: glosas.filter(g => g.estado === 'Aceptada' || ingresos.some(i => i.factura === g.factura)).length,
+      pendingCount: sectionGlosas.filter(g => g.estado === 'Pendiente').length,
+      respondedCount: sectionGlosas.filter(g => g.estado === 'Respondida').length,
+      acceptedCount: sectionGlosas.filter(g => g.estado === 'Aceptada' || sectionIngresos.some(i => i.factura === g.factura)).length,
     };
-  }, [glosas, ingresos]);
+  }, [glosas, ingresos, currentMainSection]);
 
   const handleAddGlosa = async (newGlosa: Glosa) => {
     // Optimista: Actualizar UI y Caché primero
@@ -391,11 +402,14 @@ function Home() {
       return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
     };
 
-    const facturas = new Set([...glosas.map(g => g.factura), ...ingresos.map(i => i.factura)].filter(f => f && f.trim() !== ''));
+    const sectionGlosas = glosas.filter(g => (g as any).seccion === currentMainSection || (!(g as any).seccion && currentMainSection === 'GLOSAS'));
+    const sectionIngresos = ingresos.filter(i => (i as any).seccion === currentMainSection || (!(i as any).seccion && currentMainSection === 'GLOSAS'));
+
+    const facturas = new Set([...sectionGlosas.map(g => g.factura), ...sectionIngresos.map(i => i.factura)].filter(f => f && f.trim() !== ''));
 
     return Array.from(facturas).map(f => {
-      const factGlosas = glosas.filter(g => g.factura === f);
-      const factIngresos = ingresos.filter(i => i.factura === f);
+      const factGlosas = sectionGlosas.filter(g => g.factura === f);
+      const factIngresos = sectionIngresos.filter(i => i.factura === f);
 
       const glosado = factGlosas.reduce((acc, g) => acc + g.valor_glosa, 0);
       const aceptado = factIngresos.reduce((acc, i) => acc + i.valor_aceptado, 0);
@@ -418,7 +432,7 @@ function Home() {
         diferencia: glosado - aceptado - noAceptado
       };
     }).sort((a, b) => b.timestamp - a.timestamp);
-  }, [glosas, ingresos]);
+  }, [glosas, ingresos, currentMainSection]);
 
   const filteredConsolidado = useMemo(() => {
     return (consolidado || []).filter(item =>
@@ -759,20 +773,73 @@ function Home() {
         }}
       >
         <div style={{ padding: '0 1rem', marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
             <div style={{ padding: '8px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>NAVEGACIÓN</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>NAVEGACIÓN V2</h2>
           </div>
+
+          {/* Debug Box - Visible para troubleshooting */}
+          <div style={{ padding: '8px', background: 'rgba(255,0,0,0.1)', border: '1px solid rgba(255,0,0,0.2)', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)' }}>
+            DEBUG: ROL={role || 'NULL'} | SEC={seccion_asignada || 'NULL'}
+          </div>
+
+          {/* Selector de Sección Principal (Visible para Admins) */}
+          {role === 'admin' ? (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
+              padding: '1rem',
+              background: 'rgba(255,255,255,0.03)',
+              borderRadius: '16px',
+              border: '1px solid rgba(255,255,255,0.05)'
+            }}>
+              <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>SECCIÓN ACTIVA</p>
+              <select
+                value={currentMainSection}
+                onChange={(e) => {
+                  setCurrentMainSection(e.target.value as any);
+                  setSearchTerm(''); // Limpiar búsquedas al cambiar sección
+                }}
+                style={{
+                  width: '100%',
+                  background: 'rgba(6, 4, 13, 0.5)',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  borderRadius: '10px',
+                  padding: '0.6rem',
+                  color: 'white',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="GLOSAS">GLOSAS</option>
+                <option value="RATIFICADAS">GLOSAS RATIFICADAS</option>
+                <option value="MEDICAMENTOS">MEDICAMENTOS</option>
+              </select>
+            </div>
+          ) : (
+            <div style={{
+              padding: '1rem',
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), transparent)',
+              borderRadius: '16px',
+              border: '1px solid rgba(139, 92, 246, 0.2)'
+            }}>
+              <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.1em' }}>MODALIDAD</p>
+              <p style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white', marginTop: '0.2rem' }}>{currentMainSection}</p>
+            </div>
+          )}
         </div>
 
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {[
-            { id: 'dashboard', label: 'DASHBOARD', icon: LayoutDashboard },
-            { id: 'ingreso', label: 'INGRESO GLOSAS', icon: PieChart },
-            { id: 'consolidado', label: 'CONSOLIDADO', icon: ListChecks },
-            { id: 'valores', label: 'VALORES ACEPTADOS', icon: Wallet },
+            { id: 'dashboard', label: '1. TABLERO MASTER', icon: LayoutDashboard },
+            { id: 'ingreso', label: '2. REGISTRO GLOSAS', icon: PieChart },
+            { id: 'consolidado', label: '3. CONSOLIDADO POR FACTURA', icon: ListChecks },
+            { id: 'valores', label: '4. GESTIÓN DE PAGOS', icon: Wallet },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = activeSection === item.id;
@@ -878,7 +945,7 @@ function Home() {
               </svg>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingTop: '15px' }}>
-              <h1 style={{ fontSize: '2.8rem', color: '#ffffff', fontWeight: 900, lineHeight: 1.1, margin: 0 }}>Sistema en Gestión de Glosas</h1>
+              <h1 style={{ fontSize: '2.8rem', color: '#ffffff', fontWeight: 900, lineHeight: 1.1, margin: 0 }}>Sistema Gestión Glosas (V2)</h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', letterSpacing: '0.05em', fontWeight: 600, margin: 0, marginTop: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Activity size={18} color="rgba(255,255,255,0.3)" />
@@ -999,7 +1066,12 @@ function Home() {
                   <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>Registrar Nueva Glosa</h2>
                   <p style={{ color: 'var(--text-secondary)' }}>Complete el siguiente formulario para ingresar una nueva glosa al sistema.</p>
                 </div>
-                <GlosaForm onAddGlosa={handleAddGlosa} existingGlosas={glosas} isAdmin={role === 'admin'} />
+                <GlosaForm
+                  onAddGlosa={handleAddGlosa}
+                  existingGlosas={glosas}
+                  currentSeccion={currentMainSection}
+                  isAdmin={role === 'admin'}
+                />
               </motion.div>
             )}
 
@@ -1014,8 +1086,12 @@ function Home() {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
                   <div>
-                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>Consolidado y Auditoría</h2>
-                    <p style={{ color: 'var(--text-secondary)' }}>Visualización general de facturas, comparativas y estados de respuesta.</p>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>Resumen de Auditoría por Factura</h2>
+                    <p style={{ color: 'var(--text-secondary)', maxWidth: '800px' }}>
+                      Este panel agrupa todas las reclamaciones por factura para visualizar el balance final.
+                      Permite comparar el <strong>monto total glosado</strong> frente a los <strong>pagos aceptados</strong>,
+                      identificando la diferencia pendiente de conciliar.
+                    </p>
                   </div>
                 </div>
 
@@ -1092,7 +1168,11 @@ function Home() {
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>Gestión de Valores</h2>
                     <p style={{ color: 'var(--text-secondary)' }}>Registre los pagos aceptados y no aceptados para conciliar facturas.</p>
                   </div>
-                  <IngresoForm onAddIngreso={handleAddIngreso} isAdmin={role === 'admin'} />
+                  <IngresoForm
+                    onAddIngreso={handleAddIngreso}
+                    isAdmin={role === 'admin'}
+                    currentSeccion={currentMainSection}
+                  />
                 </div>
                 <div>
                   <IngresoList
@@ -1186,7 +1266,7 @@ function Home() {
                     style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b' }}
                   >
                     <Activity size={12} />
-                    RESCATE
+                    RECUPERACIÓN LOCAL
                   </motion.button>
 
                   <motion.button
@@ -1196,7 +1276,7 @@ function Home() {
                     style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#60a5fa' }}
                   >
                     <Activity size={12} />
-                    TEST NUBE
+                    VERIFICAR CONEXIÓN NUBE
                   </motion.button>
 
                   <motion.button
@@ -1206,7 +1286,7 @@ function Home() {
                     style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10b981' }}
                   >
                     <RefreshCw size={12} />
-                    SINCRONIZAR MARCAS
+                    SINCRONIZAR MARCAS LOCALES
                   </motion.button>
 
                   <motion.button
@@ -1216,7 +1296,7 @@ function Home() {
                     style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b' }}
                   >
                     <Activity size={12} />
-                    BUSCAR MARCAS PERDIDAS
+                    ESCANEO DE SEGURIDAD
                   </motion.button>
                 </div>
               )}
@@ -1240,7 +1320,7 @@ function Home() {
   );
 }
 
-const IngresoForm = ({ onAddIngreso, isAdmin }: { onAddIngreso: (ingreso: Ingreso) => void, isAdmin: boolean }) => {
+const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: (ingreso: Ingreso) => void, isAdmin: boolean, currentSeccion: string }) => {
   const [formData, setFormData] = useState({ factura: '', valor_aceptado: '', valor_no_aceptado: '' });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1251,7 +1331,8 @@ const IngresoForm = ({ onAddIngreso, isAdmin }: { onAddIngreso: (ingreso: Ingres
       factura: formData.factura,
       valor_aceptado: parseFloat(formData.valor_aceptado) || 0,
       valor_no_aceptado: parseFloat(formData.valor_no_aceptado) || 0,
-      fecha: new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      fecha: new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      seccion: currentSeccion
     });
     setFormData({ factura: '', valor_aceptado: '', valor_no_aceptado: '' });
   };

@@ -22,10 +22,11 @@ interface Glosa {
 interface GlosaFormProps {
     onAddGlosa: (glosa: any) => void;
     existingGlosas: Glosa[];
+    currentSeccion: string;
     isAdmin?: boolean;
 }
 
-export const GlosaForm = ({ onAddGlosa, existingGlosas, isAdmin = true }: GlosaFormProps) => {
+export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin = true }: GlosaFormProps) => {
     const [formData, setFormData] = useState({
         factura: '',
         servicio: '',
@@ -108,7 +109,8 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, isAdmin = true }: GlosaF
             id: Math.random().toString(36).substr(2, 9),
             valor_glosa: valor,
             fecha: nowTimestamp(),
-            registrada_internamente: false
+            registrada_internamente: false,
+            seccion: currentSeccion
         });
 
         // Mostrar éxito
