@@ -759,7 +759,7 @@ function Home() {
         )}
       </AnimatePresence>
 
-      {/* Sidebar - Rediseñado como Navegación */}
+      {/* Sidebar - Rediseñado Premium Dark */}
       <motion.aside
         initial={{ x: -280 }}
         animate={{ x: 0 }}
@@ -774,7 +774,7 @@ function Home() {
           position: 'sticky',
           top: 0,
           height: '100vh',
-          background: 'rgba(6, 4, 13, 0.98)',
+          background: 'rgba(4, 7, 19, 0.95)',
           backdropFilter: 'blur(40px)',
           zIndex: 100
         }}
@@ -837,199 +837,128 @@ function Home() {
           )}
         </div>
 
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
           {[
-            { id: 'dashboard', label: '1. TABLERO MASTER', icon: LayoutDashboard },
-            { id: 'ingreso', label: '2. REGISTRO GLOSAS', icon: PieChart },
-            { id: 'consolidado', label: '3. CONSOLIDADO POR FACTURA', icon: ListChecks },
-            { id: 'valores', label: '4. GESTIÓN DE PAGOS', icon: Wallet },
+            { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+            { id: 'ingreso', label: 'Registro', icon: PieChart },
+            { id: 'consolidado', label: 'Auditoría', icon: ListChecks },
+            { id: 'valores', label: 'Pagos', icon: Wallet },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = activeSection === item.id;
             return (
               <motion.button
                 key={item.id}
-                whileHover={{ x: 5, background: 'rgba(255,255,255,0.03)' }}
+                whileHover={{ background: 'rgba(255,255,255,0.03)' }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setActiveSection(item.id as any)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '1rem',
-                  padding: '1rem 1.25rem',
+                  gap: '0.85rem',
+                  padding: '0.85rem 1rem',
                   borderRadius: '12px',
                   border: 'none',
-                  background: isActive ? 'linear-gradient(90deg, rgba(139, 92, 246, 0.15), transparent)' : 'transparent',
-                  color: isActive ? 'white' : 'var(--text-secondary)',
+                  background: isActive ? 'rgba(0, 242, 254, 0.1)' : 'transparent',
+                  color: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.4)',
                   cursor: 'pointer',
                   textAlign: 'left',
-                  transition: 'all 0.3s ease',
+                  transition: 'all 0.2s ease',
                   position: 'relative',
-                  overflow: 'hidden'
                 }}
               >
+                <Icon size={18} style={{ color: isActive ? 'var(--primary)' : 'inherit', opacity: isActive ? 1 : 0.6 }} />
+                <span style={{ fontSize: '0.85rem', fontWeight: isActive ? 700 : 500 }}>{item.label}</span>
                 {isActive && (
                   <motion.div
-                    layoutId="activePill"
+                    layoutId="activeGlow"
                     style={{
                       position: 'absolute',
-                      left: 0,
-                      top: '20%',
-                      bottom: '20%',
+                      right: '0.5rem',
                       width: '4px',
+                      height: '4px',
+                      borderRadius: '50%',
                       background: 'var(--primary)',
-                      borderRadius: '0 4px 4px 0',
-                      boxShadow: '0 0 10px var(--primary)'
+                      boxShadow: '0 0 8px var(--primary)'
                     }}
                   />
                 )}
-                <Icon size={18} style={{ color: isActive ? 'var(--primary)' : 'inherit' }} />
-                <span style={{ fontSize: '0.8rem', fontWeight: isActive ? 800 : 600, letterSpacing: '0.05em' }}>{item.label}</span>
               </motion.button>
             );
           })}
         </nav>
 
-        {/* Mini Stats persistentes en Sidebar (Opcional) */}
-        <div style={{ marginTop: 'auto', padding: '1rem' }}>
-          <div className="card" style={{ padding: '1rem', background: 'rgba(139, 92, 246, 0.05)', border: '1px solid rgba(139, 92, 246, 0.1)' }}>
-            <p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>TOTAL AUDITADO</p>
-            <p style={{ fontSize: '1.2rem', fontWeight: 900, color: 'white' }}>${formatPesos(stats.totalValue)}</p>
+        {/* User Profile / Logout bottom section */}
+        <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'white', fontSize: '0.75rem' }}>
+              {user?.email?.charAt(0).toUpperCase()}
+            </div>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'white', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</p>
+              <p style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', margin: 0, textTransform: 'uppercase' }}>{role}</p>
+            </div>
           </div>
         </div>
       </motion.aside>
 
       <main className="container" style={{ flex: 1, margin: 0, maxWidth: 'none', overflowY: 'auto', padding: '1.5rem 2.5rem' }}>
-        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', cursor: 'pointer' }}>
-              <svg width="200" height="60" viewBox="0 0 280 85" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#8b5cf6" />
-                    <stop offset="100%" stopColor="#4361ee" />
-                  </linearGradient>
-                  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="3" result="blur" />
-                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                  </filter>
-                  <linearGradient id="icon-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#a78bfa" />
-                    <stop offset="100%" stopColor="#3b82f6" />
-                  </linearGradient>
-                </defs>
-
-                {/* Icono de precisión / Iris Estilizado */}
-                <g transform="translate(0, 5)">
-                  <circle cx="35" cy="35" r="32" stroke="url(#logo-grad)" strokeWidth="0.5" strokeDasharray="4 2" opacity="0.3" />
-                  <circle cx="35" cy="35" r="25" stroke="url(#logo-grad)" strokeWidth="1.5" opacity="0.6" />
-                  <motion.path
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ duration: 1.5, ease: "easeInOut" }}
-                    d="M35 15C46.0457 15 55 23.9543 55 35C55 46.0457 46.0457 55 35 55C23.9543 55 15 46.0457 15 35"
-                    stroke="url(#icon-grad)"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                    filter="url(#glow)"
-                  />
-                  <circle cx="35" cy="35" r="8" fill="url(#logo-grad)" filter="url(#glow)" />
-                </g>
-
-                {/* Texto COI */}
-                <text x="85" y="55" fontFamily="Inter, system-ui, sans-serif" fontWeight="900" fontSize="58" fill="white" letterSpacing="-4">
-                  COI
-                </text>
-
-                {/* Subtexto */}
-                <text x="87" y="78" fontFamily="Inter, sans-serif" fontSize="9.5" fill="rgba(255,255,255,0.4)" fontWeight="700" letterSpacing="1.5">
-                  CLÍNICA OFTALMOLÓGICA INTERNACIONAL
-                </text>
-              </svg>
+        <header style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '1rem 0',
+          marginBottom: '2rem',
+          borderBottom: '1px solid var(--border)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              boxShadow: '0 0 15px var(--primary-glow)'
+            }}>
+              <Activity size={18} />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <h1 style={{ fontSize: '1.8rem', color: '#ffffff', fontWeight: 900, lineHeight: 1.1, margin: 0 }}>Glosas (V3 - LÍNEAS ACTIVADAS)</h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', letterSpacing: '0.05em', fontWeight: 600, margin: 0, marginTop: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Activity size={14} color="rgba(255,255,255,0.3)" />
-                  Control de Facturación e Ingresos
-                </p>
-                {supabaseError && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    style={{
-                      background: supabaseError.includes('Reintentando') ? 'rgba(139, 92, 246, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                      border: `1px solid ${supabaseError.includes('Reintentando') ? 'rgba(139, 92, 246, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
-                      color: supabaseError.includes('Reintentando') ? '#8b5cf6' : '#ef4444',
-                      padding: '4px 12px',
-                      borderRadius: '8px',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      marginTop: '0.82rem'
-                    }}
-                  >
-                    {supabaseError.includes('Reintentando') ? '🔄 ' : '⚠️ '} {supabaseError.includes('Reintentando') ? supabaseError : `ERROR BD: ${supabaseError}`}
-                  </motion.div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'right', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ fontWeight: 700, color: 'white', fontSize: '0.9rem', marginBottom: '0.1rem' }}>
-                {new Date().toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
-              </p>
-              {lastUpdate && (
-                <p style={{ fontSize: '0.7rem', color: 'rgba(139, 92, 246, 0.7)', fontWeight: 600 }}>
-                  Actualizado: {lastUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              )}
-            </div>
-            <motion.button
-              whileHover={{ scale: 1.05, rotate: 180 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => loadData(true)}
-              title="Sincronizar"
-              style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.2)', color: '#8b5cf6', cursor: 'pointer', borderRadius: '10px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <RefreshCw size={18} />
-            </motion.button>
-          </motion.div>
+            <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'white', letterSpacing: '-0.01em' }}>
+              Análisis de Datos <span style={{ fontSize: '0.6rem', background: 'var(--primary)', color: '#000', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.5rem', verticalAlign: 'middle', fontWeight: 900 }}>V4.0 PREMIUM</span>
+            </h1>
+          </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{
-                fontSize: '0.8rem',
-                color: 'rgba(255,255,255,0.4)',
-                fontWeight: 600,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-                margin: 0
-              }}>
-                SECCIÓN: {currentMainSection}
-              </p>
+            {/* Search and Notification icons like in the screenshot */}
+            <div style={{ display: 'flex', gap: '1rem', color: 'rgba(255,255,255,0.4)' }}>
+              <button style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}><LayoutDashboard size={18} /></button>
+              <button style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}><Activity size={18} /></button>
             </div>
+
+            <div style={{ width: '1px', height: '20px', background: 'var(--border)' }}></div>
+
             <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={signOut}
-              title="Cerrar sesión"
               style={{
-                background: '#ef4444',
-                boxShadow: '0 0 15px rgba(239, 68, 68, 0.4)',
-                color: 'white',
-                width: '38px',
-                height: '38px',
-                borderRadius: '10px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                border: 'none',
+                gap: '0.5rem',
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                background: 'rgba(239, 68, 68, 0.1)',
+                color: '#f15bb5',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                fontSize: '0.75rem',
+                fontWeight: 700,
                 cursor: 'pointer'
               }}
             >
-              <LogOut size={18} />
+              <LogOut size={14} />
+              SALIR
             </motion.button>
           </div>
         </header>

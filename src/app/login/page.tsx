@@ -40,8 +40,8 @@ export default function LoginPage() {
             alignItems: 'center',
             justifyContent: 'center',
             padding: '1.5rem',
-            background: '#0a0a0f',
-            backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.05) 0%, transparent 50%)',
+            background: 'var(--background)',
+            backgroundImage: 'radial-gradient(circle at 50% 50%, var(--primary-glow) 0%, transparent 70%)',
             position: 'fixed',
             inset: 0,
             width: '100vw',
@@ -52,110 +52,138 @@ export default function LoginPage() {
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="card"
                 style={{
                     maxWidth: '430px',
                     width: '100%',
-                    padding: '3.5rem 2.5rem',
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-                    transform: 'none'
+                    padding: '4rem 3rem',
+                    background: 'var(--surface)',
+                    backdropFilter: 'blur(40px)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-lg)',
+                    boxShadow: 'var(--shadow-premium), 0 0 40px var(--primary-glow)',
+                    position: 'relative',
+                    overflow: 'hidden'
                 }}
             >
-                <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+                {/* Decorative glow */}
+                <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '150px', height: '150px', background: 'var(--primary-glow)', filter: 'blur(50px)', borderRadius: '50%' }} />
+
+                <div style={{ textAlign: 'center', marginBottom: '3.5rem', position: 'relative' }}>
                     <div style={{
-                        width: '60px',
-                        height: '60px',
-                        background: 'linear-gradient(135deg, #8b5cf6, #d946ef)',
-                        borderRadius: '1.25rem',
+                        width: '70px',
+                        height: '70px',
+                        background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+                        borderRadius: '20px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        margin: '0 auto 1.5rem',
-                        boxShadow: '0 0 20px rgba(139, 92, 246, 0.3)'
+                        margin: '0 auto 2rem',
+                        boxShadow: '0 0 25px var(--primary-glow)'
                     }}>
-                        <Activity size={32} color="white" />
+                        <Activity size={36} color="white" />
                     </div>
-                    <h1 style={{ fontSize: '2rem', fontWeight: 950, color: 'white', marginBottom: '0.5rem' }}>Bienvenido</h1>
-                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>Ingresa tus credenciales para continuar</p>
+                    <h1 style={{ fontSize: '2.5rem', fontWeight: 950, color: 'white', marginBottom: '0.75rem', letterSpacing: '-0.03em' }}>
+                        SisFact <span style={{ color: 'var(--primary)', fontSize: '0.8rem', verticalAlign: 'middle', background: 'rgba(0, 242, 254, 0.1)', padding: '4px 8px', borderRadius: '6px' }}>PRO</span>
+                    </h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 500 }}>Control de Auditoría Médica</p>
                 </div>
 
-                <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    <div className="input-group">
-                        <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Mail size={14} /> Correo Electrónico
+                <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', position: 'relative' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                        <label style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Mail size={12} /> Correo Electrónico
                         </label>
                         <input
                             type="email"
-                            className="input"
-                            placeholder="admin@clinica.com"
+                            placeholder="usuario@coi.com"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            style={{ padding: '0.85rem 1rem' }}
+                            style={{
+                                padding: '1rem 1.25rem',
+                                background: 'rgba(255,255,255,0.03)',
+                                border: '1px solid var(--border)',
+                                borderRadius: '14px',
+                                color: 'white',
+                                outline: 'none',
+                                fontSize: '0.9rem',
+                                transition: 'all 0.3s ease'
+                            }}
                         />
                     </div>
 
-                    <div className="input-group">
-                        <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Lock size={14} /> Contraseña
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                        <label style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Lock size={12} /> Contraseña
                         </label>
                         <input
                             type="password"
-                            className="input"
                             placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            style={{ padding: '0.85rem 1rem' }}
+                            style={{
+                                padding: '1rem 1.25rem',
+                                background: 'rgba(255,255,255,0.03)',
+                                border: '1px solid var(--border)',
+                                borderRadius: '14px',
+                                color: 'white',
+                                outline: 'none',
+                                fontSize: '0.9rem',
+                                transition: 'all 0.3s ease'
+                            }}
                         />
                     </div>
 
                     {error && (
                         <motion.p
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            style={{ color: '#ef4444', fontSize: '0.85rem', textAlign: 'center', fontWeight: 600 }}
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            style={{ color: 'var(--danger)', fontSize: '0.8rem', textAlign: 'center', fontWeight: 700, background: 'rgba(241, 91, 181, 0.1)', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(241, 91, 181, 0.2)' }}
                         >
                             {error}
                         </motion.p>
                     )}
 
                     <motion.button
-                        whileHover={{ scale: 1.02 }}
+                        whileHover={{ scale: 1.02, boxShadow: '0 0 20px var(--primary-glow)' }}
                         whileTap={{ scale: 0.98 }}
                         type="submit"
-                        className="btn btn-primary"
                         disabled={loading}
                         style={{
-                            height: '56px',
+                            height: '60px',
+                            background: 'var(--primary)',
+                            color: '#000',
+                            border: 'none',
+                            borderRadius: '16px',
                             fontSize: '1rem',
                             fontWeight: 900,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '0.75rem',
-                            marginTop: '1rem'
+                            cursor: 'pointer',
+                            marginTop: '0.5rem',
+                            boxShadow: '0 10px 20px rgba(0, 242, 254, 0.2)'
                         }}
                     >
                         {loading ? (
-                            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.2)', borderTop: '2px solid white', borderRadius: '50%' }} />
+                            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} style={{ width: '22px', height: '22px', border: '3px solid rgba(0,0,0,0.1)', borderTop: '3px solid #000', borderRadius: '50%' }} />
                         ) : (
                             <>
-                                ACCEDER AL PANEL <LogIn size={18} />
+                                INICIAR SISTEMA <LogIn size={20} />
                             </>
                         )}
                     </motion.button>
                 </form>
 
-                <div style={{ marginTop: '3rem', textAlign: 'center' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                        Sisfact Auditoría &copy; {new Date().getFullYear()}
+                <div style={{ marginTop: '3.5rem', textAlign: 'center', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>
+                        Powered by Antigravity v4.0
                     </p>
                 </div>
             </motion.div>
         </div>
     );
+
 }
