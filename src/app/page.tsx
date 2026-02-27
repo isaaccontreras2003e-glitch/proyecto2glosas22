@@ -1119,7 +1119,7 @@ function Home() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                     <div>
                       <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>Gestión de Valores</h2>
-                      <p style={{ color: 'var(--text-secondary)' }}>Registre los pagos aceptados y no aceptados para conciliar facturas.</p>
+                      <p style={{ color: 'var(--text-secondary)' }}>Registre los pagos aceptados y no aceptados para su control final de auditoría.</p>
                     </div>
                     <IngresoForm
                       onAddIngreso={handleAddIngreso}

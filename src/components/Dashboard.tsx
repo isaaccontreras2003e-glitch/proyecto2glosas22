@@ -105,20 +105,16 @@ export const Dashboard = ({ glosas: allGlosas, totalIngresos, stats: executiveSt
         const totalValue = glosas.reduce((acc, curr) => acc + curr.valor_glosa, 0);
         const totalCount = glosas.length;
         const acceptedValue = glosas.filter(g => g.estado === 'Aceptada').reduce((acc, curr) => acc + curr.valor_glosa, 0);
+        const respondedValue = glosas.filter(g => g.estado === 'Respondida').reduce((acc, curr) => acc + curr.valor_glosa, 0);
         const acceptedCount = glosas.filter(g => g.estado === 'Aceptada').length;
-
-        // Sparkline Mock Data (Tendency)
-        const waveData = [30, 45, 35, 60, 40, 70, 55];
-        const countData = [20, 30, 25, 40, 35, 50, 45];
-        const acceptedWave = [10, 20, 15, 30, 25, 40, 35];
-        const acceptedCountWave = [5, 10, 8, 15, 12, 20, 18];
 
         return {
             totalValue,
             totalCount,
             acceptedValue,
+            respondedValue,
             acceptedCount,
-            waves: { totalValue: waveData, totalCount: countData, acceptedValue: acceptedWave, acceptedCount: acceptedCountWave }
+            waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
         };
     }, [glosas]);
 
@@ -202,7 +198,9 @@ export const Dashboard = ({ glosas: allGlosas, totalIngresos, stats: executiveSt
                         <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <DollarSign size={16} color="var(--primary)" />
                         </div>
-                        <span style={{ fontSize: '0.6rem', color: 'var(--primary)', fontWeight: 800 }}>+4.2% ↑</span>
+                        <span style={{ fontSize: '0.6rem', color: 'var(--primary)', fontWeight: 800 }}>
+                            {metrics.respondedValue > 0 ? ((metrics.acceptedValue / metrics.respondedValue) * 100).toFixed(1) : 0}% ↑
+                        </span>
                     </div>
                     <div>
                         <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>IMPORTE TOTAL GLOSADO</p>
