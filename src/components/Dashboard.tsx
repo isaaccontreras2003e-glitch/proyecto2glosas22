@@ -85,6 +85,12 @@ export const Dashboard = ({ glosas: allGlosas, totalIngresos, stats: executiveSt
     const [selectedService, setSelectedService] = useState('Todos');
     const [selectedType, setSelectedType] = useState('Todos');
 
+    // 0. Extract unique services dynamically from data
+    const availableServices = useMemo(() => {
+        const services = Array.from(new Set(allGlosas.map(g => g.servicio).filter(Boolean)));
+        return ['Todos', ...services.sort()];
+    }, [allGlosas]);
+
     // 1. Filter logic
     const glosas = useMemo(() => {
         return allGlosas.filter(g => {
@@ -162,10 +168,9 @@ export const Dashboard = ({ glosas: allGlosas, totalIngresos, stats: executiveSt
                                 onChange={(e) => setSelectedService(e.target.value)}
                                 style={{ background: 'rgba(20,20,30,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.4rem 2rem 0.4rem 0.75rem', color: 'white', fontSize: '0.75rem', fontWeight: 700, appearance: 'none', minWidth: '160px' }}
                             >
-                                <option>Todos</option>
-                                <option>Urgencias</option>
-                                <option>Hospitalización</option>
-                                <option>Cirugía</option>
+                                {availableServices.map(s => (
+                                    <option key={s} value={s}>{s}</option>
+                                ))}
                             </select>
                             <ChevronDown size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} />
                         </div>
