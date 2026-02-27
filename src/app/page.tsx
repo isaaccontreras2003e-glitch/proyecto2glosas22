@@ -1362,13 +1362,22 @@ const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: 
   };
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="card" style={{ padding: '2rem', border: '1px solid rgba(16, 185, 129, 0.15)', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.05), transparent)' }}>
-      <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '1.1rem', color: '#10b981', fontWeight: 800 }}>
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="card" style={{ padding: '2rem', border: '1px solid rgba(16, 185, 129, 0.3)', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08), transparent)', boxShadow: '0 10px 40px rgba(16, 185, 129, 0.1)' }}>
+      <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '1.2rem', color: '#10b981', fontWeight: 900 }}>
         <TrendingUp size={22} />
         GESTIÓN DE VALORES ACEPTADOS
       </h3>
       <form onSubmit={handleSubmit}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.5rem',
+          padding: '1.5rem',
+          background: 'rgba(0,0,0,0.2)',
+          borderRadius: '20px',
+          border: '1px solid rgba(16, 185, 129, 0.2)',
+          marginBottom: '1rem'
+        }}>
           <div className="input-group">
             <label className="label">Número de Factura Afectada</label>
             <input type="text" className="input" style={{ padding: '0.85rem 1rem' }} placeholder="Ej: FAC-100" value={formData.factura} onChange={(e) => setFormData({ ...formData, factura: e.target.value })} required disabled={!isAdmin} />
@@ -1457,7 +1466,19 @@ const IngresoList = ({
             </motion.p>
           ) : (
             ingresos.map((i, idx) => (
-              <motion.div key={i.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ delay: idx * 0.05 }} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '1.25rem', padding: '1.5rem', marginBottom: '1rem', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
+              <motion.div key={i.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ delay: idx * 0.05 }} style={{
+                background: idx % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.01)',
+                borderRadius: '1.25rem',
+                padding: '1.5rem',
+                marginBottom: '1rem',
+                border: '1px solid rgba(255,255,255,0.12)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: index % 2 === 0 ? '0 4px 20px rgba(0,0,0,0.1)' : 'none'
+              }}>
                 <div style={{ opacity: 0.8, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.03))', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}></div>
                 <div style={{ position: 'relative', zIndex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
@@ -1490,8 +1511,8 @@ const IngresoList = ({
 };
 const ConsolidadoTable = ({ data }: { data: any[] }) => {
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="card" style={{ padding: '2rem', border: '1px solid rgba(139, 92, 246, 0.15)' }}>
-      <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '1.1rem', color: '#8b5cf6', fontWeight: 800 }}>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="card" style={{ padding: '2rem', border: '1px solid rgba(139, 92, 246, 0.3)', boxShadow: '0 10px 40px rgba(139, 92, 246, 0.1)' }}>
+      <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '1.2rem', color: '#8b5cf6', fontWeight: 900 }}>
         <ListChecks size={22} />
         CONSOLIDADO POR FACTURA ({data.length})
       </h3>
@@ -1508,12 +1529,15 @@ const ConsolidadoTable = ({ data }: { data: any[] }) => {
           </thead>
           <tbody>
             {data.map((item, idx) => (
-              <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <td style={{ padding: '0.75rem', fontWeight: 700, color: 'white' }}>{item.factura}</td>
-                <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{item.fecha}</td>
-                <td style={{ padding: '0.75rem' }}>${formatPesos(item.glosado)}</td>
-                <td style={{ padding: '0.75rem', color: '#ef4444' }}>${formatPesos(item.aceptado)}</td>
-                <td style={{ padding: '0.75rem', textAlign: 'right', color: item.diferencia > 0 ? '#10b981' : 'rgba(255,255,255,0.5)', fontWeight: 800 }}>
+              <tr key={idx} style={{
+                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                background: idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'
+              }}>
+                <td style={{ padding: '1rem 0.75rem', fontWeight: 800, color: 'white' }}>{item.factura}</td>
+                <td style={{ padding: '1rem 0.75rem', color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{item.fecha}</td>
+                <td style={{ padding: '1rem 0.75rem', fontWeight: 700 }}>${formatPesos(item.glosado)}</td>
+                <td style={{ padding: '1rem 0.75rem', color: '#ef4444', fontWeight: 700 }}>${formatPesos(item.aceptado)}</td>
+                <td style={{ padding: '1rem 0.75rem', textAlign: 'right', color: item.diferencia > 0 ? '#10b981' : 'rgba(255,255,255,0.5)', fontWeight: 950, fontSize: '1rem' }}>
                   ${formatPesos(item.diferencia)}
                 </td>
               </tr>
