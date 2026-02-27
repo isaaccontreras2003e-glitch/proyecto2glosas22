@@ -143,7 +143,7 @@ export const Dashboard = ({ glosas: allGlosas, totalIngresos, stats: executiveSt
         return [
             { label: 'PEND.', p: Math.round((pending / total) * 100), color: 'rgba(255,255,255,0.2)' },
             { label: 'RESP.', p: Math.round((responded / total) * 100), color: 'var(--primary)' },
-            { label: 'ACEPT.', p: Math.round((accepted / total) * 100), color: 'var(--secondary)' }
+            { label: 'ACEPT.', p: Math.round((accepted / total) * 100), color: '#ff4d4d' }
         ];
     }, [glosas]);
 
