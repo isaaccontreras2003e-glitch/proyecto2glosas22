@@ -301,16 +301,18 @@ export const GlosaTable = ({
                                     </td>
                                 </tr>
                             ) : (
-                                glosas.map((glosa) => {
+                                glosas.map((glosa, index) => {
                                     const isDupe = duplicateIds.has(glosa.id);
                                     return (
                                         <tr
                                             key={glosa.id}
                                             style={{
-                                                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                                borderBottom: '1px solid rgba(255,255,255,0.1)',
                                                 transition: 'background 0.2s',
-                                                background: glosa.registrada_internamente ? 'rgba(16,185,129,0.03)' : (isDupe ? 'rgba(239,68,68,0.05)' : undefined),
-                                                borderLeft: glosa.registrada_internamente ? '3px solid #10b981' : (isDupe ? '3px solid rgba(239,68,68,0.5)' : '3px solid transparent')
+                                                background: glosa.registrada_internamente
+                                                    ? 'rgba(16,185,129,0.08)'
+                                                    : (isDupe ? 'rgba(239,68,68,0.1)' : (index % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent')),
+                                                borderLeft: glosa.registrada_internamente ? '4px solid #10b981' : (isDupe ? '4px solid rgba(239,68,68,0.7)' : '1px solid rgba(255,255,255,0.1)')
                                             }}
                                         >
                                             <td style={{ padding: '1.25rem 1rem', textAlign: 'center' }}>

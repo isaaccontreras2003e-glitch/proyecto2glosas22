@@ -178,10 +178,11 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                         gap: '1rem',
-                        padding: '1.25rem',
-                        background: 'rgba(255,255,255,0.02)',
-                        borderRadius: '16px',
-                        border: '1px solid rgba(255,255,255,0.05)'
+                        padding: '1.5rem',
+                        background: 'rgba(255,255,255,0.03)',
+                        borderRadius: '20px',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2)'
                     }}>
                         <div className="input-group">
                             <label className="label">Número de Factura</label>
@@ -256,10 +257,11 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                         gap: '1rem',
-                        padding: '1.25rem',
-                        background: 'rgba(255,255,255,0.02)',
-                        borderRadius: '16px',
-                        border: '1px solid rgba(255,255,255,0.05)'
+                        padding: '1.5rem',
+                        background: 'rgba(255,255,255,0.03)',
+                        borderRadius: '20px',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2)'
                     }}>
                         <div className="input-group">
                             <label className="label">Valor Glosa</label>
@@ -354,12 +356,13 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
                 <div style={{
                     marginTop: '2.5rem',
                     padding: '1.5rem',
-                    background: 'rgba(0,0,0,0.2)',
-                    borderRadius: '1.5rem',
-                    border: '1px solid rgba(255,255,255,0.05)',
+                    background: 'rgba(0,0,0,0.3)',
+                    borderRadius: '1.75rem',
+                    border: '1px solid rgba(255,255,255,0.1)',
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr',
-                    gap: '1.5rem'
+                    gap: '2rem',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
                 }}>
                     <div style={{ borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem' }}>
                         <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>FACTURAS HOY</p>
