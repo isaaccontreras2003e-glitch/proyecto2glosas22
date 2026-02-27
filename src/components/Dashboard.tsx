@@ -190,42 +190,85 @@ export const Dashboard = ({ glosas: allGlosas, totalIngresos, stats: executiveSt
                 </div>
             </div>
 
-            {/* 4 Cards Grid */}
+            {/* 4 Cards Grid (FUNCTIONAL VERSION) */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
-                <Card style={{ padding: '1.25rem', position: 'relative' }}>
-                    <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                        <DollarSign size={16} color="var(--primary)" />
+                <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <DollarSign size={16} color="var(--primary)" />
+                        </div>
+                        <span style={{ fontSize: '0.6rem', color: 'var(--primary)', fontWeight: 800 }}>+4.2% ↑</span>
                     </div>
-                    <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>IMPORTE TOTAL GLOSADO</p>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 900, margin: '4px 0', color: 'white' }}>${formatPesos(metrics.totalValue)}</h2>
-                    <Sparkline data={metrics.waves.totalValue} color="var(--primary)" />
+                    <div>
+                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>IMPORTE TOTAL GLOSADO</p>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>${formatPesos(metrics.totalValue)}</h2>
+                    </div>
+                    <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+                        <div style={{ height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
+                            <div style={{ width: '70%', height: '100%', background: 'var(--primary)', borderRadius: '10px' }}></div>
+                        </div>
+                        <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px', fontWeight: 700 }}>RIESGO EN AUDITORÍA</p>
+                    </div>
                 </Card>
 
-                <Card style={{ padding: '1.25rem' }}>
-                    <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                        <FileText size={16} color="var(--secondary)" />
+                <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <FileText size={16} color="var(--secondary)" />
+                        </div>
+                        <span style={{ fontSize: '0.6rem', color: 'var(--secondary)', fontWeight: 800 }}>PROYECTADO</span>
                     </div>
-                    <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>TOTAL FACTURAS</p>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 900, margin: '4px 0', color: 'white' }}>{metrics.totalCount}</h2>
-                    <Sparkline data={metrics.waves.totalCount} color="var(--secondary)" />
+                    <div>
+                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>TOTAL FACTURAS</p>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>{metrics.totalCount}</h2>
+                    </div>
+                    <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+                        <p style={{ fontSize: '0.7rem', color: 'white', fontWeight: 800, margin: 0 }}>{glosas.filter(g => g.estado !== 'Pendiente').length} de {metrics.totalCount}</p>
+                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>GESTIONADAS</p>
+                    </div>
                 </Card>
 
-                <Card style={{ padding: '1.25rem' }}>
-                    <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                        <CheckCircle size={16} color="var(--success)" />
+                <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{ width: '32px', height: '32px', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <AlertTriangle size={16} color="#ef4444" />
+                        </div>
+                        <span style={{ fontSize: '0.65rem', color: '#ef4444', fontWeight: 900 }}>PÉRDIDA</span>
                     </div>
-                    <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>VALORES ACEPTADOS</p>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 900, margin: '4px 0', color: 'white' }}>${formatPesos(metrics.acceptedValue)}</h2>
-                    <Sparkline data={metrics.waves.acceptedValue} color="var(--success)" />
+                    <div>
+                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>VALORES ACEPTADOS (PAGO)</p>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: '#ef4444' }}>-${formatPesos(metrics.acceptedValue)}</h2>
+                    </div>
+                    <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                            <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>IMPACTO EN FACTURACIÓN</span>
+                            <span style={{ fontSize: '0.55rem', color: '#ef4444', fontWeight: 900 }}>{metrics.totalValue > 0 ? ((metrics.acceptedValue / metrics.totalValue) * 100).toFixed(1) : 0}%</span>
+                        </div>
+                        <div style={{ height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${metrics.totalValue > 0 ? (metrics.acceptedValue / metrics.totalValue) * 100 : 0}%` }}
+                                style={{ height: '100%', background: '#ef4444', borderRadius: '10px' }}
+                            />
+                        </div>
+                    </div>
                 </Card>
 
-                <Card style={{ padding: '1.25rem' }}>
-                    <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                        <TrendingUp size={16} color="#f59e0b" />
+                <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{ width: '32px', height: '32px', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <TrendingUp size={16} color="#f59e0b" />
+                        </div>
+                        <span style={{ fontSize: '0.6rem', color: '#f59e0b', fontWeight: 800 }}>CONCILIACIÓN</span>
                     </div>
-                    <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>TOTAL FACTURAS ACEPTADAS</p>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 900, margin: '4px 0', color: 'white' }}>{metrics.acceptedCount}</h2>
-                    <Sparkline data={metrics.waves.acceptedCount} color="#f59e0b" />
+                    <div>
+                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>FACTURAS CON ERROR</p>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>{metrics.acceptedCount}</h2>
+                    </div>
+                    <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+                        <p style={{ fontSize: '0.65rem', color: 'white', fontWeight: 800, margin: 0 }}>{metrics.totalCount - metrics.acceptedCount} Salvadas</p>
+                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>AUDITORÍA DEFENSA</p>
+                    </div>
                 </Card>
             </div>
 
