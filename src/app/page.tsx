@@ -1,4 +1,5 @@
 'use client';
+// DEPLOYMENT TRIGGER: Reverting to Dark Premium Theme - 2026-02-27
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Dashboard } from '@/components/Dashboard';
