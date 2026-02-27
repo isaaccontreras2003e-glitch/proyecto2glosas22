@@ -107,7 +107,7 @@ export const GlosaTable = ({
                     padding: '1.25rem',
                     background: 'rgba(255,255,255,0.02)',
                     borderRadius: '16px',
-                    border: '1px solid rgba(255,255,255,0.05)',
+                    border: '1px solid var(--border)',
                     alignItems: 'flex-end'
                 }}>
                     <div style={{ flex: '1 1 300px' }}>
@@ -508,7 +508,7 @@ export const GlosaTable = ({
                         position: 'relative', overflow: 'hidden'
                     }} onClick={(e) => e.stopPropagation()}>
                         <div style={{
-                            padding: '1.5rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
+                            padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)',
                             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                             background: 'rgba(139, 92, 246, 0.03)'
                         }}>
@@ -541,7 +541,7 @@ export const GlosaTable = ({
                                     <span style={{ padding: '0.4rem 1rem', borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 800, width: 'fit-content', ...getStatusStyle(selectedGlosa.estado) }}>{selectedGlosa.estado}</span>
                                 </div>
                             </div>
-                            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
                                     <Info size={16} color="rgba(255,255,255,0.4)" />
                                     <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', fontWeight: 700, textTransform: 'uppercase' }}>Descripción Adicional</span>
@@ -576,7 +576,7 @@ export const GlosaTable = ({
                     }} onClick={(e) => e.stopPropagation()}>
                         <form onSubmit={handleSaveEdit}>
                             <div style={{
-                                padding: '1.5rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)',
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                 background: 'rgba(255, 255, 255, 0.02)'
                             }}>
@@ -621,7 +621,7 @@ export const GlosaTable = ({
                                     <textarea className="input" style={{ minHeight: '120px', resize: 'vertical' }} value={editingGlosa.descripcion} onChange={(e) => setEditingGlosa({ ...editingGlosa, descripcion: e.target.value })} />
                                 </div>
                             </div>
-                            <div style={{ padding: '1.5rem 2rem', background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                            <div style={{ padding: '1.5rem 2rem', background: 'rgba(255,255,255,0.02)', borderTop: '1px solid var(--border)', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
                                 <button type="button" onClick={() => setEditingGlosa(null)} style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', padding: '0.75rem 1.5rem', borderRadius: '12px', fontWeight: 600, cursor: 'pointer' }}>Cancelar</button>
                                 <button type="submit" style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '0.75rem 2rem', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <Save size={18} /> Guardar Cambios

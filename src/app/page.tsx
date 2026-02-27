@@ -1477,7 +1477,7 @@ const IngresoList = ({
                 alignItems: 'center',
                 position: 'relative',
                 overflow: 'hidden',
-                boxShadow: index % 2 === 0 ? '0 4px 20px rgba(0,0,0,0.1)' : 'none'
+                boxShadow: idx % 2 === 0 ? '0 4px 20px rgba(0,0,0,0.1)' : 'none'
               }}>
                 <div style={{ opacity: 0.8, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.03))', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}></div>
                 <div style={{ position: 'relative', zIndex: 1 }}>
