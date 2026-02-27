@@ -784,7 +784,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>NAVEGACIÓN V2</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>NAVEGACIÓN</h2>
           </div>
 
 
@@ -931,12 +931,6 @@ function Home() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            {/* Search and Notification icons like in the screenshot */}
-            <div style={{ display: 'flex', gap: '1rem', color: 'rgba(255,255,255,0.4)' }}>
-              <button style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}><LayoutDashboard size={18} /></button>
-              <button style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}><Activity size={18} /></button>
-            </div>
-
             <div style={{ width: '1px', height: '20px', background: 'var(--border)' }}></div>
 
             <motion.button
