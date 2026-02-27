@@ -81,218 +81,203 @@ const Sparkline = ({ data, color }: { data: number[], color: string }) => {
     );
 };
 
-export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: DashboardProps) => {
-    const [filterTime, setFilterTime] = useState('Mensual');
+export const Dashboard = ({ glosas: allGlosas, totalIngresos, stats: executiveStats }: DashboardProps) => {
+    const [selectedService, setSelectedService] = useState('Todos los Servicios');
 
-    // 1. Calculate Monthly Tendency (Wave Chart)
-    const monthlyData = useMemo(() => {
-        const last6Months = [];
-        for (let i = 5; i >= 0; i--) {
-            const d = new Date();
-            d.setMonth(d.getMonth() - i);
-            last6Months.push({
-                key: `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`,
-                label: d.toLocaleDateString('es-ES', { month: 'short' }).toUpperCase()
-            });
-        }
+    // Filter logic
+    const glosas = useMemo(() => {
+        if (selectedService === 'Todos los Servicios') return allGlosas;
+        return allGlosas.filter(g => g.servicio === selectedService);
+    }, [allGlosas, selectedService]);
 
-        const values = last6Months.map(m => {
-            return glosas
-                .filter(g => g.fecha?.startsWith(m.key))
-                .reduce((acc, curr) => acc + curr.valor_glosa, 0);
-        });
+    // Format for M abbreviations like screenshot
+    const formatM = (val: number) => {
+        if (val >= 1000000) return `$${(val / 1000000).toFixed(1)}M`;
+        if (val >= 1000) return `$${(val / 1000).toFixed(0)}k`;
+        return `$${val}`;
+    };
 
-        const maxVal = Math.max(...values, 1000);
-        const normalized = values.map(v => (v / maxVal) * 100);
+    // Calculate metrics based on filtered data
+    const metrics = useMemo(() => {
+        const glosado = glosas.reduce((acc, curr) => acc + curr.valor_glosa, 0);
+        const aceptado = glosas.filter(g => g.estado === 'Aceptada').reduce((acc, curr) => acc + curr.valor_glosa, 0);
+        const countGlosadas = glosas.length;
+        const countAceptadas = glosas.filter(g => g.estado === 'Aceptada').length;
 
-        return { labels: last6Months.map(m => m.label), values: normalized, rawValues: values };
+        return { glosado, aceptado, countGlosadas, countAceptadas };
     }, [glosas]);
 
-    // 2. Calculate Service/Category Distribution (for Horizontal Bars)
-    const typeDistribution = useMemo(() => {
-        const types = ['Tarifas', 'Soportes', 'RIPS', 'Autorización'];
-        const colors = ['var(--primary)', 'var(--secondary)', 'rgba(79, 172, 254, 0.5)', 'rgba(0, 242, 254, 0.3)'];
-
-        return types.map((type, i) => {
-            const value = glosas.filter(g => g.tipo_glosa === type).reduce((acc, curr) => acc + curr.valor_glosa, 0);
-            const count = glosas.filter(g => g.tipo_glosa === type).length;
-            const total = glosas.length || 1;
-            return {
-                label: type,
-                val: `$${formatPesos(value)}`,
-                p: Math.round((count / total) * 100),
-                color: colors[i]
-            };
-        }).sort((a, b) => b.p - a.p);
-    }, [glosas]);
-
-    // 3. Calculate Management Status (for Circular Chart)
-    const statusStats = useMemo(() => {
+    // Category Distribution (Administrative, Medical, Technical)
+    const typeAnalysis = useMemo(() => {
+        const types = [
+            { label: 'Administrativa', color: 'var(--primary)' },
+            { label: 'Médica', color: 'var(--secondary)' },
+            { label: 'Técnica', color: 'rgba(255,255,255,0.2)' }
+        ];
         const total = glosas.length || 1;
-        const pending = glosas.filter(g => g.estado === 'Pendiente').length;
+
+        return types.map(t => {
+            const count = glosas.filter(g => g.tipo_glosa === t.label).length;
+            return {
+                ...t,
+                p: Math.round((count / total) * 100)
+            };
+        });
+    }, [glosas]);
+
+    // Status Summary for Donut
+    const statusSummary = useMemo(() => {
+        const total = glosas.length || 1;
         const responded = glosas.filter(g => g.estado === 'Respondida').length;
         const accepted = glosas.filter(g => g.estado === 'Aceptada').length;
+        const pending = glosas.filter(g => g.estado === 'Pendiente').length;
 
         return [
-            { label: 'Pendiente', p: Math.round((pending / total) * 100), color: 'var(--primary)' },
-            { label: 'Respondida', p: Math.round((responded / total) * 100), color: 'var(--secondary)' },
-            { label: 'Aceptada', p: Math.round((accepted / total) * 100), color: 'var(--success)' }
+            { label: 'Respondidas', p: Math.round((responded / total) * 100), color: 'var(--secondary)' },
+            { label: 'Aceptadas', p: Math.round((accepted / total) * 100), color: 'var(--primary)' },
+            { label: 'Pendientes', p: Math.round((pending / total) * 100), color: 'rgba(255,255,255,0.2)' }
         ];
     }, [glosas]);
 
-    // 4. Recent Activity
-    const recentAlerts = useMemo(() => {
-        return glosas
-            .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
-            .slice(0, 3)
-            .map(g => ({
-                title: `Glosa ${g.factura}`,
-                time: new Date(g.fecha).toLocaleDateString(),
-                sub: `${g.tipo_glosa} - $${formatPesos(g.valor_glosa)}`,
-                icon: g.estado === 'Pendiente' ? <Clock size={14} /> : (g.estado === 'Aceptada' ? <CheckCircle size={14} /> : <Activity size={14} />),
-                color: g.estado === 'Pendiente' ? 'var(--warning)' : (g.estado === 'Aceptada' ? 'var(--success)' : 'var(--primary)')
-            }));
-    }, [glosas]);
-
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {/* Period Selector Tabs */}
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                {['Diario', 'Semanal', 'Mensual'].map(p => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {/* Service Filters */}
+            <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                {['Todos los Servicios', 'Urgencias', 'Hospitalización', 'Cirugía'].map(s => (
                     <button
-                        key={p}
-                        onClick={() => setFilterTime(p)}
+                        key={s}
+                        onClick={() => setSelectedService(s)}
                         style={{
-                            padding: '0.4rem 1rem',
-                            borderRadius: '20px',
-                            border: 'none',
-                            background: filterTime === p ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-                            color: filterTime === p ? '#000' : 'rgba(255,255,255,0.6)',
-                            fontSize: '0.7rem',
-                            fontWeight: 800,
+                            padding: '0.6rem 1.25rem',
+                            borderRadius: '12px',
+                            border: '1px solid',
+                            borderColor: selectedService === s ? 'var(--primary)' : 'var(--border)',
+                            background: selectedService === s ? 'var(--primary)' : 'rgba(255,255,255,0.03)',
+                            color: selectedService === s ? '#000' : 'white',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
                             cursor: 'pointer',
-                            transition: 'all 0.2s'
+                            whiteSpace: 'nowrap',
+                            transition: 'all 0.3s ease'
                         }}
                     >
-                        {p}
+                        {s}
                     </button>
                 ))}
             </div>
 
-            {/* Main Wave Chart Card */}
-            <Card style={{ padding: '2rem', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', fontWeight: 700, margin: 0 }}>Glosas Mensuales (Valor)</p>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginTop: '0.25rem' }}>
-                        <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'white', margin: 0 }}>
-                            ${formatPesos(executiveStats.totalGlosado)}
-                        </h2>
-                        <span style={{ color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 700 }}>AUDITORÍA VIVA</span>
+            {/* Main Metrics Grid (TARJETAS) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <Card style={{ padding: '2rem', background: 'rgba(0, 242, 254, 0.02)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <FileText size={20} color="var(--primary)" />
+                        <span style={{ color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 800 }}>MÉTRICA REAL</span>
                     </div>
-                </div>
+                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', margin: 0 }}>Valor Glosado</p>
+                    <h2 style={{ fontSize: '2.25rem', fontWeight: 950, margin: '0.5rem 0', color: 'white' }}>{formatM(metrics.glosado)}</h2>
+                    <div style={{ height: '40px', borderTop: '1px solid var(--border)', marginTop: '2rem', display: 'flex', alignItems: 'center' }}>
+                        <p style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'white' }}>{metrics.countGlosadas.toLocaleString()}</p>
+                        <p style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontWeight: 700, margin: '0 0 0 8px', textTransform: 'uppercase' }}>Facturas Glosadas</p>
+                    </div>
+                </Card>
 
-                <Sparkline data={monthlyData.values} color="var(--primary)" />
+                <Card style={{ padding: '2rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <CheckCircle size={20} color="var(--secondary)" />
+                        <span style={{ color: 'var(--secondary)', fontSize: '0.75rem', fontWeight: 800 }}>AUDITORÍA VIVA</span>
+                    </div>
+                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', margin: 0 }}>Valor Aceptado</p>
+                    <h2 style={{ fontSize: '2.25rem', fontWeight: 950, margin: '0.5rem 0', color: 'white' }}>{formatM(metrics.aceptado)}</h2>
+                    <div style={{ height: '40px', borderTop: '1px solid var(--border)', marginTop: '2rem', display: 'flex', alignItems: 'center' }}>
+                        <p style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'white' }}>{metrics.countAceptadas.toLocaleString()}</p>
+                        <p style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontWeight: 700, margin: '0 0 0 8px', textTransform: 'uppercase' }}>Facturas Aceptadas</p>
+                    </div>
+                </Card>
+            </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', color: 'rgba(255,255,255,0.2)', fontSize: '0.6rem', fontWeight: 800 }}>
-                    {monthlyData.labels.map(m => <span key={m}>{m}</span>)}
-                </div>
-            </Card>
-
-            {/* Bottom Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
-                {/* Gestión Status / Circular Chart */}
-                <Card style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                    <div style={{ position: 'relative', width: '120px', height: '120px' }}>
-                        <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
-                            <circle cx="50" cy="50" r="40" fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="12" />
-                            {statusStats.map((s, i) => {
-                                let offset = 0;
-                                for (let j = 0; j < i; j++) offset += statusStats[j].p;
-                                return (
-                                    <motion.circle
-                                        key={s.label}
-                                        cx="50" cy="50" r="40" fill="transparent"
-                                        stroke={s.color} strokeWidth="12" strokeLinecap="round"
-                                        strokeDasharray={`${(s.p / 100) * 251.2} 251.2`}
-                                        strokeDashoffset={-((offset / 100) * 251.2)}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ duration: 1, delay: i * 0.2 }}
-                                    />
-                                );
-                            })}
-                        </svg>
-                        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ fontSize: '1.25rem', fontWeight: 900 }}>{glosas.length}</span>
-                            <span style={{ fontSize: '0.5rem', opacity: 0.4, fontWeight: 800 }}>TOTAL</span>
+            {/* Analysis Section */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1.8fr)', gap: '1.5rem' }}>
+                <Card style={{ padding: '2rem' }}>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 900, marginBottom: '2rem' }}>Estado de Glosas</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
+                        <div style={{ position: 'relative', width: '140px', height: '140px' }}>
+                            <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
+                                <circle cx="50" cy="50" r="40" fill="transparent" stroke="rgba(255,255,255,0.03)" strokeWidth="10" />
+                                {statusSummary.map((s, i) => {
+                                    let offset = 0;
+                                    for (let j = 0; j < i; j++) offset += statusSummary[j].p;
+                                    return (
+                                        <motion.circle
+                                            key={s.label}
+                                            cx="50" cy="50" r="40" fill="transparent"
+                                            stroke={s.color} strokeWidth="10" strokeLinecap="round"
+                                            strokeDasharray={`${(s.p / 100) * 251.2} 251.2`}
+                                            strokeDashoffset={-((offset / 100) * 251.2)}
+                                            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                        />
+                                    );
+                                })}
+                            </svg>
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                <span style={{ fontSize: '1.25rem', fontWeight: 950 }}>{glosas.length}</span>
+                                <span style={{ fontSize: '0.5rem', opacity: 0.4, fontWeight: 800 }}>TOTAL</span>
+                            </div>
                         </div>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <h4 style={{ fontSize: '0.8rem', fontWeight: 800, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Activity size={14} color="var(--primary)" /> Gestión de Glosas
-                        </h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            {statusStats.map(item => (
-                                <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.7rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: item.color }} />
-                                        <span style={{ opacity: 0.6, fontWeight: 700 }}>{item.label}</span>
+                        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                            {statusSummary.map(s => (
+                                <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: s.color }} />
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>{s.label}</span>
                                     </div>
-                                    <span style={{ fontWeight: 900 }}>{item.p}%</span>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 950, color: s.color }}>{s.p}%</span>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </Card>
 
-                {/* Distribución por Categoría / Horiz Bars */}
-                <Card>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                        <h4 style={{ fontSize: '0.8rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <TrendingUp size={14} color="var(--primary)" /> Distribución por Categoría
-                        </h4>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                        {typeDistribution.map(item => (
-                            <div key={item.label}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', fontWeight: 800, marginBottom: '0.4rem' }}>
-                                    <span style={{ opacity: 0.4 }}>{item.label}</span>
-                                    <span>{item.val}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <Card style={{ padding: '2rem' }}>
+                        <h3 style={{ fontSize: '0.9rem', fontWeight: 900, marginBottom: '2rem' }}>Glosas por Tipo</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            {typeAnalysis.map(t => (
+                                <div key={t.label}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 800, marginBottom: '0.6rem' }}>
+                                        <span style={{ opacity: 0.6 }}>{t.label}</span>
+                                        <span style={{ color: t.color }}>{t.p}%</span>
+                                    </div>
+                                    <div style={{ height: '6px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${t.p}%` }}
+                                            style={{ height: '100%', background: t.color, borderRadius: '10px', boxShadow: `0 0 10px ${t.color}40` }}
+                                        />
+                                    </div>
                                 </div>
-                                <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${item.p}%` }}
-                                        transition={{ duration: 1, delay: 0.5 }}
-                                        style={{ height: '100%', background: item.color, borderRadius: '10px' }}
-                                    />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
-            </div>
-
-            {/* Recent Activity List */}
-            <Card style={{ padding: '1.25rem' }}>
-                <h4 style={{ fontSize: '0.8rem', fontWeight: 800, marginBottom: '1.5rem' }}>Actividad Reciente</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {recentAlerts.length > 0 ? recentAlerts.map((alert, idx) => (
-                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', cursor: 'pointer' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `${alert.color}15`, color: alert.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                {alert.icon}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <p style={{ fontSize: '0.75rem', fontWeight: 800, margin: 0 }}>{alert.title}</p>
-                                <p style={{ fontSize: '0.6rem', opacity: 0.4, margin: '2px 0 0 0' }}>{alert.time} • {alert.sub}</p>
-                            </div>
-                            <ChevronDown size={14} style={{ transform: 'rotate(-90deg)', opacity: 0.2 }} />
+                            ))}
                         </div>
-                    )) : (
-                        <p style={{ fontSize: '0.7rem', opacity: 0.4, textAlign: 'center' }}>No hay actividad reciente</p>
-                    )}
+                    </Card>
+
+                    <Card style={{ padding: '1.5rem 2rem' }}>
+                        <h3 style={{ fontSize: '0.85rem', fontWeight: 900, marginBottom: '1.5rem' }}>Actividad Reciente</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {glosas.slice(0, 3).map((g, i) => (
+                                <div key={i} style={{ display: 'flex', gap: '1rem', alignItems: 'center', padding: '0.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px' }}>
+                                    <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <FileText size={14} color="var(--primary)" />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <p style={{ fontSize: '0.75rem', fontWeight: 800, margin: 0 }}>Factura #{g.factura}</p>
+                                        <p style={{ fontSize: '0.6rem', opacity: 0.4, margin: 0 }}>{g.tipo_glosa}</p>
+                                    </div>
+                                    <p style={{ fontSize: '0.75rem', fontWeight: 900, margin: 0 }}>{formatM(g.valor_glosa)}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
                 </div>
-            </Card>
+            </div>
         </div>
     );
 };
