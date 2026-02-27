@@ -1034,7 +1034,7 @@ function Home() {
         </header>
 
         {/* Info Box / Footer del Header (Opcional) */}
-        <div style={{ marginBottom: '2rem', marginTop: '-0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ marginBottom: '2rem', marginTop: '-0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
           <p style={{
             fontSize: '0.7rem',
             color: 'rgba(255,255,255,0.3)',
@@ -1118,7 +1118,7 @@ function Home() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: '1.25rem', border: '1px solid rgba(255,255,255,0.05)', gap: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: '1.25rem', border: '1px solid var(--border)', gap: '1rem' }}>
                     <div style={{ flex: '1', maxWidth: '400px' }}>
                       <div style={{ position: 'relative' }}>
                         <ClipboardList size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
@@ -1212,7 +1212,7 @@ function Home() {
           )
         }
 
-        <footer style={{ marginTop: '8rem', padding: '6rem 0', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+        <footer style={{ marginTop: '8rem', padding: '6rem 0', borderTop: '2px solid var(--border)', textAlign: 'center' }}>
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             <h3 style={{
               fontSize: '0.8rem',
@@ -1227,7 +1227,7 @@ function Home() {
 
             <div style={{ display: 'flex', justifyContent: 'center', gap: '1.25rem', flexWrap: 'wrap', marginBottom: '4rem' }}>
               {/* Grupo: Gestión de Archivos */}
-              <div style={{ display: 'flex', gap: '0.75rem', background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '1.25rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '1.25rem', border: '1px solid var(--border)' }}>
                 {role === 'admin' && (
                   <>
                     <motion.button

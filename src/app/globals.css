@@ -14,13 +14,13 @@
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.5);
 
-  --border: rgba(255, 255, 255, 0.12);
-  --border-focus: rgba(139, 92, 246, 0.6);
+  --border: rgba(255, 255, 255, 0.25);
+  --border-focus: rgba(139, 92, 246, 0.8);
 
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.3);
 
-  --shadow-glow: 0 0 40px rgba(139, 92, 246, 0.15);
+  --shadow-glow: 0 0 50px rgba(139, 92, 246, 0.2);
 
   --radius-md: 1.25rem;
   --radius-lg: 2rem;

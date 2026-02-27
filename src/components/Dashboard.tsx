@@ -132,7 +132,7 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
                     <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', fontWeight: 700, marginTop: '0.3rem', letterSpacing: '0.05em' }}>Métricas en Tiempo Real | Control de Glosas y Conciliación</p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem', background: 'rgba(255,255,255,0.02)', padding: '0.5rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)' }}>
+                <div style={{ display: 'flex', gap: '1rem', background: 'rgba(255,255,255,0.02)', padding: '0.5rem', borderRadius: '14px', border: '1px solid var(--border)', backdropFilter: 'blur(10px)' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                         <span style={{ fontSize: '0.55rem', fontWeight: 900, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', paddingLeft: '0.5rem' }}>SERVICIO</span>
                         <div style={{ position: 'relative' }}>
@@ -143,7 +143,7 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
                                 style={{
                                     appearance: 'none',
                                     background: 'rgba(255,255,255,0.03)',
-                                    border: '1px solid rgba(255,255,255,0.05)',
+                                    border: '1px solid var(--border)',
                                     color: 'white',
                                     padding: '0.5rem 2rem 0.5rem 0.75rem',
                                     borderRadius: '8px',
@@ -159,7 +159,7 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
                         </div>
                     </div>
 
-                    <div style={{ width: '1px', background: 'rgba(255,255,255,0.05)', margin: '0.5rem 0' }} />
+                    <div style={{ width: '1px', background: 'var(--border)', margin: '0.5rem 0' }} />
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                         <span style={{ fontSize: '0.55rem', fontWeight: 900, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', paddingLeft: '0.5rem' }}>TIPO GLOSA</span>
@@ -171,7 +171,7 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
                                 style={{
                                     appearance: 'none',
                                     background: 'rgba(255,255,255,0.03)',
-                                    border: '1px solid rgba(255,255,255,0.05)',
+                                    border: '1px solid var(--border)',
                                     color: 'white',
                                     padding: '0.5rem 2rem 0.5rem 0.75rem',
                                     borderRadius: '8px',
@@ -203,7 +203,7 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
                     <Card key={index} style={{
                         padding: '1.75rem',
                         background: 'linear-gradient(145deg, rgba(20,20,25,0.9), rgba(10,10,12,0.95))',
-                        border: '1px solid rgba(255,255,255,0.05)',
+                        border: '1px solid var(--border)',
                         position: 'relative',
                         overflow: 'hidden'
                     }}>
@@ -255,7 +255,7 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
                     flexDirection: 'column',
                     gap: '2rem',
                     background: 'rgba(10, 10, 12, 0.4)',
-                    border: '1px solid rgba(255,255,255,0.05)',
+                    border: '1px solid var(--border)',
                     backdropFilter: 'blur(20px)'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -310,7 +310,7 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
                     justifyContent: 'center',
                     position: 'relative',
                     background: 'rgba(10, 10, 12, 0.4)',
-                    border: '1px solid rgba(255,255,255,0.05)',
+                    border: '1px solid var(--border)',
                     backdropFilter: 'blur(20px)'
                 }}>
                     <div style={{ position: 'absolute', top: '2rem', left: '2rem' }}>
@@ -391,9 +391,9 @@ export const Dashboard = ({ glosas, totalIngresos, stats: executiveStats }: Dash
                                     padding: '0.75rem 0.5rem',
                                     background: 'rgba(255,255,255,0.02)',
                                     borderRadius: '12px',
-                                    border: '1px solid rgba(255,255,255,0.04)'
+                                    border: '1px solid var(--border)'
                                 }}
-                                whileHover={{ y: -4, background: 'rgba(255,255,255,0.04)', borderColor: `${item.color}40` }}
+                                whileHover={{ y: -4, background: 'rgba(255,255,255,0.04)', borderColor: `${item.color}80` }}
                             >
                                 <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.4)', fontWeight: 900, letterSpacing: '0.05em', display: 'block', marginBottom: '0.25rem' }}>{item.label}</span>
                                 <p style={{ color: 'white', fontSize: '1.25rem', fontWeight: 950, margin: 0 }}>{item.val}%</p>
