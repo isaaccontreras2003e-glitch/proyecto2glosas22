@@ -947,7 +947,7 @@ function Home() {
               </svg>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <h1 style={{ fontSize: '1.8rem', color: '#ffffff', fontWeight: 900, lineHeight: 1.1, margin: 0 }}>Glosas (V2)</h1>
+              <h1 style={{ fontSize: '1.8rem', color: '#ffffff', fontWeight: 900, lineHeight: 1.1, margin: 0 }}>Glosas (V3 - LÍNEAS ACTIVADAS)</h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', letterSpacing: '0.05em', fontWeight: 600, margin: 0, marginTop: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <Activity size={14} color="rgba(255,255,255,0.3)" />
