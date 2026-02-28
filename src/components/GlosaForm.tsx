@@ -106,31 +106,61 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
             const { data: { text } } = await worker.recognize(file);
             console.log("OCR Text Raw:", text);
 
-            // 1. Extraer Factura (Patrón: FEB o FAC seguido de números)
-            const facturaMatch = text.match(/(FEB|FAC|FE|FC)[\s\-]?(\d{3,})/i);
-            const extractedFactura = facturaMatch ? `${facturaMatch[1].toUpperCase()}${facturaMatch[2]}` : '';
+            const cleanText = text.replace(/\s+/g, ' '); // Normalizar espacios para regex sencillos
 
-            // 2. Extraer Valores (Suma de todos los encontrados)
-            // Buscamos patrones de montos monetarios vinculados a glosa
-            const valorRegex = /(objetado|inicial|facturado|glosa|valor|vr\.?)\s*[:\-\$]?\s*(\d{1,3}(\.\d{3})*(,\d+)?)/gi;
+            // 1. Extraer Factura (Patrón: FEB o FAC seguido de números)
+            // Agregamos limpieza de errores comunes (O -> 0)
+            const facturaMatch = text.match(/(FEB|FAC|FE|FC|F EB|F AC)[\s\-\#]?\s?(\d[O\d]{3,})/i);
+            let extractedFactura = '';
+            if (facturaMatch) {
+                let code = facturaMatch[2].replace(/O/g, '0'); // Error común de OCR
+                const prefix = facturaMatch[1].replace(/\s/g, '').toUpperCase();
+                extractedFactura = `${prefix}${code}`;
+            }
+
+            // 2. Extraer Valores (Suma y Búsqueda contextual)
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
             let totalSum = 0;
-            let match;
             let foundAnyValue = false;
 
-            while ((match = valorRegex.exec(text)) !== null) {
-                const cleanValue = match[2].replace(/\./g, '').replace(/,/g, '.');
-                const numericValue = parseFloat(cleanValue);
-                if (!isNaN(numericValue) && numericValue > 1000) { // Evitar números pequeños que no son glosas
-                    totalSum += numericValue;
-                    foundAnyValue = true;
+            // Buscamos en cada línea y su contexto
+            lines.forEach((line, idx) => {
+                const lowerLine = line.toLowerCase();
+                const keywords = ['objetado', 'inicial', 'facturado', 'glosa', 'valor', 'vr', 'monto'];
+
+                if (keywords.some(k => lowerLine.includes(k))) {
+                    // Buscar número en la misma línea
+                    const numMatch = line.match(/(\d{1,3}(\.\d{3})*(,\d+)?)/g);
+                    if (numMatch) {
+                        numMatch.forEach(n => {
+                            const val = parseFloat(n.replace(/\./g, '').replace(/,/g, '.'));
+                            if (val > 1000) {
+                                totalSum += val;
+                                foundAnyValue = true;
+                            }
+                        });
+                    } else {
+                        // Si no hay número, buscar en la siguiente línea (contexto de tabla)
+                        const nextLine = lines[idx + 1] || '';
+                        const nextNumMatch = nextLine.match(/(\d{1,3}(\.\d{3})*(,\d+)?)/g);
+                        if (nextNumMatch) {
+                            // En tablas, el valor suele estar al final o en la misma posición
+                            const val = parseFloat(nextNumMatch[nextNumMatch.length - 1].replace(/\./g, '').replace(/,/g, '.'));
+                            if (val > 1000) {
+                                totalSum += val;
+                                foundAnyValue = true;
+                            }
+                        }
+                    }
                 }
-            }
+            });
 
             let extractedValor = '';
             if (foundAnyValue) {
+                // Si la factura se repite (como en el screenshot), tomamos la mitad si la suma es exacta duplicada
+                // Pero por ahora, sumamos todo como pidió el usuario.
                 extractedValor = Math.round(totalSum).toString();
             } else {
-                // Fallback: buscar todos los números grandes que parezcan moneda (mínimo 4 cifras)
                 const allNumbers = text.match(/\d{1,3}(\.\d{3})+/g);
                 if (allNumbers) {
                     const values = allNumbers.map(n => parseInt(n.replace(/\./g, ''))).filter(v => v > 1000);
@@ -139,34 +169,37 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
             }
 
             // 3. Extraer Servicio (Descripción de texto)
-            // Buscamos líneas cortas o palabras tras "Servicio" o "Descripción"
-            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 5);
+            // Filtramos encabezados y buscamos líneas en MAYÚSCULAS largas
+            const headers = ['afiliado', 'codigo', 'servicio', 'descripcion', 'valor', 'objetado', 'factura', 'inicial'];
             let extractedServicio = '';
-            const servicioLine = lines.find(l =>
-                l.toLowerCase().includes('servicio') ||
-                l.toLowerCase().includes('descripción') ||
-                l.match(/^[A-Z\s]{10,}$/) // Líneas en mayúsculas suelen ser servicios
-            );
 
-            if (servicioLine) {
-                extractedServicio = servicioLine.replace(/(servicio|descripción|:) /gi, '').substring(0, 50);
-            } else if (lines.length > 2) {
-                extractedServicio = lines[1]; // Tomar la segunda línea descriptiva como servicio
+            // Buscar una línea que sea predominantemente MAYÚSCULAS y larga (típico de servicios)
+            const potentialServices = lines.filter(l => {
+                const isHeader = headers.some(h => l.toLowerCase().includes(h) && l.length < 30);
+                const isAllCaps = l.replace(/[^A-Z\s]/g, '').length / l.length > 0.7;
+                const isNotId = !l.match(/^(CC|TI|RC|CE|PA|AS|MS|NI)[\s\-]?\d+/i); // No es identificación
+                return !isHeader && isAllCaps && l.length > 15 && isNotId;
+            });
+
+            if (potentialServices.length > 0) {
+                extractedServicio = potentialServices[0].substring(0, 70);
+            } else {
+                // Fallback: buscar tras la palabra "servicio" o "descripcion"
+                const sIdx = lines.findIndex(l => l.toLowerCase().includes('servicio') || l.toLowerCase().includes('descripción'));
+                if (sIdx !== -1 && lines[sIdx + 1]) {
+                    extractedServicio = lines[sIdx + 1].substring(0, 70);
+                }
             }
 
             // 4. Extraer Descripción (Detalle de la objeción)
-            // Buscamos bloques de texto tras "Detalle", "Motivo" u "Observación"
-            const descripcionLine = lines.find(l =>
-                l.toLowerCase().includes('detalle') ||
-                l.toLowerCase().includes('motivo') ||
-                l.toLowerCase().includes('observación') ||
-                l.toLowerCase().includes('glosa total')
-            );
             let extractedDescripcion = '';
-            if (descripcionLine) {
-                extractedDescripcion = descripcionLine.replace(/(detalle|motivo|observación|objecion|inicial|:) /gi, '');
-            } else if (lines.length > 3) {
-                extractedDescripcion = lines.slice(2, 4).join(' '); // Tomar un par de líneas como descripción
+            const descKeywords = ['detalle', 'motivo', 'observación', 'glosa total', 'anexo', 'tarifario', 'incluido'];
+            const descIdx = lines.findIndex(l => descKeywords.some(k => l.toLowerCase().includes(k)));
+
+            if (descIdx !== -1) {
+                // La descripción suele ser la línea que contiene el keyword o las siguientes si son texto largo
+                const context = lines.slice(descIdx, descIdx + 3).join(' ');
+                extractedDescripcion = context.substring(0, 150);
             }
 
             setFormData(prev => ({
