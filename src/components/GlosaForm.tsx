@@ -157,49 +157,71 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
 
             let extractedValor = '';
             if (foundAnyValue) {
-                // Si la factura se repite (como en el screenshot), tomamos la mitad si la suma es exacta duplicada
-                // Pero por ahora, sumamos todo como pidió el usuario.
+                // Si encontramos varios valores, sumarlos (pedito del usuario)
+                // Pero si hay duplicados exactos muy cercanos, podríamos estar sumando la misma fila
                 extractedValor = Math.round(totalSum).toString();
             } else {
-                const allNumbers = text.match(/\d{1,3}(\.\d{3})+/g);
+                // Búsqueda profunda en todo el texto si falló el línea a línea
+                const allNumbers = text.match(/\d{1,3}(\.\d{3})+(,\d+)?/g);
                 if (allNumbers) {
                     const values = allNumbers.map(n => parseInt(n.replace(/\./g, ''))).filter(v => v > 1000);
+                    // Tomar el valor más probable (a menudo el más grande en glosas totales)
                     if (values.length > 0) extractedValor = Math.max(...values).toString();
                 }
             }
 
-            // 3. Extraer Servicio (Descripción de texto)
-            // Filtramos encabezados y buscamos líneas en MAYÚSCULAS largas
-            const headers = ['afiliado', 'codigo', 'servicio', 'descripcion', 'valor', 'objetado', 'factura', 'inicial'];
+            // 3. Extraer Servicio (Descripción de texto) - REPARACIÓN PROFUNDA v4.3.2
+            // Problema: Tesseract lee horizontalmente mezclando columnas.
+            // "FOTOGRAFÍA A COLOR DE SEGMENTO Glosa total..."
             let extractedServicio = '';
+            const servicioKeywords = ['servicio', 'descripcion', 'procedimiento'];
+            const stopKeywords = ['glosa', 'gloss', 'detalle', 'motivo', 'objetado', 'valor', 'inicial', 'facturado', 'aceptado', 'cod', 'cod.'];
 
-            // Buscar una línea que sea predominantemente MAYÚSCULAS y larga (típico de servicios)
-            const potentialServices = lines.filter(l => {
-                const isHeader = headers.some(h => l.toLowerCase().includes(h) && l.length < 30);
-                const isAllCaps = l.replace(/[^A-Z\s]/g, '').length / l.length > 0.7;
-                const isNotId = !l.match(/^(CC|TI|RC|CE|PA|AS|MS|NI)[\s\-]?\d+/i); // No es identificación
-                return !isHeader && isAllCaps && l.length > 15 && isNotId;
+            // Buscar la línea que parece ser el servicio
+            const serviceLines = lines.filter(l => {
+                const lower = l.toLowerCase();
+                const isNotId = !l.match(/^(CC|TI|RC|CE|PA|AS|MS|NI)[\s\-]?\d+/i);
+                const hasLetters = /[A-Z]{5,}/.test(l);
+                return isNotId && hasLetters && l.length > 10;
             });
 
-            if (potentialServices.length > 0) {
-                extractedServicio = potentialServices[0].substring(0, 70);
-            } else {
-                // Fallback: buscar tras la palabra "servicio" o "descripcion"
-                const sIdx = lines.findIndex(l => l.toLowerCase().includes('servicio') || l.toLowerCase().includes('descripción'));
-                if (sIdx !== -1 && lines[sIdx + 1]) {
-                    extractedServicio = lines[sIdx + 1].substring(0, 70);
+            if (serviceLines.length > 0) {
+                let candidate = serviceLines[0];
+
+                // Si la línea contiene una palabra de parada, cortarla ahí (limpieza de mezcla de columnas)
+                for (const stop of stopKeywords) {
+                    const stopIdx = candidate.toLowerCase().indexOf(' ' + stop);
+                    if (stopIdx !== -1) {
+                        candidate = candidate.substring(0, stopIdx);
+                    }
                 }
+
+                // Limpiar prefijos basura de OCR (ej: "ce ", "menea ")
+                extractedServicio = candidate.replace(/^[a-z]{1,3}\s/i, '').trim().substring(0, 80);
             }
 
             // 4. Extraer Descripción (Detalle de la objeción)
             let extractedDescripcion = '';
-            const descKeywords = ['detalle', 'motivo', 'observación', 'glosa total', 'anexo', 'tarifario', 'incluido'];
-            const descIdx = lines.findIndex(l => descKeywords.some(k => l.toLowerCase().includes(k)));
+            const descKeywords = ['detalle', 'motivo', 'observación', 'glosa total', 'anexo', 'tarifario', 'incluido', 'objetado'];
 
-            if (descIdx !== -1) {
-                // La descripción suele ser la línea que contiene el keyword o las siguientes si son texto largo
-                const context = lines.slice(descIdx, descIdx + 3).join(' ');
-                extractedDescripcion = context.substring(0, 150);
+            // Buscar la primera línea que contenga descripción o donde cortamos el servicio
+            const descCandidateIdx = lines.findIndex(l => descKeywords.some(k => l.toLowerCase().includes(k)));
+
+            if (descCandidateIdx !== -1) {
+                let descText = lines.slice(descCandidateIdx, descCandidateIdx + 3).join(' ');
+
+                // Limpiar si el nombre del servicio se coló al principio
+                if (extractedServicio && descText.includes(extractedServicio)) {
+                    descText = descText.replace(extractedServicio, '');
+                }
+
+                extractedDescripcion = descText.trim().substring(0, 200);
+            } else {
+                // Fallback: Si no hay keywords, tomar líneas que no son servicio ni factura
+                const remainingLines = lines.filter(l => l !== extractedServicio && !l.includes(extractedFactura) && l.length > 20);
+                if (remainingLines.length > 0) {
+                    extractedDescripcion = remainingLines[0].substring(0, 200);
+                }
             }
 
             setFormData(prev => ({
