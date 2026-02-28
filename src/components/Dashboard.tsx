@@ -251,7 +251,7 @@ export const Dashboard = ({ glosas: allGlosas, totalIngresos, stats: executiveSt
                         <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
                             <motion.div
                                 initial={{ width: 0 }}
-                                animate={{ width: `${metrics.totalValue > 0 ? (metrics.acceptedValue / metrics.totalValue) * 100 : 0}%` }}
+                                animate={{ width: `${Math.min(100, metrics.totalValue > 0 ? (metrics.acceptedValue / metrics.totalValue) * 100 : 0)}%` }}
                                 style={{ height: '100%', background: '#ff4d4d', borderRadius: '10px', boxShadow: '0 0 10px rgba(255, 77, 77, 0.3)' }}
                             />
                         </div>
@@ -298,7 +298,7 @@ export const Dashboard = ({ glosas: allGlosas, totalIngresos, stats: executiveSt
                                 <div style={{ height: '4px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
                                     <motion.div
                                         initial={{ width: 0 }}
-                                        animate={{ width: `${cat.p}%` }}
+                                        animate={{ width: `${Math.min(100, cat.p)}%` }}
                                         style={{ height: '100%', background: 'linear-gradient(90deg, var(--primary), var(--secondary))', borderRadius: '10px', boxShadow: `0 0 10px var(--primary-glow)` }}
                                     />
                                 </div>
