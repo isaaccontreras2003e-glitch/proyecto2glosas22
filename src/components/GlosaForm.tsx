@@ -12,6 +12,7 @@ interface Glosa {
     servicio: string;
     orden_servicio: string;
     valor_glosa: number;
+    valor_aceptado: number;
     descripcion: string;
     tipo_glosa: string;
     estado: string;
@@ -33,6 +34,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
         servicio: '',
         orden_servicio: '',
         valor_glosa: '',
+        valor_aceptado: '',
         descripcion: '',
         tipo_glosa: 'Tarifas',
         estado: 'Pendiente'
@@ -98,14 +100,15 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
         const factura = formData.factura.trim();
         const servicio = formData.servicio.trim();
         const valor = parseFloat(formData.valor_glosa);
+        const valorAceptado = parseFloat(formData.valor_aceptado || '0');
 
         if (!factura || !servicio || isNaN(valor)) {
             showToast('❌ CAMPOS REQUERIDOS: Completa Factura, Servicio y Valor.', 'error');
             return;
         }
 
-        if (valor < 0) {
-            showToast('❌ ERROR: El valor no puede ser negativo.', 'error');
+        if (valor < 0 || valorAceptado < 0) {
+            showToast('❌ ERROR: Los valores no pueden ser negativos.', 'error');
             return;
         }
 
@@ -117,6 +120,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
             servicio,
             id: Math.random().toString(36).substr(2, 9),
             valor_glosa: valor,
+            valor_aceptado: valorAceptado,
             fecha: nowTimestamp(),
             registrada_internamente: false,
             seccion: currentSeccion
@@ -131,6 +135,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
             servicio: '',
             orden_servicio: '',
             valor_glosa: '',
+            valor_aceptado: '',
             descripcion: '',
             tipo_glosa: 'Tarifas',
             estado: 'Pendiente'
@@ -277,6 +282,16 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
                             />
                         </div>
                         <div className="input-group">
+                            <label className="label">Valor Aceptado</label>
+                            <input
+                                type="number"
+                                className="input"
+                                placeholder="0.00"
+                                value={formData.valor_aceptado}
+                                onChange={(e) => setFormData({ ...formData, valor_aceptado: e.target.value })}
+                            />
+                        </div>
+                        <div className="input-group">
                             <label className="label">Tipo de Glosa</label>
                             <select
                                 className="input"
@@ -327,7 +342,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
                         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
                             <button
                                 type="button"
-                                onClick={() => setFormData({ ...formData, factura: '', servicio: '', valor_glosa: '' })}
+                                onClick={() => setFormData({ ...formData, factura: '', servicio: '', valor_glosa: '', valor_aceptado: '' })}
                                 className="btn btn-secondary"
                                 style={{ flex: 1, gap: '0.5rem' }}
                             >

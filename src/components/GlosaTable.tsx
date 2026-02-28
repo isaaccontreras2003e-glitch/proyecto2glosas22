@@ -12,6 +12,7 @@ interface Glosa {
     servicio: string;
     orden_servicio: string;
     valor_glosa: number;
+    valor_aceptado: number;
     descripcion: string;
     tipo_glosa: string;
     estado: string;
@@ -534,6 +535,7 @@ export const GlosaTable = ({
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 <DetailItem icon={<DollarSign size={16} />} label="Valor Glosado" value={`$${formatPesos(selectedGlosa.valor_glosa)}`} isHighlight />
+                                <DetailItem icon={<DollarSign size={16} />} label="Valor Aceptado" value={`$${formatPesos(selectedGlosa.valor_aceptado)}`} isHighlight />
                                 <DetailItem icon={<Calendar size={16} />} label="Fecha de Registro" value={selectedGlosa.fecha} />
                                 {/* Build Sync: Timestamp V1.0 */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -598,6 +600,10 @@ export const GlosaTable = ({
                                 <div className="input-group">
                                     <label className="label">Valor Glosa</label>
                                     <input type="number" className="input" value={editingGlosa.valor_glosa} onChange={(e) => setEditingGlosa({ ...editingGlosa, valor_glosa: parseFloat(e.target.value) })} />
+                                </div>
+                                <div className="input-group">
+                                    <label className="label">Valor Aceptado</label>
+                                    <input type="number" className="input" value={editingGlosa.valor_aceptado} onChange={(e) => setEditingGlosa({ ...editingGlosa, valor_aceptado: parseFloat(e.target.value) })} />
                                 </div>
                                 <div className="input-group" style={{ gridColumn: '1 / -1' }}>
                                     <label className="label">Servicio / Descripción Operativa</label>

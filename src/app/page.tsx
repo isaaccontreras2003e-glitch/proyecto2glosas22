@@ -23,6 +23,7 @@ interface Glosa {
   servicio: string;
   orden_servicio: string;
   valor_glosa: number;
+  valor_aceptado: number;
   descripcion: string;
   tipo_glosa: string;
   estado: string;
