@@ -6,9 +6,10 @@ interface CardProps {
     className?: string;
     title?: string;
     style?: React.CSSProperties;
+    headerAction?: React.ReactNode;
 }
 
-export const Card = ({ children, className = '', title, style }: CardProps) => {
+export const Card = ({ children, className = '', title, style, headerAction }: CardProps) => {
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -16,7 +17,10 @@ export const Card = ({ children, className = '', title, style }: CardProps) => {
             className={`card ${className}`}
             style={style}
         >
-            {title && <h3 style={{ marginBottom: '1.25rem', fontSize: '1.125rem' }}>{title}</h3>}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                {title && <h3 style={{ margin: 0, fontSize: '1.125rem' }}>{title}</h3>}
+                {headerAction && <div>{headerAction}</div>}
+            </div>
             {children}
         </motion.div>
     );

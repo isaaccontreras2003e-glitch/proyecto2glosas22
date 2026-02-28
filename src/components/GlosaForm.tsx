@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Save, Plus, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Save, Plus, AlertTriangle, CheckCircle2, Scan, Camera, Loader2, Image as ImageIcon } from 'lucide-react';
+import { createWorker } from 'tesseract.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './Card';
 import { useToast } from '@/lib/contexts/ToastContext';
@@ -40,6 +41,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
     const { showToast } = useToast();
     const [forceSubmit, setForceSubmit] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [isScanning, setIsScanning] = useState(false);
 
     // Cálculos de control diario
     const todayStr = useMemo(() => new Date().toLocaleDateString('es-ES', {
@@ -90,6 +92,74 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
                 g.valor_glosa === parseFloat(formData.valor_glosa)
         );
     }, [formData, existingGlosas]);
+
+    // Lógica de Escaneo OCR
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsScanning(true);
+        showToast('🔍 ESCANEANDO IMAGEN... Por favor espera.', 'info');
+
+        try {
+            const worker = await createWorker('spa'); // Usar español
+            const { data: { text } } = await worker.recognize(file);
+            console.log("OCR Text Raw:", text);
+
+            // 1. Extraer Factura (Patrón: FEB o FAC seguido de números)
+            const facturaMatch = text.match(/(FEB|FAC|FE|FC)[\s\-]?(\d{3,})/i);
+            const extractedFactura = facturaMatch ? `${facturaMatch[1].toUpperCase()}${facturaMatch[2]}` : '';
+
+            // 2. Extraer Valor (Patrón: números después de "Valor", "Total", "Objetado" etc)
+            // Buscamos algo como "Vr. Inicial" o "Valor" cerca de un número
+            const valorMatch = text.match(/(objetado|inicial|facturado|glosa|valor|vr\.?)\s*[:\-\$]?\s*(\d{1,3}(\.\d{3})*(,\d+)?)/i);
+            let extractedValor = '';
+            if (valorMatch) {
+                extractedValor = valorMatch[2].replace(/\./g, '').replace(/,/g, '.');
+            } else {
+                // Fallback: buscar el número más grande que parezca moneda (mínimo 4 cifras para evitar fechas/IDs)
+                const allNumbers = text.match(/\d{1,3}(\.\d{3})+/g);
+                if (allNumbers) {
+                    const values = allNumbers.map(n => parseInt(n.replace(/\./g, ''))).filter(v => v > 1000);
+                    if (values.length > 0) extractedValor = Math.max(...values).toString();
+                }
+            }
+
+            // 3. Extraer Servicio (Descripción de texto)
+            // Buscamos líneas cortas o palabras tras "Servicio" o "Descripción"
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 5);
+            let extractedServicio = '';
+            const servicioLine = lines.find(l =>
+                l.toLowerCase().includes('servicio') ||
+                l.toLowerCase().includes('descripción') ||
+                l.match(/^[A-Z\s]{10,}$/) // Líneas en mayúsculas suelen ser servicios
+            );
+
+            if (servicioLine) {
+                extractedServicio = servicioLine.replace(/(servicio|descripción|:) /gi, '').substring(0, 50);
+            } else if (lines.length > 2) {
+                extractedServicio = lines[1]; // Tomar la segunda línea descriptiva como servicio
+            }
+
+            setFormData(prev => ({
+                ...prev,
+                factura: extractedFactura || prev.factura,
+                valor_glosa: extractedValor || prev.valor_glosa,
+                servicio: extractedServicio || prev.servicio
+            }));
+
+            await worker.terminate();
+            showToast('✅ ESCANEO COMPLETADO: Revisa los campos autocompletados.', 'success');
+        } catch (error) {
+            console.error("OCR Error:", error);
+            showToast('❌ ERROR DE ESCANEO: No se pudo leer la imagen.', 'error');
+        } finally {
+            setIsScanning(false);
+            // Enfocar el campo manual Orden de Servicio
+            const osInput = document.getElementById('orden_servicio');
+            if (osInput) osInput.focus();
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -143,7 +213,57 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
     const alertColor = isDuplicateExact ? '#ef4444' : '#f59e0b';
 
     return (
-        <Card title={formTitle}>
+        <Card
+            title={formTitle}
+            headerAction={
+                isAdmin && (
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <input
+                            type="file"
+                            id="ocr-upload"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={handleImageUpload}
+                            disabled={isScanning}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => document.getElementById('ocr-upload')?.click()}
+                            disabled={isScanning}
+                            style={{
+                                background: isScanning ? 'rgba(255,255,255,0.05)' : 'rgba(139, 92, 246, 0.15)',
+                                border: '1px solid rgba(139, 92, 246, 0.3)',
+                                padding: '6px 12px',
+                                borderRadius: '8px',
+                                color: 'var(--primary)',
+                                fontSize: '0.65rem',
+                                fontWeight: 800,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                cursor: isScanning ? 'not-allowed' : 'pointer',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
+                            }}
+                            className="ocr-btn"
+                        >
+                            {isScanning ? (
+                                <>
+                                    <Loader2 size={14} className="animate-spin" />
+                                    Analizando...
+                                </>
+                            ) : (
+                                <>
+                                    <Camera size={14} />
+                                    Escanear Imagen
+                                </>
+                            )}
+                        </button>
+                    </div>
+                )
+            }
+        >
             <AnimatePresence>
                 {showSuccess && (
                     <motion.div
@@ -241,6 +361,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
                         <div className="input-group">
                             <label className="label">Orden de Servicio</label>
                             <input
+                                id="orden_servicio"
                                 type="text"
                                 className="input"
                                 placeholder="Ej: OS-9988"
