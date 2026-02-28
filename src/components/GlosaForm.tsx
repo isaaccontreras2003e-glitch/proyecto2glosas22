@@ -154,11 +154,27 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
                 extractedServicio = lines[1]; // Tomar la segunda línea descriptiva como servicio
             }
 
+            // 4. Extraer Descripción (Detalle de la objeción)
+            // Buscamos bloques de texto tras "Detalle", "Motivo" u "Observación"
+            const descripcionLine = lines.find(l =>
+                l.toLowerCase().includes('detalle') ||
+                l.toLowerCase().includes('motivo') ||
+                l.toLowerCase().includes('observación') ||
+                l.toLowerCase().includes('glosa total')
+            );
+            let extractedDescripcion = '';
+            if (descripcionLine) {
+                extractedDescripcion = descripcionLine.replace(/(detalle|motivo|observación|objecion|inicial|:) /gi, '');
+            } else if (lines.length > 3) {
+                extractedDescripcion = lines.slice(2, 4).join(' '); // Tomar un par de líneas como descripción
+            }
+
             setFormData(prev => ({
                 ...prev,
                 factura: extractedFactura || prev.factura,
                 valor_glosa: extractedValor || prev.valor_glosa,
-                servicio: extractedServicio || prev.servicio
+                servicio: extractedServicio || prev.servicio,
+                descripcion: extractedDescripcion || prev.descripcion
             }));
 
             await worker.terminate();
