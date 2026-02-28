@@ -110,14 +110,27 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
             const facturaMatch = text.match(/(FEB|FAC|FE|FC)[\s\-]?(\d{3,})/i);
             const extractedFactura = facturaMatch ? `${facturaMatch[1].toUpperCase()}${facturaMatch[2]}` : '';
 
-            // 2. Extraer Valor (Patrón: números después de "Valor", "Total", "Objetado" etc)
-            // Buscamos algo como "Vr. Inicial" o "Valor" cerca de un número
-            const valorMatch = text.match(/(objetado|inicial|facturado|glosa|valor|vr\.?)\s*[:\-\$]?\s*(\d{1,3}(\.\d{3})*(,\d+)?)/i);
+            // 2. Extraer Valores (Suma de todos los encontrados)
+            // Buscamos patrones de montos monetarios vinculados a glosa
+            const valorRegex = /(objetado|inicial|facturado|glosa|valor|vr\.?)\s*[:\-\$]?\s*(\d{1,3}(\.\d{3})*(,\d+)?)/gi;
+            let totalSum = 0;
+            let match;
+            let foundAnyValue = false;
+
+            while ((match = valorRegex.exec(text)) !== null) {
+                const cleanValue = match[2].replace(/\./g, '').replace(/,/g, '.');
+                const numericValue = parseFloat(cleanValue);
+                if (!isNaN(numericValue) && numericValue > 1000) { // Evitar números pequeños que no son glosas
+                    totalSum += numericValue;
+                    foundAnyValue = true;
+                }
+            }
+
             let extractedValor = '';
-            if (valorMatch) {
-                extractedValor = valorMatch[2].replace(/\./g, '').replace(/,/g, '.');
+            if (foundAnyValue) {
+                extractedValor = Math.round(totalSum).toString();
             } else {
-                // Fallback: buscar el número más grande que parezca moneda (mínimo 4 cifras para evitar fechas/IDs)
+                // Fallback: buscar todos los números grandes que parezcan moneda (mínimo 4 cifras)
                 const allNumbers = text.match(/\d{1,3}(\.\d{3})+/g);
                 if (allNumbers) {
                     const values = allNumbers.map(n => parseInt(n.replace(/\./g, ''))).filter(v => v > 1000);
