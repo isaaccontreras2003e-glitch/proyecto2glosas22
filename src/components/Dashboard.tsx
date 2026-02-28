@@ -32,6 +32,7 @@ interface DashboardProps {
         percentRegistrado: number;
         totalCount: number;
         acceptedCount: number;
+        totalNoAceptado: number;
     };
 }
 
@@ -104,15 +105,15 @@ export const Dashboard = ({ glosas: allGlosas, totalIngresos, stats: executiveSt
     const metrics = useMemo(() => {
         const totalValue = glosas.reduce((acc, curr) => acc + curr.valor_glosa, 0);
         const totalCount = glosas.length;
-        const acceptedValue = glosas.filter(g => g.estado === 'Aceptada').reduce((acc, curr) => acc + curr.valor_glosa, 0);
-        const respondedValue = glosas.filter(g => g.estado === 'Respondida').reduce((acc, curr) => acc + curr.valor_glosa, 0);
+        const acceptedValue = executiveStats.totalAceptado;
+        const totalManagedValue = executiveStats.totalAceptado + executiveStats.totalNoAceptado;
         const acceptedCount = glosas.filter(g => g.estado === 'Aceptada').length;
 
         return {
             totalValue,
             totalCount,
             acceptedValue,
-            respondedValue,
+            totalManagedValue,
             acceptedCount,
             waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
         };
@@ -199,7 +200,7 @@ export const Dashboard = ({ glosas: allGlosas, totalIngresos, stats: executiveSt
                             <DollarSign size={16} color="var(--primary)" />
                         </div>
                         <span style={{ fontSize: '0.6rem', color: 'var(--primary)', fontWeight: 800 }}>
-                            {metrics.respondedValue > 0 ? ((metrics.acceptedValue / metrics.respondedValue) * 100).toFixed(1) : 0}% ↑
+                            {metrics.totalManagedValue > 0 ? ((metrics.acceptedValue / metrics.totalManagedValue) * 100).toFixed(1) : 0}% ↑
                         </span>
                     </div>
                     <div>

@@ -310,6 +310,7 @@ function Home() {
       totalAceptado: totalAceptadoValue,
       totalPendiente: Math.max(0, pendingValue),
       totalRegistradoInterno: totalRegistradoInternoValue,
+      totalNoAceptado: totalNoAceptadoValue,
       percentAceptado: totalGlosadoValue > 0 ? Math.round((totalAceptadoValue / totalGlosadoValue) * 100) : 0,
       percentRegistrado: totalGlosadoValue > 0 ? Math.round((totalRegistradoInternoValue / totalGlosadoValue) * 100) : 0,
 
