@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Save, Plus, AlertTriangle, CheckCircle2, Scan, Camera, Loader2, Image as ImageIcon } from 'lucide-react';
-import { createWorker } from 'tesseract.js';
+import { Save, Plus, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './Card';
 import { useToast } from '@/lib/contexts/ToastContext';
@@ -41,7 +40,6 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
     const { showToast } = useToast();
     const [forceSubmit, setForceSubmit] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
-    const [isScanning, setIsScanning] = useState(false);
 
     // Cálculos de control diario
     const todayStr = useMemo(() => new Date().toLocaleDateString('es-ES', {
@@ -92,158 +90,6 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
                 g.valor_glosa === parseFloat(formData.valor_glosa)
         );
     }, [formData, existingGlosas]);
-
-    // Lógica de Escaneo OCR
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        setIsScanning(true);
-        showToast('🔍 ESCANEANDO IMAGEN... Por favor espera.', 'info');
-
-        try {
-            const worker = await createWorker('spa'); // Usar español
-            const { data: { text } } = await worker.recognize(file);
-            console.log("OCR Text Raw:", text);
-
-            const cleanText = text.replace(/\s+/g, ' '); // Normalizar espacios para regex sencillos
-
-            // 1. Extraer Factura (Patrón: FEB o FAC seguido de números)
-            // Agregamos limpieza de errores comunes (O -> 0)
-            const facturaMatch = text.match(/(FEB|FAC|FE|FC|F EB|F AC)[\s\-\#]?\s?(\d[O\d]{3,})/i);
-            let extractedFactura = '';
-            if (facturaMatch) {
-                let code = facturaMatch[2].replace(/O/g, '0'); // Error común de OCR
-                const prefix = facturaMatch[1].replace(/\s/g, '').toUpperCase();
-                extractedFactura = `${prefix}${code}`;
-            }
-
-            // 2. Extraer Valores (Suma y Búsqueda contextual)
-            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            let totalSum = 0;
-            let foundAnyValue = false;
-
-            // Buscamos en cada línea y su contexto
-            lines.forEach((line, idx) => {
-                const lowerLine = line.toLowerCase();
-                const keywords = ['objetado', 'inicial', 'facturado', 'glosa', 'valor', 'vr', 'monto'];
-
-                if (keywords.some(k => lowerLine.includes(k))) {
-                    // Buscar número en la misma línea
-                    const numMatch = line.match(/(\d{1,3}(\.\d{3})*(,\d+)?)/g);
-                    if (numMatch) {
-                        numMatch.forEach(n => {
-                            const val = parseFloat(n.replace(/\./g, '').replace(/,/g, '.'));
-                            if (val > 1000) {
-                                totalSum += val;
-                                foundAnyValue = true;
-                            }
-                        });
-                    } else {
-                        // Si no hay número, buscar en la siguiente línea (contexto de tabla)
-                        const nextLine = lines[idx + 1] || '';
-                        const nextNumMatch = nextLine.match(/(\d{1,3}(\.\d{3})*(,\d+)?)/g);
-                        if (nextNumMatch) {
-                            // En tablas, el valor suele estar al final o en la misma posición
-                            const val = parseFloat(nextNumMatch[nextNumMatch.length - 1].replace(/\./g, '').replace(/,/g, '.'));
-                            if (val > 1000) {
-                                totalSum += val;
-                                foundAnyValue = true;
-                            }
-                        }
-                    }
-                }
-            });
-
-            let extractedValor = '';
-            if (foundAnyValue) {
-                // Si encontramos varios valores, sumarlos (pedito del usuario)
-                // Pero si hay duplicados exactos muy cercanos, podríamos estar sumando la misma fila
-                extractedValor = Math.round(totalSum).toString();
-            } else {
-                // Búsqueda profunda en todo el texto si falló el línea a línea
-                const allNumbers = text.match(/\d{1,3}(\.\d{3})+(,\d+)?/g);
-                if (allNumbers) {
-                    const values = allNumbers.map(n => parseInt(n.replace(/\./g, ''))).filter(v => v > 1000);
-                    // Tomar el valor más probable (a menudo el más grande en glosas totales)
-                    if (values.length > 0) extractedValor = Math.max(...values).toString();
-                }
-            }
-
-            // 3. Extraer Servicio (Descripción de texto) - REPARACIÓN PROFUNDA v4.3.2
-            // Problema: Tesseract lee horizontalmente mezclando columnas.
-            // "FOTOGRAFÍA A COLOR DE SEGMENTO Glosa total..."
-            let extractedServicio = '';
-            const servicioKeywords = ['servicio', 'descripcion', 'procedimiento'];
-            const stopKeywords = ['glosa', 'gloss', 'detalle', 'motivo', 'objetado', 'valor', 'inicial', 'facturado', 'aceptado', 'cod', 'cod.'];
-
-            // Buscar la línea que parece ser el servicio
-            const serviceLines = lines.filter(l => {
-                const lower = l.toLowerCase();
-                const isNotId = !l.match(/^(CC|TI|RC|CE|PA|AS|MS|NI)[\s\-]?\d+/i);
-                const hasLetters = /[A-Z]{5,}/.test(l);
-                return isNotId && hasLetters && l.length > 10;
-            });
-
-            if (serviceLines.length > 0) {
-                let candidate = serviceLines[0];
-
-                // Si la línea contiene una palabra de parada, cortarla ahí (limpieza de mezcla de columnas)
-                for (const stop of stopKeywords) {
-                    const stopIdx = candidate.toLowerCase().indexOf(' ' + stop);
-                    if (stopIdx !== -1) {
-                        candidate = candidate.substring(0, stopIdx);
-                    }
-                }
-
-                // Limpiar prefijos basura de OCR (ej: "ce ", "menea ")
-                extractedServicio = candidate.replace(/^[a-z]{1,3}\s/i, '').trim().substring(0, 80);
-            }
-
-            // 4. Extraer Descripción (Detalle de la objeción)
-            let extractedDescripcion = '';
-            const descKeywords = ['detalle', 'motivo', 'observación', 'glosa total', 'anexo', 'tarifario', 'incluido', 'objetado'];
-
-            // Buscar la primera línea que contenga descripción o donde cortamos el servicio
-            const descCandidateIdx = lines.findIndex(l => descKeywords.some(k => l.toLowerCase().includes(k)));
-
-            if (descCandidateIdx !== -1) {
-                let descText = lines.slice(descCandidateIdx, descCandidateIdx + 3).join(' ');
-
-                // Limpiar si el nombre del servicio se coló al principio
-                if (extractedServicio && descText.includes(extractedServicio)) {
-                    descText = descText.replace(extractedServicio, '');
-                }
-
-                extractedDescripcion = descText.trim().substring(0, 200);
-            } else {
-                // Fallback: Si no hay keywords, tomar líneas que no son servicio ni factura
-                const remainingLines = lines.filter(l => l !== extractedServicio && !l.includes(extractedFactura) && l.length > 20);
-                if (remainingLines.length > 0) {
-                    extractedDescripcion = remainingLines[0].substring(0, 200);
-                }
-            }
-
-            setFormData(prev => ({
-                ...prev,
-                factura: extractedFactura || prev.factura,
-                valor_glosa: extractedValor || prev.valor_glosa,
-                servicio: extractedServicio || prev.servicio,
-                descripcion: extractedDescripcion || prev.descripcion
-            }));
-
-            await worker.terminate();
-            showToast('✅ ESCANEO COMPLETADO: Revisa los campos autocompletados.', 'success');
-        } catch (error) {
-            console.error("OCR Error:", error);
-            showToast('❌ ERROR DE ESCANEO: No se pudo leer la imagen.', 'error');
-        } finally {
-            setIsScanning(false);
-            // Enfocar el campo manual Orden de Servicio
-            const osInput = document.getElementById('orden_servicio');
-            if (osInput) osInput.focus();
-        }
-    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -299,54 +145,6 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
     return (
         <Card
             title={formTitle}
-            headerAction={
-                isAdmin && (
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <input
-                            type="file"
-                            id="ocr-upload"
-                            accept="image/*"
-                            style={{ display: 'none' }}
-                            onChange={handleImageUpload}
-                            disabled={isScanning}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => document.getElementById('ocr-upload')?.click()}
-                            disabled={isScanning}
-                            style={{
-                                background: isScanning ? 'rgba(255,255,255,0.05)' : 'rgba(139, 92, 246, 0.15)',
-                                border: '1px solid rgba(139, 92, 246, 0.3)',
-                                padding: '6px 12px',
-                                borderRadius: '8px',
-                                color: 'var(--primary)',
-                                fontSize: '0.65rem',
-                                fontWeight: 800,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                cursor: isScanning ? 'not-allowed' : 'pointer',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em'
-                            }}
-                            className="ocr-btn"
-                        >
-                            {isScanning ? (
-                                <>
-                                    <Loader2 size={14} className="animate-spin" />
-                                    Analizando...
-                                </>
-                            ) : (
-                                <>
-                                    <Camera size={14} />
-                                    Escanear Imagen
-                                </>
-                            )}
-                        </button>
-                    </div>
-                )
-            }
         >
             <AnimatePresence>
                 {showSuccess && (
