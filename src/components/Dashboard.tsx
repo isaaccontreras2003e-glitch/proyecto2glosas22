@@ -22,7 +22,7 @@ interface Glosa {
 
 interface DashboardProps {
     glosas: Glosa[];
-    totalIngresos: number;
+    consolidado: any[];
     stats: {
         totalGlosado: number;
         totalAceptado: number;
@@ -82,7 +82,7 @@ const Sparkline = ({ data, color }: { data: number[], color: string }) => {
     );
 };
 
-export const Dashboard = ({ glosas: allGlosas, totalIngresos, stats: executiveStats }: DashboardProps) => {
+export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stats: executiveStats }: DashboardProps) => {
     const [selectedService, setSelectedService] = useState('Todos');
     const [selectedType, setSelectedType] = useState('Todos');
 
@@ -100,13 +100,23 @@ export const Dashboard = ({ glosas: allGlosas, totalIngresos, stats: executiveSt
             return matchService && matchType;
         });
     }, [allGlosas, selectedService, selectedType]);
+    const filteredConsolidado = useMemo(() => {
+        return allConsolidado.filter(item => {
+            const matchService = selectedService === 'Todos' || item.servicios?.includes(selectedService);
+            const matchType = selectedType === 'Todos' || item.tipos?.includes(selectedType);
+            return matchService && matchType;
+        });
+    }, [allConsolidado, selectedService, selectedType]);
 
     // 2. Metrics for the 4 Cards
     const metrics = useMemo(() => {
-        const totalValue = glosas.reduce((acc, curr) => acc + curr.valor_glosa, 0);
-        const totalCount = glosas.length;
-        const acceptedValue = executiveStats.totalAceptado;
-        const totalManagedValue = executiveStats.totalAceptado + executiveStats.totalNoAceptado;
+        const totalValue = filteredConsolidado.reduce((acc, curr) => acc + curr.glosado, 0);
+        const totalCount = glosas.length; // Count of individual glosa lines
+
+        // Financial metrics from filtered consolidated list (Truth)
+        const acceptedValue = filteredConsolidado.reduce((acc, curr) => acc + curr.aceptado, 0);
+        const totalManagedValue = filteredConsolidado.reduce((acc, curr) => acc + (curr.aceptado + curr.noAceptado), 0);
+
         const acceptedCount = glosas.filter(g => g.estado === 'Aceptada').length;
 
         return {
@@ -117,7 +127,7 @@ export const Dashboard = ({ glosas: allGlosas, totalIngresos, stats: executiveSt
             acceptedCount,
             waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
         };
-    }, [glosas]);
+    }, [glosas, filteredConsolidado]);
 
     // 3. Category Bars
     const categories = useMemo(() => {

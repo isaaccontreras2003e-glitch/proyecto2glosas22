@@ -422,6 +422,9 @@ function Home() {
       const aceptado = factIngresos.reduce((acc, i) => acc + i.valor_aceptado, 0);
       const noAceptado = factIngresos.reduce((acc, i) => acc + i.valor_no_aceptado, 0);
 
+      const servicios = Array.from(new Set(factGlosas.map(g => g.servicio).filter(Boolean)));
+      const tipos = Array.from(new Set(factGlosas.map(g => g.tipo_glosa).filter(Boolean)));
+
       const fechasGlosas = factGlosas.map(g => parseDate(g.fecha));
       const fechasIngresos = factIngresos.map(i => parseDate(i.fecha));
       const todasLasFechas = [...fechasGlosas, ...fechasIngresos].filter(Boolean);
@@ -434,6 +437,8 @@ function Home() {
         glosado,
         aceptado,
         noAceptado,
+        servicios,
+        tipos,
         fecha: fechaActividad,
         timestamp: maxFechaTimestamp,
         diferencia: glosado - aceptado - noAceptado
@@ -1001,7 +1006,7 @@ function Home() {
                 >
                   <Dashboard
                     glosas={currentSectionGlosas}
-                    totalIngresos={stats.totalIngresos}
+                    consolidado={consolidado}
                     stats={stats}
                   />
                 </motion.div>
