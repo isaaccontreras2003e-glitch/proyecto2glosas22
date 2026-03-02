@@ -996,286 +996,352 @@ function Home() {
 
         {
           ((!loading && !authLoading) || forcedEntry) && user && (
-            <AnimatePresence mode="wait">
-              {activeSection === 'dashboard' && (
-                <motion.div
-                  key="dashboard"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Dashboard
-                    glosas={currentSectionGlosas}
-                    consolidado={consolidado}
-                    stats={stats}
-                  />
-                </motion.div>
-              )}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              {/* Sección Actual Highlight Indicator */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '2rem',
+                padding: '1rem 1.5rem',
+                background: currentMainSection === 'GLOSAS'
+                  ? 'rgba(139, 92, 246, 0.05)'
+                  : currentMainSection === 'MEDICAMENTOS'
+                    ? 'rgba(16, 185, 129, 0.05)'
+                    : 'rgba(245, 158, 11, 0.05)',
+                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                margin: '-2rem -2rem 2rem -2rem',
+                position: 'sticky',
+                top: 0,
+                zIndex: 10,
+                backdropFilter: 'blur(20px)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{
+                    width: '10px',
+                    height: '100%',
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    background: currentMainSection === 'GLOSAS' ? '#8b5cf6' : currentMainSection === 'MEDICAMENTOS' ? '#10b981' : '#f59e0b',
+                    boxShadow: `0 0 15px ${currentMainSection === 'GLOSAS' ? '#8b5cf6' : currentMainSection === 'MEDICAMENTOS' ? '#10b981' : '#f59e0b'}`
+                  }} />
+                  <span style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 900,
+                    color: currentMainSection === 'GLOSAS' ? '#a78bfa' : currentMainSection === 'MEDICAMENTOS' ? '#34d399' : '#fbbf24',
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase'
+                  }}>Sección Activa</span>
+                  <h2 style={{
+                    fontSize: '1.2rem',
+                    fontWeight: 950,
+                    color: 'white',
+                    margin: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    {currentMainSection === 'GLOSAS' && <FileText size={20} color="#8b5cf6" />}
+                    {currentMainSection === 'MEDICAMENTOS' && <Activity size={20} color="#10b981" />}
+                    {currentMainSection === 'RATIFICADAS' && <CheckCircle size={20} color="#f59e0b" />}
+                    {currentMainSection}
+                  </h2>
+                </div>
 
-              {activeSection === 'ingreso' && (
-                <motion.div
-                  key="ingreso"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                  style={{ maxWidth: '1000px', margin: '0 auto' }}
-                >
-                  <div style={{ marginBottom: '2rem' }}>
-                    <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>Registrar Nueva Glosa</h2>
-                    <p style={{ color: 'var(--text-secondary)' }}>Complete el siguiente formulario para ingresar una nueva glosa al sistema.</p>
-                  </div>
-                  <GlosaForm
-                    onAddGlosa={handleAddGlosa}
-                    existingGlosas={glosas}
-                    currentSeccion={currentMainSection}
-                    isAdmin={role === 'admin'}
-                  />
-                </motion.div>
-              )}
-
-              {activeSection === 'consolidado' && (
-                <motion.div
-                  key="consolidado"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.3 }}
-                  style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
-                    <div>
-                      <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>Resumen de Auditoría por Factura</h2>
-                      <p style={{ color: 'var(--text-secondary)', maxWidth: '800px' }}>
-                        Este panel agrupa todas las reclamaciones por factura para visualizar el balance final.
-                        Permite comparar el <strong>monto total glosado</strong> frente a los <strong>pagos aceptados</strong>,
-                        identificando la diferencia pendiente de conciliar.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: '1.25rem', border: '1px solid var(--border)', gap: '1rem' }}>
-                    <div style={{ flex: '1', maxWidth: '400px' }}>
-                      <div style={{ position: 'relative' }}>
-                        <ClipboardList size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-                        <input
-                          type="text"
-                          placeholder="Buscar factura en consolidado..."
-                          value={searchTermConsolidado}
-                          onChange={(e) => setSearchTermConsolidado(e.target.value)}
-                          style={{
-                            width: '100%',
-                            background: 'rgba(0,0,0,0.2)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: '12px',
-                            padding: '0.75rem 1rem 0.75rem 2.8rem',
-                            color: 'white',
-                            fontSize: '0.85rem',
-                            outline: 'none',
-                            transition: 'all 0.2s'
-                          }}
-                          onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-                          onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
-                        />
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                      <motion.button whileHover={{ scale: 1.05 }} onClick={exportToExcel} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(139,92,246,0.1)', color: 'var(--primary)', height: '42px' }}>
-                        <Download size={16} /> CONSOLIDADO CSV
-                      </motion.button>
-                    </div>
-                  </div>
-
-                  <ConsolidadoTable data={filteredConsolidado} />
-
-                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: '2.5rem' }}>
-                    <div style={{ marginBottom: '1.5rem' }}>
-                      <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'white' }}>Listado Detallado</h3>
-                    </div>
-                    <GlosaTable
-                      glosas={filteredGlosas}
-                      onUpdateStatus={handleUpdateStatus}
-                      onUpdateGlosa={handleUpdateGlosa}
-                      onDeleteGlosa={handleDeleteGlosa}
-                      onDeleteDuplicates={handleDeleteDuplicates}
-                      onToggleInternalRegistry={handleToggleInternalRegistry}
-                      searchTerm={searchTerm}
-                      setSearchTerm={setSearchTerm}
-                      filterTipo={filterTipo}
-                      setFilterTipo={setFilterTipo}
-                      filterEstado={filterEstado}
-                      setFilterEstado={setFilterEstado}
-                      filterInterno={filterInterno}
-                      setFilterInterno={setFilterInterno}
-                      isAdmin={role === 'admin'}
-                    />
-                  </div>
-                </motion.div>
-              )}
-
-              {activeSection === 'valores' && (
-                <motion.div
-                  key="valores"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                  style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem' }}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                    <div>
-                      <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>Gestión de Valores</h2>
-                      <p style={{ color: 'var(--text-secondary)' }}>Registre los pagos aceptados y no aceptados para su control final de auditoría.</p>
-                    </div>
-                    <IngresoForm
-                      onAddIngreso={handleAddIngreso}
-                      isAdmin={role === 'admin'}
-                      currentSeccion={currentMainSection}
-                    />
-                  </div>
-                  <div>
-                    <IngresoList
-                      ingresos={filteredIngresos}
-                      onDelete={handleDeleteIngreso}
-                      isAdmin={role === 'admin'}
-                      searchTerm={searchTermIngresos}
-                      setSearchTerm={setSearchTermIngresos}
-                    />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          )
-        }
-
-        <footer style={{ marginTop: '8rem', padding: '6rem 0', borderTop: '2px solid var(--border)', textAlign: 'center' }}>
-          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-            <h3 style={{
-              fontSize: '0.8rem',
-              color: 'rgba(255,255,255,0.3)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.2em',
-              marginBottom: '2.5rem',
-              fontWeight: 800
-            }}>
-              Panel de Control y Gestión de Datos
-            </h3>
-
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1.25rem', flexWrap: 'wrap', marginBottom: '4rem' }}>
-              {/* Grupo: Gestión de Archivos */}
-              <div style={{ display: 'flex', gap: '0.75rem', background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '1.25rem', border: '1px solid var(--border)' }}>
-                {role === 'admin' && (
-                  <>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      onClick={() => fileInputRef.current?.click()}
-                      className="btn btn-secondary"
-                      style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#10b981', borderColor: 'rgba(16,185,129,0.2)' }}
-                    >
-                      <ListChecks size={16} />
-                      IMPORTAR EXCEL
-                    </motion.button>
-                    <input type="file" ref={fileInputRef} onChange={handleCSVImport} accept=".csv" style={{ display: 'none' }} />
-                  </>
-                )}
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  onClick={exportGlosasToExcel}
-                  className="btn btn-secondary"
-                  style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#8b5cf6', borderColor: 'rgba(139,92,246,0.2)' }}
-                >
-                  <Download size={16} />
-                  EXPORTAR DATOS
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  onClick={exportToExcel}
-                  className="btn btn-secondary"
-                  style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}
-                >
-                  <Download size={16} />
-                  CONSOLIDADO
-                </motion.button>
+                <div style={{
+                  fontSize: '0.7rem',
+                  color: 'rgba(255,255,255,0.4)',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <Clock size={12} /> {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </div>
               </div>
 
-              {/* Grupo: Mantenimiento (Discreto) */}
-              {role === 'admin' && (
-                <div style={{ display: 'flex', gap: '0.75rem', opacity: 0.5 }}>
-                  <motion.button
-                    whileHover={{ scale: 1.05, opacity: 1 }}
-                    onClick={() => {
-                      const recovered = {
-                        glosas: JSON.parse(localStorage.getItem('sisfact_glosas') || '[]'),
-                        ingresos: JSON.parse(localStorage.getItem('sisfact_ingresos') || '[]')
-                      };
-                      if (confirm('¿Deseas intentar IMPORTAR a la nube o DESCARGAR un respaldo?')) {
-                        handleManualImport();
-                      } else {
-                        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(recovered, null, 2));
-                        const downloadAnchorNode = document.createElement('a');
-                        downloadAnchorNode.setAttribute("href", dataStr);
-                        downloadAnchorNode.setAttribute("download", "respaldo_glosas_seguro.json");
-                        document.body.appendChild(downloadAnchorNode);
-                        downloadAnchorNode.click();
-                        downloadAnchorNode.remove();
-                      }
-                    }}
-                    className="btn btn-secondary"
-                    style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b' }}
+              <AnimatePresence mode="wait">
+                {activeSection === 'dashboard' && (
+                  <motion.div
+                    key="dashboard"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
                   >
-                    <Activity size={12} />
-                    RECUPERACIÓN LOCAL
-                  </motion.button>
+                    <Dashboard
+                      glosas={currentSectionGlosas}
+                      consolidado={consolidado}
+                      stats={stats}
+                    />
+                  </motion.div>
+                )}
 
-                  <motion.button
-                    whileHover={{ scale: 1.05, opacity: 1 }}
-                    onClick={testConnection}
-                    className="btn btn-secondary"
-                    style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#60a5fa' }}
+                {activeSection === 'ingreso' && (
+                  <motion.div
+                    key="ingreso"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3 }}
+                    style={{ maxWidth: '1000px', margin: '0 auto' }}
                   >
-                    <Activity size={12} />
-                    VERIFICAR CONEXIÓN NUBE
-                  </motion.button>
+                    <div style={{ marginBottom: '2rem' }}>
+                      <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>Registrar {currentMainSection.toLowerCase()}</h2>
+                      <p style={{ color: 'var(--text-secondary)' }}>Complete el siguiente formulario para ingresar un nuevo registro de {currentMainSection.toLowerCase()}.</p>
+                    </div>
+                    <GlosaForm
+                      onAddGlosa={handleAddGlosa}
+                      existingGlosas={glosas}
+                      currentSeccion={currentMainSection}
+                      isAdmin={role === 'admin'}
+                    />
+                  </motion.div>
+                )}
 
-                  <motion.button
-                    whileHover={{ scale: 1.05, opacity: 1 }}
-                    onClick={handleSyncLocalCheckpoints}
-                    className="btn btn-secondary"
-                    style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10b981' }}
+                {activeSection === 'consolidado' && (
+                  <motion.div
+                    key="consolidado"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.3 }}
+                    style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}
                   >
-                    <RefreshCw size={12} />
-                    SINCRONIZAR MARCAS LOCALES
-                  </motion.button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
+                      <div>
+                        <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>Consolidado de {currentMainSection}</h2>
+                        <p style={{ color: 'var(--text-secondary)', maxWidth: '800px' }}>
+                          Resumen agrupado por factura para visualizar el balance final de <strong>{currentMainSection.toLowerCase()}</strong>.
+                          Permite comparar el monto total frente a lo aceptado y la diferencia pendiente.
+                        </p>
+                      </div>
+                    </div>
 
-                  <motion.button
-                    whileHover={{ scale: 1.05, opacity: 1 }}
-                    onClick={handleDeepRecovery}
-                    className="btn btn-secondary"
-                    style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b' }}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: '1.25rem', border: '1px solid var(--border)', gap: '1rem' }}>
+                      <div style={{ flex: '1', maxWidth: '400px' }}>
+                        <div style={{ position: 'relative' }}>
+                          <ClipboardList size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+                          <input
+                            type="text"
+                            placeholder="Buscar factura en consolidado..."
+                            value={searchTermConsolidado}
+                            onChange={(e) => setSearchTermConsolidado(e.target.value)}
+                            style={{
+                              width: '100%',
+                              background: 'rgba(0,0,0,0.2)',
+                              border: '1px solid rgba(255,255,255,0.1)',
+                              borderRadius: '12px',
+                              padding: '0.75rem 1rem 0.75rem 2.8rem',
+                              color: 'white',
+                              fontSize: '0.85rem',
+                              outline: 'none',
+                              transition: 'all 0.2s'
+                            }}
+                            onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                            onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                          />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '1rem' }}>
+                        <motion.button whileHover={{ scale: 1.05 }} onClick={exportToExcel} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(139,92,246,0.1)', color: 'var(--primary)', height: '42px' }}>
+                          <Download size={16} /> CONSOLIDADO CSV
+                        </motion.button>
+                      </div>
+                    </div>
+
+                    <ConsolidadoTable data={filteredConsolidado} />
+
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: '2.5rem' }}>
+                      <div style={{ marginBottom: '1.5rem' }}>
+                        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'white' }}>Listado Detallado</h3>
+                      </div>
+                      <GlosaTable
+                        glosas={filteredGlosas}
+                        onUpdateStatus={handleUpdateStatus}
+                        onUpdateGlosa={handleUpdateGlosa}
+                        onDeleteGlosa={handleDeleteGlosa}
+                        onDeleteDuplicates={handleDeleteDuplicates}
+                        onToggleInternalRegistry={handleToggleInternalRegistry}
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        filterTipo={filterTipo}
+                        setFilterTipo={setFilterTipo}
+                        filterEstado={filterEstado}
+                        setFilterEstado={setFilterEstado}
+                        filterInterno={filterInterno}
+                        setFilterInterno={setFilterInterno}
+                        isAdmin={role === 'admin'}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeSection === 'valores' && (
+                  <motion.div
+                    key="valores"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem' }}
                   >
-                    <Activity size={12} />
-                    ESCANEO DE SEGURIDAD
-                  </motion.button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                      <div>
+                        <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>Gestión de Valores</h2>
+                        <p style={{ color: 'var(--text-secondary)' }}>Registre los pagos aceptados y no aceptados para su control final de auditoría.</p>
+                      </div>
+                      <IngresoForm
+                        onAddIngreso={handleAddIngreso}
+                        isAdmin={role === 'admin'}
+                        currentSeccion={currentMainSection}
+                      />
+                    </div>
+                    <div>
+                      <IngresoList
+                        ingresos={filteredIngresos}
+                        onDelete={handleDeleteIngreso}
+                        isAdmin={role === 'admin'}
+                        searchTerm={searchTermIngresos}
+                        setSearchTerm={setSearchTermIngresos}
+                      />
+                    </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <footer style={{ marginTop: '8rem', padding: '6rem 0', borderTop: '2px solid var(--border)', textAlign: 'center' }}>
+                <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+                  <h3 style={{
+                    fontSize: '0.8rem',
+                    color: 'rgba(255,255,255,0.3)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.2em',
+                    marginBottom: '2.5rem',
+                    fontWeight: 800
+                  }}>
+                    Panel de Control y Gestión de Datos
+                  </h3>
+
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '1.25rem', flexWrap: 'wrap', marginBottom: '4rem' }}>
+                    {/* Grupo: Gestión de Archivos */}
+                    <div style={{ display: 'flex', gap: '0.75rem', background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '1.25rem', border: '1px solid var(--border)' }}>
+                      {role === 'admin' && (
+                        <>
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            onClick={() => fileInputRef.current?.click()}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#10b981', borderColor: 'rgba(16,185,129,0.2)' }}
+                          >
+                            <ListChecks size={16} />
+                            IMPORTAR EXCEL
+                          </motion.button>
+                          <input type="file" ref={fileInputRef} onChange={handleCSVImport} accept=".csv" style={{ display: 'none' }} />
+                        </>
+                      )}
+
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        onClick={exportGlosasToExcel}
+                        className="btn btn-secondary"
+                        style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#8b5cf6', borderColor: 'rgba(139,92,246,0.2)' }}
+                      >
+                        <Download size={16} />
+                        EXPORTAR DATOS
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        onClick={exportToExcel}
+                        className="btn btn-secondary"
+                        style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}
+                      >
+                        <Download size={16} />
+                        CONSOLIDADO
+                      </motion.button>
+                    </div>
+
+                    {/* Grupo: Mantenimiento (Discreto) */}
+                    {role === 'admin' && (
+                      <div style={{ display: 'flex', gap: '0.75rem', opacity: 0.5 }}>
+                        <motion.button
+                          whileHover={{ scale: 1.05, opacity: 1 }}
+                          onClick={() => {
+                            const recovered = {
+                              glosas: JSON.parse(localStorage.getItem('sisfact_glosas') || '[]'),
+                              ingresos: JSON.parse(localStorage.getItem('sisfact_ingresos') || '[]')
+                            };
+                            if (confirm('¿Deseas intentar IMPORTAR a la nube o DESCARGAR un respaldo?')) {
+                              handleManualImport();
+                            } else {
+                              const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(recovered, null, 2));
+                              const downloadAnchorNode = document.createElement('a');
+                              downloadAnchorNode.setAttribute("href", dataStr);
+                              downloadAnchorNode.setAttribute("download", "respaldo_glosas_seguro.json");
+                              document.body.appendChild(downloadAnchorNode);
+                              downloadAnchorNode.click();
+                              downloadAnchorNode.remove();
+                            }
+                          }}
+                          className="btn btn-secondary"
+                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b' }}
+                        >
+                          <Activity size={12} />
+                          RECUPERACIÓN LOCAL
+                        </motion.button>
+
+                        <motion.button
+                          whileHover={{ scale: 1.05, opacity: 1 }}
+                          onClick={testConnection}
+                          className="btn btn-secondary"
+                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#60a5fa' }}
+                        >
+                          <Activity size={12} />
+                          VERIFICAR CONEXIÓN NUBE
+                        </motion.button>
+
+                        <motion.button
+                          whileHover={{ scale: 1.05, opacity: 1 }}
+                          onClick={handleSyncLocalCheckpoints}
+                          className="btn btn-secondary"
+                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10b981' }}
+                        >
+                          <RefreshCw size={12} />
+                          SINCRONIZAR MARCAS LOCALES
+                        </motion.button>
+
+                        <motion.button
+                          whileHover={{ scale: 1.05, opacity: 1 }}
+                          onClick={handleDeepRecovery}
+                          className="btn btn-secondary"
+                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b' }}
+                        >
+                          <Activity size={12} />
+                          ESCANEO DE SEGURIDAD
+                        </motion.button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ opacity: 0.4 }}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
+                      &copy; {new Date().getFullYear()} Sisfact Auditoría. Desarrollado por Isaac Contreras.
+                    </p>
+                    <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.65rem', marginTop: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                      Gestión de Alto Rendimiento para Clínicas Internacionales
+                    </p>
+                  </div>
+                  <div style={{ marginTop: '2rem', padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.65rem', color: 'rgba(255,255,255,0.15)', fontFamily: 'monospace' }}>
+                    DEBUG: ID={user?.id} | ROL={role} | EMAIL={user?.email}
+                  </div>
                 </div>
-              )}
+              </footer>
             </div>
-
-            <div style={{ opacity: 0.4 }}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
-                &copy; {new Date().getFullYear()} Sisfact Auditoría. Desarrollado por Isaac Contreras.
-              </p>
-              <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.65rem', marginTop: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                Gestión de Alto Rendimiento para Clínicas Internacionales
-              </p>
-            </div>
-            <div style={{ marginTop: '2rem', padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.65rem', color: 'rgba(255,255,255,0.15)', fontFamily: 'monospace' }}>
-              DEBUG: ID={user?.id} | ROL={role} | EMAIL={user?.email}
-            </div>
-          </div>
-        </footer>
+  )
+}
       </main >
     </div >
   );
