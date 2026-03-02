@@ -122,7 +122,10 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
 
         // Percentages
         const percentResponded = totalValue > 0 ? (totalRespondedValue / totalValue) * 100 : 0;
-        const percentAcceptedTotal = totalValue > 0 ? (acceptedValue / totalValue) * 100 : 0;
+
+        // Breakdown within responded
+        const percentAcceptedResponded = totalRespondedValue > 0 ? (acceptedValue / totalRespondedValue) * 100 : 0;
+        const percentNoAcceptedResponded = totalRespondedValue > 0 ? (noAcceptedValue / totalRespondedValue) * 100 : 0;
 
         return {
             totalValue,
@@ -132,7 +135,8 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
             totalRespondedValue,
             acceptedCount,
             percentResponded,
-            percentAcceptedTotal,
+            percentAcceptedResponded,
+            percentNoAcceptedResponded,
             waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
         };
     }, [glosas, filteredConsolidado]);
@@ -217,20 +221,21 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <DollarSign size={16} color="var(--primary)" />
                         </div>
-                        <span style={{ fontSize: '0.6rem', color: 'var(--primary)', fontWeight: 800 }}>
-                            {metrics.percentAcceptedTotal.toFixed(1)}% ACEPTADO
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                            <span style={{ fontSize: '0.55rem', color: '#ff4d4d', fontWeight: 800 }}>{metrics.percentAcceptedResponded.toFixed(1)}% ACEPTADO</span>
+                            <span style={{ fontSize: '0.55rem', color: 'var(--primary)', fontWeight: 800 }}>{metrics.percentNoAcceptedResponded.toFixed(1)}% NO ACEPTADO</span>
+                        </div>
                     </div>
                     <div>
                         <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>IMPORTE TOTAL GLOSADO</p>
                         <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>${formatPesos(metrics.totalValue)}</h2>
                     </div>
                     <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                        <div style={{ height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
+                        <div style={{ height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '100px', display: 'flex' }}>
                             <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${Math.min(100, metrics.percentResponded)}%` }}
-                                style={{ height: '100%', background: 'var(--primary)', borderRadius: '10px', boxShadow: '0 0 10px var(--primary-glow)' }}
+                                style={{ height: '100%', background: 'linear-gradient(90deg, #ff4d4d, var(--primary))', borderRadius: '100px', boxShadow: '0 0 10px var(--primary-glow)' }}
                             />
                         </div>
                         <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px', fontWeight: 700 }}>TOTAL VALORES RESPONDIDOS</p>
