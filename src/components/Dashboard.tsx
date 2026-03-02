@@ -116,23 +116,23 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
         // Financial metrics from filtered consolidated list (Truth)
         const acceptedValue = filteredConsolidado.reduce((acc, curr) => acc + curr.aceptado, 0);
         const noAcceptedValue = filteredConsolidado.reduce((acc, curr) => acc + curr.noAceptado, 0);
-        const totalManagedValue = acceptedValue + noAcceptedValue;
+        const totalRespondedValue = acceptedValue + noAcceptedValue;
 
         const acceptedCount = glosas.filter(g => g.estado === 'Aceptada').length;
 
         // Percentages
-        const percentManaged = totalValue > 0 ? (totalManagedValue / totalValue) * 100 : 0;
-        const percentRecovery = totalManagedValue > 0 ? (noAcceptedValue / totalManagedValue) * 100 : 0;
+        const percentResponded = totalValue > 0 ? (totalRespondedValue / totalValue) * 100 : 0;
+        const percentAcceptedTotal = totalValue > 0 ? (acceptedValue / totalValue) * 100 : 0;
 
         return {
             totalValue,
             totalCount,
             acceptedValue,
             noAcceptedValue,
-            totalManagedValue,
+            totalRespondedValue,
             acceptedCount,
-            percentManaged,
-            percentRecovery,
+            percentResponded,
+            percentAcceptedTotal,
             waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
         };
     }, [glosas, filteredConsolidado]);
@@ -218,7 +218,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             <DollarSign size={16} color="var(--primary)" />
                         </div>
                         <span style={{ fontSize: '0.6rem', color: 'var(--primary)', fontWeight: 800 }}>
-                            {metrics.percentRecovery.toFixed(1)}% RECUPERADO
+                            {metrics.percentAcceptedTotal.toFixed(1)}% ACEPTADO
                         </span>
                     </div>
                     <div>
@@ -229,11 +229,11 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         <div style={{ height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
                             <motion.div
                                 initial={{ width: 0 }}
-                                animate={{ width: `${Math.min(100, metrics.percentManaged)}%` }}
+                                animate={{ width: `${Math.min(100, metrics.percentResponded)}%` }}
                                 style={{ height: '100%', background: 'var(--primary)', borderRadius: '10px', boxShadow: '0 0 10px var(--primary-glow)' }}
                             />
                         </div>
-                        <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px', fontWeight: 700 }}>GESTIÓN DE CONCILIACIÓN REAL</p>
+                        <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px', fontWeight: 700 }}>TOTAL VALORES RESPONDIDOS</p>
                     </div>
                 </Card>
 
