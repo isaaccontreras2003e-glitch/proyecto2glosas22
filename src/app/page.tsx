@@ -191,16 +191,16 @@ function Home() {
   useEffect(() => {
     const migrateData = async () => {
       try {
-        const isMigrated = localStorage.getItem('migrated_to_supabase_deep_v2');
+        const isMigrated = localStorage.getItem('migrated_to_supabase_deep_v3');
         if (isMigrated === 'true') return;
 
-        console.log('--- INICIANDO ESCANEO PROFUNDO DE RECUPERACIÓN ---');
+        console.log('--- INICIANDO ESCANEO PROFUNDO DE RECUPERACIÓN V3 ---');
         let recoveredGlosas: any[] = [];
         let recoveredIngresos: any[] = [];
         const foundKeys: string[] = [];
 
         // Llaves específicas encontradas y escaneo general
-        const keysToTry = Array.from(new Set(['sisfact_glosas', 'sisfact_ingresos', ...Object.keys(localStorage)]));
+        const keysToTry = Array.from(new Set(['sisfact_glosas', 'sisfact_ingresos', 'cached_glosas', 'cached_ingresos', ...Object.keys(localStorage)]));
 
         for (const key of keysToTry) {
           try {
@@ -212,13 +212,13 @@ function Home() {
             if (Array.isArray(parsed) && parsed.length > 0) {
               const first = parsed[0];
 
-              if (key === 'sisfact_glosas' || (first.factura && first.valor_glosa !== undefined)) {
+              if (key.includes('glosa') || (first.factura && first.valor_glosa !== undefined)) {
                 if (!foundKeys.includes(key)) {
                   recoveredGlosas = [...recoveredGlosas, ...parsed];
                   foundKeys.push(key);
                 }
               }
-              else if (key === 'sisfact_ingresos' || (first.factura && first.valor_aceptado !== undefined)) {
+              else if (key.includes('ingreso') || (first.factura && (first.valor_aceptado !== undefined || first.valor_no_aceptado !== undefined))) {
                 if (!foundKeys.includes(key)) {
                   recoveredIngresos = [...recoveredIngresos, ...parsed];
                   foundKeys.push(key);
@@ -229,13 +229,27 @@ function Home() {
         }
 
         if (recoveredGlosas.length > 0 || recoveredIngresos.length > 0) {
-          localStorage.setItem('migrated_to_supabase_deep_v2', 'true');
+          console.log(`Detectados ${recoveredGlosas.length} glosas y ${recoveredIngresos.length} ingresos locales. Subiendo...`);
+
+          // Subir a Supabase antes de marcar como migrado
+          if (recoveredGlosas.length > 0) {
+            await supabase.from('glosas').upsert(recoveredGlosas);
+          }
+          if (recoveredIngresos.length > 0) {
+            await supabase.from('ingresos').upsert(recoveredIngresos);
+          }
+
+          localStorage.setItem('migrated_to_supabase_deep_v3', 'true');
+
+          // Refrescar estado local
           const [{ data: gData }, { data: iData }] = await Promise.all([
             supabase.from('glosas').select('*').order('fecha', { ascending: false }),
             supabase.from('ingresos').select('*').order('fecha', { ascending: false }),
           ]);
           if (gData) setGlosas(gData);
           if (iData) setIngresos(iData);
+        } else {
+          localStorage.setItem('migrated_to_supabase_deep_v3', 'true');
         }
       } catch (err: any) {
         console.error('Error durante la recuperación:', err);
@@ -602,6 +616,30 @@ function Home() {
       }
     } catch (e: any) {
       showToast('Error al leer el JSON: ' + e.message, 'error');
+    }
+  };
+
+  const handleEmergencySync = async () => {
+    if (!confirm('Esta acción subirá todos tus datos locales actuales a la nube. ¿Deseas continuar?')) return;
+    try {
+      setLoading(true);
+      const localGlosas = JSON.parse(localStorage.getItem('cached_glosas') || '[]');
+      const localIngresos = JSON.parse(localStorage.getItem('cached_ingresos') || '[]');
+
+      if (localGlosas.length > 0) {
+        await supabase.from('glosas').upsert(localGlosas);
+      }
+      if (localIngresos.length > 0) {
+        await supabase.from('ingresos').upsert(localIngresos);
+      }
+
+      showToast(`✅ Sincronización de emergencia exitosa.`, 'success');
+      loadData(true);
+    } catch (err: any) {
+      console.error('Error en sincronización de emergencia:', err);
+      showToast('❌ Error al sincronizar: ' + err.message, 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1343,6 +1381,16 @@ function Home() {
                         >
                           <Activity size={12} />
                           ESCANEO DE SEGURIDAD
+                        </motion.button>
+
+                        <motion.button
+                          whileHover={{ scale: 1.05, opacity: 1 }}
+                          onClick={handleEmergencySync}
+                          className="btn btn-secondary"
+                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                        >
+                          <RefreshCw size={12} />
+                          SINCRO EMERGENCIA (SUBIR TODO)
                         </motion.button>
                       </div>
                     )}
