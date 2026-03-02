@@ -6,7 +6,7 @@ import { Dashboard } from '@/components/Dashboard';
 import { GlosaForm } from '@/components/GlosaForm';
 import { GlosaTable } from '@/components/GlosaTable';
 import { supabase } from '@/lib/supabase';
-import { LayoutDashboard, TrendingUp, Wallet, Activity, Trash2, Download, ListChecks, PieChart, ChevronUp, RefreshCw, ClipboardList, LogOut } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Wallet, Activity, Trash2, Download, ListChecks, PieChart, ChevronUp, RefreshCw, ClipboardList, LogOut, FileText, CheckCircle, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -24,6 +24,7 @@ interface Glosa {
   orden_servicio: string;
   valor_glosa: number;
   valor_aceptado: number;
+  valor_no_aceptado?: number;
   descripcion: string;
   tipo_glosa: string;
   estado: string;
@@ -299,8 +300,18 @@ function Home() {
     const sectionIngresos = ingresos.filter(i => (i as any).seccion === currentMainSection || (!(i as any).seccion && currentMainSection === 'GLOSAS'));
 
     const totalGlosadoValue = sectionGlosas.reduce((acc, curr) => acc + curr.valor_glosa, 0);
-    const totalAceptadoValue = sectionIngresos.reduce((acc, curr) => acc + curr.valor_aceptado, 0);
-    const totalNoAceptadoValue = sectionIngresos.reduce((acc, curr) => acc + curr.valor_no_aceptado, 0);
+    const glosaAceptado = sectionGlosas.reduce((acc, curr) => acc + (curr.valor_aceptado || 0), 0);
+    const ingresoAceptado = sectionIngresos.reduce((acc, curr) => acc + (curr.valor_aceptado || 0), 0);
+    const totalAceptadoValue = glosaAceptado + ingresoAceptado;
+
+    const glosaNoAceptado = sectionGlosas.reduce((acc, curr) => {
+      if (curr.valor_no_aceptado !== undefined && curr.valor_no_aceptado !== null) return acc + curr.valor_no_aceptado;
+      if (curr.estado !== 'Pendiente') return acc + (curr.valor_glosa - (curr.valor_aceptado || 0));
+      return acc;
+    }, 0);
+    const ingresoNoAceptado = sectionIngresos.reduce((acc, curr) => acc + (curr.valor_no_aceptado || 0), 0);
+    const totalNoAceptadoValue = glosaNoAceptado + ingresoNoAceptado;
+
     const totalRegistradoInternoValue = sectionGlosas.filter(g => g.registrada_internamente).reduce((acc, curr) => acc + curr.valor_glosa, 0);
 
     const pendingValue = totalGlosadoValue - totalAceptadoValue - totalNoAceptadoValue;
@@ -420,8 +431,20 @@ function Home() {
       const factIngresos = sectionIngresos.filter(i => i.factura === f);
 
       const glosado = factGlosas.reduce((acc, g) => acc + g.valor_glosa, 0);
-      const aceptado = factIngresos.reduce((acc, i) => acc + i.valor_aceptado, 0);
-      const noAceptado = factIngresos.reduce((acc, i) => acc + i.valor_no_aceptado, 0);
+
+      // Sumar aceptados de AMBOS (glosas e ingresos)
+      const aceptadoGlosas = factGlosas.reduce((acc, g) => acc + (g.valor_aceptado || 0), 0);
+      const aceptadoIngresos = factIngresos.reduce((acc, i) => acc + (i.valor_aceptado || 0), 0);
+      const aceptado = aceptadoGlosas + aceptadoIngresos;
+
+      // Sumar no aceptados de AMBOS logicamente
+      const noAceptadoGlosas = factGlosas.reduce((acc, g) => {
+        if (g.valor_no_aceptado !== undefined && g.valor_no_aceptado !== null) return acc + g.valor_no_aceptado;
+        if (g.estado !== 'Pendiente') return acc + (g.valor_glosa - (g.valor_aceptado || 0));
+        return acc;
+      }, 0);
+      const noAceptadoIngresos = factIngresos.reduce((acc, i) => acc + (i.valor_no_aceptado || 0), 0);
+      const noAceptado = noAceptadoGlosas + noAceptadoIngresos;
 
       const servicios = Array.from(new Set(factGlosas.map(g => g.servicio).filter(Boolean)));
       const tipos = Array.from(new Set(factGlosas.map(g => g.tipo_glosa).filter(Boolean)));
@@ -1207,7 +1230,6 @@ function Home() {
                         setSearchTerm={setSearchTermIngresos}
                       />
                     </div>
-                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1340,8 +1362,8 @@ function Home() {
                 </div>
               </footer>
             </div>
-  )
-}
+          )
+        }
       </main >
     </div >
   );
