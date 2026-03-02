@@ -60,8 +60,17 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
 
     const dailyStats = useMemo(() => {
         const todayGlosas = existingGlosas.filter(g => {
-            const matchesDate = g.fecha?.split(',')[0] === todayStr;
-            const matchesSection = (g as any).seccion === currentSeccion || (!(g as any).seccion && currentSeccion === 'GLOSAS');
+            if (!g.fecha) return false;
+            // Normalizar fechas para comparación (DD/MM/YYYY)
+            const datePart = g.fecha.split(',')[0].trim();
+            const normalizedToday = todayStr.trim();
+
+            // Intento de match flexible (por si los separadores cambian de / a - o similar)
+            const matchesDate = datePart.replace(/[-\/]/g, '/') === normalizedToday.replace(/[-\/]/g, '/');
+
+            const matchesSection = (g as any).seccion === currentSeccion ||
+                ((g as any).seccion?.toUpperCase() === currentSeccion.toUpperCase()) ||
+                (!(g as any).seccion && currentSeccion === 'GLOSAS');
             return matchesDate && matchesSection;
         });
         const uniqueFacturas = new Set(todayGlosas.map(g => g.factura)).size;

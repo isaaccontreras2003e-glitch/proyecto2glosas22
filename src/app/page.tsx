@@ -191,37 +191,39 @@ function Home() {
   useEffect(() => {
     const migrateData = async () => {
       try {
-        const isMigrated = localStorage.getItem('migrated_to_supabase_deep_v3');
+        const isMigrated = localStorage.getItem('migrated_to_supabase_v4_final');
         if (isMigrated === 'true') return;
 
-        console.log('--- INICIANDO ESCANEO PROFUNDO DE RECUPERACIÓN V3 ---');
+        console.log('--- INICIANDO SUPER ESCANEO DE RECUPERACIÓN V4 ---');
         let recoveredGlosas: any[] = [];
         let recoveredIngresos: any[] = [];
-        const foundKeys: string[] = [];
+        const seenIds = new Set();
 
-        // Llaves específicas encontradas y escaneo general
-        const keysToTry = Array.from(new Set(['sisfact_glosas', 'sisfact_ingresos', 'cached_glosas', 'cached_ingresos', ...Object.keys(localStorage)]));
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key) continue;
 
-        for (const key of keysToTry) {
           try {
             const val = localStorage.getItem(key);
-            if (!val) continue;
+            if (!val || (!val.includes('[') && !val.includes('{'))) continue;
 
             const parsed = JSON.parse(val);
+            const items = Array.isArray(parsed) ? parsed : [parsed];
 
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              const first = parsed[0];
-
-              if (key.includes('glosa') || (first.factura && first.valor_glosa !== undefined)) {
-                if (!foundKeys.includes(key)) {
-                  recoveredGlosas = [...recoveredGlosas, ...parsed];
-                  foundKeys.push(key);
+            for (const item of items) {
+              if (!item || typeof item !== 'object') continue;
+              if (item.factura && (item.valor_glosa !== undefined || item.servicio !== undefined)) {
+                const id = item.id || `rec_${item.factura}_${item.valor_glosa}`;
+                if (!seenIds.has(id)) {
+                  recoveredGlosas.push({ ...item, id: id.toString(), seccion: item.seccion || 'GLOSAS' });
+                  seenIds.add(id);
                 }
               }
-              else if (key.includes('ingreso') || (first.factura && (first.valor_aceptado !== undefined || first.valor_no_aceptado !== undefined))) {
-                if (!foundKeys.includes(key)) {
-                  recoveredIngresos = [...recoveredIngresos, ...parsed];
-                  foundKeys.push(key);
+              else if (item.factura && (item.valor_aceptado !== undefined || item.valor_no_aceptado !== undefined)) {
+                const id = item.id || `rec_ing_${item.factura}_${item.valor_aceptado}`;
+                if (!seenIds.has(id)) {
+                  recoveredIngresos.push({ ...item, id: id.toString(), seccion: item.seccion || 'GLOSAS' });
+                  seenIds.add(id);
                 }
               }
             }
@@ -229,27 +231,13 @@ function Home() {
         }
 
         if (recoveredGlosas.length > 0 || recoveredIngresos.length > 0) {
-          console.log(`Detectados ${recoveredGlosas.length} glosas y ${recoveredIngresos.length} ingresos locales. Subiendo...`);
-
-          // Subir a Supabase antes de marcar como migrado
-          if (recoveredGlosas.length > 0) {
-            await supabase.from('glosas').upsert(recoveredGlosas);
-          }
-          if (recoveredIngresos.length > 0) {
-            await supabase.from('ingresos').upsert(recoveredIngresos);
-          }
-
-          localStorage.setItem('migrated_to_supabase_deep_v3', 'true');
-
-          // Refrescar estado local
-          const [{ data: gData }, { data: iData }] = await Promise.all([
-            supabase.from('glosas').select('*').order('fecha', { ascending: false }),
-            supabase.from('ingresos').select('*').order('fecha', { ascending: false }),
-          ]);
-          if (gData) setGlosas(gData);
-          if (iData) setIngresos(iData);
+          console.log(`SUPER ESCANEO: Encontrados ${recoveredGlosas.length} glosas y ${recoveredIngresos.length} ingresos.`);
+          if (recoveredGlosas.length > 0) await supabase.from('glosas').upsert(recoveredGlosas);
+          if (recoveredIngresos.length > 0) await supabase.from('ingresos').upsert(recoveredIngresos);
+          localStorage.setItem('migrated_to_supabase_v4_final', 'true');
+          loadData(true);
         } else {
-          localStorage.setItem('migrated_to_supabase_deep_v3', 'true');
+          localStorage.setItem('migrated_to_supabase_v4_final', 'true');
         }
       } catch (err: any) {
         console.error('Error durante la recuperación:', err);
@@ -1326,71 +1314,78 @@ function Home() {
 
                     {/* Grupo: Mantenimiento (Discreto) */}
                     {role === 'admin' && (
-                      <div style={{ display: 'flex', gap: '0.75rem', opacity: 0.5 }}>
+                      <div style={{ display: 'flex', gap: '0.75rem', opacity: 0.5, flexWrap: 'wrap' }}>
                         <motion.button
                           whileHover={{ scale: 1.05, opacity: 1 }}
-                          onClick={() => {
-                            const recovered = {
-                              glosas: JSON.parse(localStorage.getItem('sisfact_glosas') || '[]'),
-                              ingresos: JSON.parse(localStorage.getItem('sisfact_ingresos') || '[]')
-                            };
-                            if (confirm('¿Deseas intentar IMPORTAR a la nube o DESCARGAR un respaldo?')) {
-                              handleManualImport();
-                            } else {
-                              const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(recovered, null, 2));
-                              const downloadAnchorNode = document.createElement('a');
-                              downloadAnchorNode.setAttribute("href", dataStr);
-                              downloadAnchorNode.setAttribute("download", "respaldo_glosas_seguro.json");
-                              document.body.appendChild(downloadAnchorNode);
-                              downloadAnchorNode.click();
-                              downloadAnchorNode.remove();
-                            }
+                          onClick={async () => {
+                            if (!confirm('Esta acción forzará un nuevo escaneo profundo de todo tu navegador para buscar datos perdidos. ¿Continuar?')) return;
+                            localStorage.removeItem('migrated_to_supabase_v4_final');
+                            window.location.reload();
                           }}
-                          className="btn btn-secondary"
-                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b' }}
-                        >
-                          <Activity size={12} />
-                          RECUPERACIÓN LOCAL
-                        </motion.button>
-
-                        <motion.button
-                          whileHover={{ scale: 1.05, opacity: 1 }}
-                          onClick={testConnection}
-                          className="btn btn-secondary"
-                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#60a5fa' }}
-                        >
-                          <Activity size={12} />
-                          VERIFICAR CONEXIÓN NUBE
-                        </motion.button>
-
-                        <motion.button
-                          whileHover={{ scale: 1.05, opacity: 1 }}
-                          onClick={handleSyncLocalCheckpoints}
                           className="btn btn-secondary"
                           style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10b981' }}
                         >
                           <RefreshCw size={12} />
-                          SINCRONIZAR MARCAS LOCALES
+                          FORZAR NUEVO ESCANEO
                         </motion.button>
 
                         <motion.button
                           whileHover={{ scale: 1.05, opacity: 1 }}
-                          onClick={handleDeepRecovery}
+                          onClick={async () => {
+                            if (!confirm('SINCRO UNIVERSAL: Intentará subir CUALQUIER dato de glosa/ingreso encontrado en este navegador a la nube. ¿Deseas continuar?')) return;
+                            setLoading(true);
+                            try {
+                              let count = 0;
+                              for (let i = 0; i < localStorage.length; i++) {
+                                const key = localStorage.key(i);
+                                if (!key) continue;
+                                const val = localStorage.getItem(key);
+                                if (val && (val.includes('factura') || val.includes('valor_glosa'))) {
+                                  try {
+                                    const parsed = JSON.parse(val);
+                                    const data = Array.isArray(parsed) ? parsed : [parsed];
+                                    if (data[0]?.factura) {
+                                      await supabase.from(key.includes('ingreso') ? 'ingresos' : 'glosas').upsert(data);
+                                      count += data.length;
+                                    }
+                                  } catch (e) { }
+                                }
+                              }
+                              showToast(`Sincronización finalizada.`, 'success');
+                              loadData(true);
+                            } catch (e) {
+                              showToast('Error en sincronización.', 'error');
+                            } finally {
+                              setLoading(false);
+                            }
+                          }}
                           className="btn btn-secondary"
-                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b' }}
-                        >
-                          <Activity size={12} />
-                          ESCANEO DE SEGURIDAD
-                        </motion.button>
-
-                        <motion.button
-                          whileHover={{ scale: 1.05, opacity: 1 }}
-                          onClick={handleEmergencySync}
-                          className="btn btn-secondary"
-                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.4)' }}
                         >
                           <RefreshCw size={12} />
-                          SINCRO EMERGENCIA (SUBIR TODO)
+                          SINCRO UNIVERSAL
+                        </motion.button>
+
+                        <motion.button
+                          whileHover={{ scale: 1.05, opacity: 1 }}
+                          onClick={() => {
+                            const sections = {
+                              glosas: glosas.filter(g => (g as any).seccion === 'GLOSAS' || !(g as any).seccion).length,
+                              medicamentos: glosas.filter(g => (g as any).seccion === 'MEDICAMENTOS' || (g as any).seccion === 'medicamentos').length,
+                              ratificadas: glosas.filter(g => (g as any).seccion === 'RATIFICADAS').length,
+                            };
+                            alert(`INFORME DE SALUD DE DATOS:\n\n` +
+                              `• GLOSAS: ${sections.glosas} registros\n` +
+                              `• MEDICAMENTOS: ${sections.medicamentos} registros\n` +
+                              `• RATIFICADAS: ${sections.ratificadas} registros\n\n` +
+                              `Total en Nube: ${glosas.length}\n` +
+                              `Estado: Sincronizado correctamente.`);
+                          }}
+                          className="btn btn-secondary"
+                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}
+                        >
+                          <Activity size={12} />
+                          INFORME DE SALUD
                         </motion.button>
                       </div>
                     )}
