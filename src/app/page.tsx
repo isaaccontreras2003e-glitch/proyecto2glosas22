@@ -400,6 +400,7 @@ function Home() {
       console.error('Error sincronizando nueva glosa:', error);
       showToast('Error de red. El dato se guardará localmente.', 'info');
     } else {
+      console.log('✅ Sincronizado con Supabase:', newGlosa.id);
       // Si tuvo éxito, podemos limpiar del buffer
       const currentBuffer = JSON.parse(localStorage.getItem('emergency_buffer') || '[]');
       localStorage.setItem('emergency_buffer', JSON.stringify(currentBuffer.filter((g: any) => g.id !== newGlosa.id)));
@@ -1207,6 +1208,36 @@ function Home() {
                       currentSeccion={currentMainSection}
                       isAdmin={role === 'admin'}
                     />
+
+                    {/* v8.6: VISIBILIDAD INSTANTÁNEA - Historial de Hoy */}
+                    <div style={{ marginTop: '3.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '2.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                        <div style={{ width: '4px', height: '24px', background: 'var(--primary)', borderRadius: '2px' }}></div>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'white', margin: 0 }}>Tus Registros de Hoy ({currentMainSection})</h3>
+                      </div>
+
+                      <GlosaTable
+                        glosas={currentSectionGlosas.filter(g => {
+                          const today = new Date();
+                          const todayStr = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+                          return (g.fecha || '').includes(todayStr);
+                        })}
+                        onUpdateStatus={handleUpdateStatus}
+                        onUpdateGlosa={handleUpdateGlosa}
+                        onDeleteGlosa={handleDeleteGlosa}
+                        onDeleteDuplicates={handleDeleteDuplicates}
+                        onToggleInternalRegistry={handleToggleInternalRegistry}
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        filterTipo={filterTipo}
+                        setFilterTipo={setFilterTipo}
+                        filterEstado={filterEstado}
+                        setFilterEstado={setFilterEstado}
+                        filterInterno={filterInterno}
+                        setFilterInterno={setFilterInterno}
+                        isAdmin={role === 'admin'}
+                      />
+                    </div>
                   </motion.div>
                 )}
 

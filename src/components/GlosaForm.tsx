@@ -140,10 +140,11 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
             seccion: currentSeccion.toUpperCase()
         });
 
-        // Mostrar éxito
+        // Mostrar éxito instantáneo
         setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 5000);
+        setTimeout(() => setShowSuccess(false), 3000);
 
+        // RESET ABSOLUTO: Limpiar todo para el siguiente registro
         setFormData({
             factura: '',
             servicio: '',
@@ -155,6 +156,8 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
             estado: 'Pendiente'
         });
         setForceSubmit(false);
+
+        console.log('✅ Registro enviado y formulario reseteado:', uniqueId);
     };
 
     const formTitle = currentSeccion === 'MEDICAMENTOS' ? 'Registrar Medicamentos' : 'Registrar Gestión de Glosa';
