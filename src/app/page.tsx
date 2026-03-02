@@ -122,26 +122,35 @@ function Home() {
         if (iRes?.error) throw iRes.error;
 
         if (gRes && gRes.data) {
-          // RECUPERACIÓN: Si tenemos marcas locales que no están en la nube (ej: antes de la columna)
-          // intentamos mezclarlas solo si el registro de la nube viene sin ese campo o en falso
-          const localGlosas = JSON.parse(localStorage.getItem('cached_glosas') || '[]');
-          const mergedGlosas = gRes.data.map((cloudG: any) => {
-            const localG = localGlosas.find((lg: any) => lg.id === cloudG.id);
-            if (localG?.registrada_internamente && !cloudG.registrada_internamente) {
-              return { ...cloudG, registrada_internamente: true };
-            }
-            return cloudG;
-          });
+          // MEJORADO: Merge inteligente que no destruye el estado local optimista
+          setGlosas(prev => {
+            const cloudIds = new Set(gRes.data.map((c: any) => c.id));
+            const localOnly = prev.filter(p => !cloudIds.has(p.id));
 
-          setGlosas(mergedGlosas);
-          localStorage.setItem('cached_glosas', JSON.stringify(mergedGlosas));
+            // Unir y ordenar por fecha (formato DD/MM/YYYY)
+            const combined = [...localOnly, ...gRes.data];
+
+            const sorted = combined.sort((a, b) => {
+              if (!a.fecha || !b.fecha) return 0;
+              const dateA = a.fecha.split(',')[0].trim().split('/').reverse().join('');
+              const dateB = b.fecha.split(',')[0].trim().split('/').reverse().join('');
+              return dateB.localeCompare(dateA);
+            });
+
+            localStorage.setItem('cached_glosas', JSON.stringify(sorted));
+            return sorted;
+          });
           lastFetchedUserId.current = user.id;
         }
+
         if (iRes && iRes.data) {
-          if (iRes.data.length > 0 || ingresos.length === 0) {
-            setIngresos(iRes.data);
-            localStorage.setItem('cached_ingresos', JSON.stringify(iRes.data));
-          }
+          setIngresos(prev => {
+            const cloudIds = new Set(iRes.data.map((c: any) => c.id));
+            const localOnly = prev.filter(p => !cloudIds.has(p.id));
+            const combined = [...localOnly, ...iRes.data];
+            localStorage.setItem('cached_ingresos', JSON.stringify(combined));
+            return combined;
+          });
         }
 
         setLastUpdate(new Date());
@@ -1419,17 +1428,16 @@ function Home() {
                               const d = new Date();
                               return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
                             })();
-                            const last5 = glosas.slice(0, 5).map(g => `• ${g.factura} | ${g.seccion} | ${g.fecha}`).join('\n');
-                            const todayRecords = glosas.filter(g => (g.fecha || '').replace(/[-\.]/g, '/').startsWith(todayManual));
+                            const last10 = glosas.slice(0, 10).map(g => `• ${g.factura} | ${g.seccion} | ${g.fecha}`).join('\n');
+                            const todayRecords = glosas.filter(g => (g.fecha || '').includes(todayManual));
 
-                            alert(`DIAGNÓSTICO V8.3 (AGRESIVO):\n\n` +
-                              `EN NUBE:\n• GLOSAS: ${sections.glosas}\n` +
-                              `• MEDICAMENTOS: ${sections.medicamentos}\n` +
-                              `• RATIFICADAS: ${sections.ratificadas}\n\n` +
+                            alert(`DIAGNÓSTICO V8.3 (ÚLTIMO INTENTO):\n\n` +
+                              `EN NUBE (Total): ${glosas.length}\n` +
+                              `EN MEMORIA HOY (${todayManual}): ${todayRecords.length} encontrados\n\n` +
                               `VISTA ACTUAL: ${currentMainSection}\n` +
-                              `REGISTROS HOY: ${todayRecords.length}\n\n` +
-                              `ÚLTIMOS 5 EN MEMORIA:\n${last5 || 'Ninguno'}\n\n` +
-                              `Si REVISIÓN DE HOY es 0 pero ves los datos en ÚLTIMOS 5, avísame.`);
+                              `REGISTROS HOY EN ESTA VISTA: ${todayRecords.filter(g => (g.seccion?.toUpperCase() || 'GLOSAS') === currentMainSection.toUpperCase()).length}\n\n` +
+                              `ÚLTIMOS 10 EN MEMORIA:\n${last10 || 'Ninguno'}\n\n` +
+                              `Si REVISIÓN DE HOY es > 0 pero no los ves en la tabla, refresca.`);
                           }}
                           className="btn btn-secondary"
                           style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}
