@@ -397,10 +397,10 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
                     boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
                 }}>
                     <div style={{ borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem' }}>
-                        <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>FACTURAS HOY</p>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>REGISTROS HOY</p>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                            <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{dailyStats.facturas}</span>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>({dailyStats.count} registros)</span>
+                            <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{dailyStats.count}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>({dailyStats.facturas} factura/s)</span>
                         </div>
                     </div>
                     <div>
