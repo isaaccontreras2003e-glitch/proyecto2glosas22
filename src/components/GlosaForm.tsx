@@ -59,16 +59,18 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
     const dailyStats = useMemo(() => {
         const todayGlosas = existingGlosas.filter(g => {
             if (!g.fecha) return false;
-            // Normalizar fechas para comparación (DD/MM/YYYY)
+            // Normalizar fechas para comparación ultra-flexible
             const datePart = g.fecha.split(',')[0].trim();
             const normalizedToday = todayStr.trim();
 
-            const matchesDate = datePart.replace(/[-\/]/g, '/') === normalizedToday.replace(/[-\/]/g, '/');
+            const gDate = datePart.replace(/[-\.]/g, '/');
+            const tDate = normalizedToday.replace(/[-\.]/g, '/');
+            const matchesDate = gDate === tDate;
 
-            // MEJORA: Si el registro no tiene sección (huerfano), permitir que se vea en la sección actual
-            const itemSection = (g as any).seccion?.toUpperCase();
+            // Normalización de sección agresiva
+            const itemSection = (g as any).seccion?.toUpperCase() || 'GLOSAS';
             const currentUpper = currentSeccion.toUpperCase();
-            const matchesSection = !itemSection || itemSection === currentUpper || (itemSection === 'GLOSAS' && currentUpper === 'GLOSAS');
+            const matchesSection = itemSection === currentUpper;
 
             return matchesDate && matchesSection;
         });

@@ -306,19 +306,26 @@ function Home() {
   };
 
   const filteredIngresos = useMemo(() => {
+    const currentUpper = currentMainSection.toUpperCase();
     return ingresos.filter(i => {
-      const matchesSection = (i as any).seccion === currentMainSection || (!(i as any).seccion && currentMainSection === 'GLOSAS');
+      const iSection = (i as any).seccion?.toUpperCase() || 'GLOSAS';
+      const matchesSection = iSection === currentUpper;
       return matchesSection && i.factura.toLowerCase().includes(searchTermIngresos.toLowerCase());
     });
   }, [ingresos, currentMainSection, searchTermIngresos]);
 
   const currentSectionGlosas = useMemo(() => {
-    return glosas.filter(g => (g as any).seccion === currentMainSection || (!(g as any).seccion && currentMainSection === 'GLOSAS'));
+    const currentUpper = currentMainSection.toUpperCase();
+    return glosas.filter(g => {
+      const gSection = (g as any).seccion?.toUpperCase() || 'GLOSAS';
+      return gSection === currentUpper;
+    });
   }, [glosas, currentMainSection]);
 
   const stats = useMemo(() => {
-    const sectionGlosas = glosas.filter(g => (g as any).seccion === currentMainSection || (!(g as any).seccion && currentMainSection === 'GLOSAS'));
-    const sectionIngresos = ingresos.filter(i => (i as any).seccion === currentMainSection || (!(i as any).seccion && currentMainSection === 'GLOSAS'));
+    const currentUpper = currentMainSection.toUpperCase();
+    const sectionGlosas = glosas.filter(g => ((g as any).seccion?.toUpperCase() || 'GLOSAS') === currentUpper);
+    const sectionIngresos = ingresos.filter(i => ((i as any).seccion?.toUpperCase() || 'GLOSAS') === currentUpper);
 
     const totalGlosadoValue = sectionGlosas.reduce((acc, curr) => acc + curr.valor_glosa, 0);
     const glosaAceptado = sectionGlosas.reduce((acc, curr) => acc + (curr.valor_aceptado || 0), 0);
@@ -1412,16 +1419,17 @@ function Home() {
                               const d = new Date();
                               return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
                             })();
-                            const todayRecords = glosas.filter(g => g.fecha?.startsWith(todayManual));
+                            const last5 = glosas.slice(0, 5).map(g => `• ${g.factura} | ${g.seccion} | ${g.fecha}`).join('\n');
+                            const todayRecords = glosas.filter(g => (g.fecha || '').replace(/[-\.]/g, '/').startsWith(todayManual));
 
-                            alert(`INFORME DE SALUD (V5.1 CONTEXTUAL):\n\n` +
-                              `• GLOSAS: ${sections.glosas} registros en nube\n` +
-                              `• MEDICAMENTOS: ${sections.medicamentos} registros en nube\n` +
-                              `• RATIFICADAS: ${sections.ratificadas} registros en nube\n\n` +
-                              `• REVISIÓN DE HOY (${todayManual}): ${todayRecords.length} encontrados\n\n` +
-                              `Total Nube: ${glosas.length}\n` +
-                              `Total local detectado: ${localStorage.length} llaves\n\n` +
-                              `Estado: Si no ves los registros, usa FORZAR NUEVO ESCANEO V5.1.`);
+                            alert(`DIAGNÓSTICO V8.3 (AGRESIVO):\n\n` +
+                              `EN NUBE:\n• GLOSAS: ${sections.glosas}\n` +
+                              `• MEDICAMENTOS: ${sections.medicamentos}\n` +
+                              `• RATIFICADAS: ${sections.ratificadas}\n\n` +
+                              `VISTA ACTUAL: ${currentMainSection}\n` +
+                              `REGISTROS HOY: ${todayRecords.length}\n\n` +
+                              `ÚLTIMOS 5 EN MEMORIA:\n${last5 || 'Ninguno'}\n\n` +
+                              `Si REVISIÓN DE HOY es 0 pero ves los datos en ÚLTIMOS 5, avísame.`);
                           }}
                           className="btn btn-secondary"
                           style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}
