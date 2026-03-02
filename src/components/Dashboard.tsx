@@ -115,16 +115,24 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
 
         // Financial metrics from filtered consolidated list (Truth)
         const acceptedValue = filteredConsolidado.reduce((acc, curr) => acc + curr.aceptado, 0);
-        const totalManagedValue = filteredConsolidado.reduce((acc, curr) => acc + (curr.aceptado + curr.noAceptado), 0);
+        const noAcceptedValue = filteredConsolidado.reduce((acc, curr) => acc + curr.noAceptado, 0);
+        const totalManagedValue = acceptedValue + noAcceptedValue;
 
         const acceptedCount = glosas.filter(g => g.estado === 'Aceptada').length;
+
+        // Percentages
+        const percentManaged = totalValue > 0 ? (totalManagedValue / totalValue) * 100 : 0;
+        const percentRecovery = totalManagedValue > 0 ? (noAcceptedValue / totalManagedValue) * 100 : 0;
 
         return {
             totalValue,
             totalCount,
             acceptedValue,
+            noAcceptedValue,
             totalManagedValue,
             acceptedCount,
+            percentManaged,
+            percentRecovery,
             waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
         };
     }, [glosas, filteredConsolidado]);
@@ -210,7 +218,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             <DollarSign size={16} color="var(--primary)" />
                         </div>
                         <span style={{ fontSize: '0.6rem', color: 'var(--primary)', fontWeight: 800 }}>
-                            {metrics.totalManagedValue > 0 ? ((metrics.acceptedValue / metrics.totalManagedValue) * 100).toFixed(1) : 0}% ↑
+                            {metrics.percentRecovery.toFixed(1)}% RECUPERADO
                         </span>
                     </div>
                     <div>
@@ -219,9 +227,13 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                     </div>
                     <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
                         <div style={{ height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
-                            <div style={{ width: '70%', height: '100%', background: 'var(--primary)', borderRadius: '10px' }}></div>
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min(100, metrics.percentManaged)}%` }}
+                                style={{ height: '100%', background: 'var(--primary)', borderRadius: '10px', boxShadow: '0 0 10px var(--primary-glow)' }}
+                            />
                         </div>
-                        <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px', fontWeight: 700 }}>RIESGO EN AUDITORÍA</p>
+                        <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px', fontWeight: 700 }}>GESTIÓN DE CONCILIACIÓN REAL</p>
                     </div>
                 </Card>
 
