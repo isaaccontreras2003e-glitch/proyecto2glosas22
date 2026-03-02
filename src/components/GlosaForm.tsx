@@ -124,11 +124,15 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
 
         if (isDuplicateExact && !forceSubmit) return; // Bloquear si es duplicado exacto sin confirmación
 
+        const uniqueId = typeof window !== 'undefined' && window.crypto && (window.crypto as any).randomUUID
+            ? (window.crypto as any).randomUUID()
+            : Math.random().toString(36).substring(2) + Date.now().toString(36);
+
         onAddGlosa({
             ...formData,
             factura, // Usamos la versión sanitizada (con trim)
             servicio,
-            id: Math.random().toString(36).substr(2, 9),
+            id: uniqueId,
             valor_glosa: valor,
             valor_aceptado: valorAceptado,
             fecha: nowTimestamp(),

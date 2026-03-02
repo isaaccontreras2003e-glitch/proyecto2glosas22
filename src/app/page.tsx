@@ -124,11 +124,17 @@ function Home() {
         if (gRes && gRes.data) {
           // MEJORADO: Merge inteligente que no destruye el estado local optimista
           setGlosas(prev => {
+            const emergencyBuffer = JSON.parse(localStorage.getItem('emergency_buffer') || '[]');
             const cloudIds = new Set(gRes.data.map((c: any) => c.id));
             const localOnly = prev.filter(p => !cloudIds.has(p.id));
 
-            // Unir y ordenar por fecha (formato DD/MM/YYYY)
-            const combined = [...localOnly, ...gRes.data];
+            // Unir Nube + Memoria Local + Buffer de Emergencia
+            const combined = [...gRes.data];
+            [...localOnly, ...emergencyBuffer].forEach(item => {
+              if (!cloudIds.has(item.id)) {
+                combined.push(item);
+              }
+            });
 
             const sorted = combined.sort((a, b) => {
               if (!a.fecha || !b.fecha) return 0;
@@ -285,8 +291,12 @@ function Home() {
   const [searchTermConsolidado, setSearchTermConsolidado] = useState('');
 
   const filteredGlosas = useMemo(() => {
+    const currentUpper = currentMainSection.toUpperCase();
     return glosas.filter(g => {
-      const matchesSection = (g as any).seccion === currentMainSection || (!(g as any).seccion && currentMainSection === 'GLOSAS');
+      // Normalización nuclear para la tabla
+      const gSection = (g as any).seccion?.toUpperCase() || 'GLOSAS';
+      const matchesSection = gSection === currentUpper;
+
       const matchesSearch = g.factura.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (g.servicio && g.servicio.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (g.descripcion && g.descripcion.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -373,18 +383,26 @@ function Home() {
   }, [glosas, ingresos, currentMainSection]);
 
   const handleAddGlosa = async (newGlosa: Glosa) => {
-    // Optimista: Actualizar UI y Caché primero con actualización funcional
+    // Escudo de Persistencia: Guardar en un buffer aparte para emergencias
+    const backupBuffer = JSON.parse(localStorage.getItem('emergency_buffer') || '[]');
+    localStorage.setItem('emergency_buffer', JSON.stringify([newGlosa, ...backupBuffer]));
+
+    // Optimista
     setGlosas(prev => {
       const updated = [newGlosa, ...prev];
       localStorage.setItem('cached_glosas', JSON.stringify(updated));
       return updated;
     });
 
-    // Segundo plano: Sincronizar con Supabase
+    // Sincronizar
     const { error } = await supabase.from('glosas').insert([newGlosa]);
     if (error) {
       console.error('Error sincronizando nueva glosa:', error);
       showToast('Error de red. El dato se guardará localmente.', 'info');
+    } else {
+      // Si tuvo éxito, podemos limpiar del buffer
+      const currentBuffer = JSON.parse(localStorage.getItem('emergency_buffer') || '[]');
+      localStorage.setItem('emergency_buffer', JSON.stringify(currentBuffer.filter((g: any) => g.id !== newGlosa.id)));
     }
   };
 
@@ -398,8 +416,6 @@ function Home() {
     const { error } = await supabase.from('glosas').update({ estado: newEstado }).eq('id', id);
     if (error) console.error('Error actualizando estado:', error);
   };
-
-
 
   const handleUpdateGlosa = async (updatedGlosa: Glosa) => {
     setGlosas(prev => {
@@ -1434,16 +1450,18 @@ function Home() {
                               const d = new Date();
                               return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
                             })();
+                            const buffer = JSON.parse(localStorage.getItem('emergency_buffer') || '[]');
                             const last10 = glosas.slice(0, 10).map(g => `• ${g.factura} | ${g.seccion} | ${g.fecha}`).join('\n');
                             const todayRecords = glosas.filter(g => (g.fecha || '').includes(todayManual));
 
-                            alert(`DIAGNÓSTICO V8.4 (SISTEMA INTEGRAL):\n\n` +
+                            alert(`DIAGNÓSTICO V8.5 (ESCUDO DE PERSISTENCIA):\n\n` +
                               `EN NUBE (Total): ${glosas.length}\n` +
                               `EN MEMORIA HOY (${todayManual}): ${todayRecords.length} encontrados\n\n` +
+                              `ESCUDO (Buffer): ${buffer.length} registros protegidos localmente\n` +
                               `VISTA ACTUAL: ${currentMainSection}\n` +
                               `REGISTROS HOY EN ESTA VISTA: ${todayRecords.filter(g => (g.seccion?.toUpperCase() || 'GLOSAS') === currentMainSection.toUpperCase()).length}\n\n` +
                               `DATOS EN RAM (Últimos 10):\n${last10 || 'Ninguno'}\n\n` +
-                              `Si tus facturas de hoy NO están en los "Últimos 10", es que no se guardaron. Si ESTÁN ahí pero no en la tabla, es un error de filtro.`);
+                              `Si tus facturas NO están en RAM pero sí en ESCUDO, avísame.`);
                           }}
                           className="btn btn-secondary"
                           style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}
