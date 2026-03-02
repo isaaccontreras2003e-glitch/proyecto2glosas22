@@ -465,7 +465,7 @@ function Home() {
         tipos,
         fecha: fechaActividad,
         timestamp: maxFechaTimestamp,
-        diferencia: glosado - aceptado - noAceptado
+        diferencia: glosado - aceptado
       };
     }).sort((a, b) => b.timestamp - a.timestamp);
   }, [glosas, ingresos, currentMainSection]);
