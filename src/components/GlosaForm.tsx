@@ -44,12 +44,12 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
     const [showSuccess, setShowSuccess] = useState(false);
 
     // Cálculos de control diario
-    const todayStr = useMemo(() => new Date().toLocaleDateString('es-ES', {
+    const todayStr = useMemo(() => new Date().toLocaleDateString('es-CL', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric'
     }), []);
-    const nowTimestamp = () => new Date().toLocaleString('es-ES', {
+    const nowTimestamp = () => new Date().toLocaleString('es-CL', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -65,12 +65,13 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
             const datePart = g.fecha.split(',')[0].trim();
             const normalizedToday = todayStr.trim();
 
-            // Intento de match flexible (por si los separadores cambian de / a - o similar)
             const matchesDate = datePart.replace(/[-\/]/g, '/') === normalizedToday.replace(/[-\/]/g, '/');
 
-            const matchesSection = (g as any).seccion === currentSeccion ||
-                ((g as any).seccion?.toUpperCase() === currentSeccion.toUpperCase()) ||
-                (!(g as any).seccion && currentSeccion === 'GLOSAS');
+            // MEJORA: Si el registro no tiene sección (huerfano), permitir que se vea en la sección actual
+            const itemSection = (g as any).seccion?.toUpperCase();
+            const currentUpper = currentSeccion.toUpperCase();
+            const matchesSection = !itemSection || itemSection === currentUpper || (itemSection === 'GLOSAS' && currentUpper === 'GLOSAS');
+
             return matchesDate && matchesSection;
         });
         const uniqueFacturas = new Set(todayGlosas.map(g => g.factura)).size;
