@@ -187,14 +187,14 @@ function Home() {
     }
   }, [user?.id, loadData]);
 
-  // Migración de datos desde localStorage a Supabase (SUPER ESCANEO V5 - Sensible a Secciones)
+  // Migración de datos desde localStorage a Supabase (SUPER ESCANEO V5.1 - Sensible a Contexto)
   useEffect(() => {
     const migrateData = async () => {
       try {
-        const isMigrated = localStorage.getItem('migrated_to_supabase_v5_sections');
+        const isMigrated = localStorage.getItem('migrated_to_supabase_v5_final_context');
         if (isMigrated === 'true') return;
 
-        console.log('--- INICIANDO SUPER ESCANEO DE SECCIONES V5 ---');
+        console.log('--- INICIANDO SUPER ESCANEO DE CONTEXTO V5.1 ---');
         let recoveredGlosas: any[] = [];
         let recoveredIngresos: any[] = [];
         const seenIds = new Set();
@@ -210,11 +210,12 @@ function Home() {
             const parsed = JSON.parse(val);
             const items = Array.isArray(parsed) ? parsed : [parsed];
 
-            // Determinar sección probable por la llave
-            let inferredSection = 'GLOSAS';
+            // Inteligencia de sección mejorada: Prioriza Contexto Actual
+            let inferredSection = currentMainSection || 'GLOSAS';
             const kLower = key.toLowerCase();
             if (kLower.includes('medic')) inferredSection = 'MEDICAMENTOS';
             if (kLower.includes('ratif')) inferredSection = 'RATIFICADAS';
+            if (kLower.includes('glosa') && !kLower.includes('ratif')) inferredSection = 'GLOSAS';
 
             for (const item of items) {
               if (!item || typeof item !== 'object') continue;
@@ -249,13 +250,13 @@ function Home() {
         }
 
         if (recoveredGlosas.length > 0 || recoveredIngresos.length > 0) {
-          console.log(`V5 SECCIONES: Encontrados ${recoveredGlosas.length} glosas y ${recoveredIngresos.length} ingresos.`);
+          console.log(`V5.1 CONTEXTO: Encontrados ${recoveredGlosas.length} glosas y ${recoveredIngresos.length} ingresos.`);
           if (recoveredGlosas.length > 0) await supabase.from('glosas').upsert(recoveredGlosas);
           if (recoveredIngresos.length > 0) await supabase.from('ingresos').upsert(recoveredIngresos);
-          localStorage.setItem('migrated_to_supabase_v5_sections', 'true');
+          localStorage.setItem('migrated_to_supabase_v5_final_context', 'true');
           loadData(true);
         } else {
-          localStorage.setItem('migrated_to_supabase_v5_sections', 'true');
+          localStorage.setItem('migrated_to_supabase_v5_final_context', 'true');
         }
       } catch (err: any) {
         console.error('Error durante la recuperación:', err);
@@ -1336,8 +1337,8 @@ function Home() {
                         <motion.button
                           whileHover={{ scale: 1.05, opacity: 1 }}
                           onClick={async () => {
-                            if (!confirm('Esta acción forzará un nuevo escaneo profundo V5 de todo tu navegador (incluyendo Medicamentos). ¿Continuar?')) return;
-                            localStorage.removeItem('migrated_to_supabase_v5_sections');
+                            if (!confirm('Esta acción forzará un nuevo escaneo profundo V5.1 (Contextual). Si estás en la pestaña MEDICAMENTOS, los datos se recuperarán allí. ¿Continuar?')) return;
+                            localStorage.removeItem('migrated_to_supabase_v5_final_context');
                             window.location.reload();
                           }}
                           className="btn btn-secondary"
