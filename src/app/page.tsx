@@ -357,23 +357,27 @@ function Home() {
   }, [glosas, ingresos, currentMainSection]);
 
   const handleAddGlosa = async (newGlosa: Glosa) => {
-    // Optimista: Actualizar UI y Caché primero
-    const updatedGlosas = [newGlosa, ...glosas];
-    setGlosas(updatedGlosas);
-    localStorage.setItem('cached_glosas', JSON.stringify(updatedGlosas));
+    // Optimista: Actualizar UI y Caché primero con actualización funcional
+    setGlosas(prev => {
+      const updated = [newGlosa, ...prev];
+      localStorage.setItem('cached_glosas', JSON.stringify(updated));
+      return updated;
+    });
 
     // Segundo plano: Sincronizar con Supabase
     const { error } = await supabase.from('glosas').insert([newGlosa]);
     if (error) {
       console.error('Error sincronizando nueva glosa:', error);
-      // Opcional: Notificar error persistente o intentar colar después
+      showToast('Error de red. El dato se guardará localmente.', 'info');
     }
   };
 
   const handleUpdateStatus = async (id: string, newEstado: string) => {
-    const updatedGlosas = glosas.map(g => g.id === id ? { ...g, estado: newEstado } : g);
-    setGlosas(updatedGlosas);
-    localStorage.setItem('cached_glosas', JSON.stringify(updatedGlosas));
+    setGlosas(prev => {
+      const updated = prev.map(g => g.id === id ? { ...g, estado: newEstado } : g);
+      localStorage.setItem('cached_glosas', JSON.stringify(updated));
+      return updated;
+    });
 
     const { error } = await supabase.from('glosas').update({ estado: newEstado }).eq('id', id);
     if (error) console.error('Error actualizando estado:', error);
@@ -1404,13 +1408,20 @@ function Home() {
                               medicamentos: glosas.filter(g => (g as any).seccion === 'MEDICAMENTOS' || (g as any).seccion === 'medicamentos').length,
                               ratificadas: glosas.filter(g => (g as any).seccion === 'RATIFICADAS').length,
                             };
-                            alert(`INFORME DE SALUD (V5 SECCIONES):\n\n` +
+                            const todayManual = (() => {
+                              const d = new Date();
+                              return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+                            })();
+                            const todayRecords = glosas.filter(g => g.fecha?.startsWith(todayManual));
+
+                            alert(`INFORME DE SALUD (V5.1 CONTEXTUAL):\n\n` +
                               `• GLOSAS: ${sections.glosas} registros en nube\n` +
                               `• MEDICAMENTOS: ${sections.medicamentos} registros en nube\n` +
                               `• RATIFICADAS: ${sections.ratificadas} registros en nube\n\n` +
+                              `• REVISIÓN DE HOY (${todayManual}): ${todayRecords.length} encontrados\n\n` +
                               `Total Nube: ${glosas.length}\n` +
                               `Total local detectado: ${localStorage.length} llaves\n\n` +
-                              `Estado: Si faltan datos en Medicamentos, usa FORZAR NUEVO ESCANEO.`);
+                              `Estado: Si no ves los registros, usa FORZAR NUEVO ESCANEO V5.1.`);
                           }}
                           className="btn btn-secondary"
                           style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}

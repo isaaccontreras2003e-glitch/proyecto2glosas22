@@ -43,20 +43,18 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
     const [forceSubmit, setForceSubmit] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
 
-    // Cálculos de control diario
-    const todayStr = useMemo(() => new Date().toLocaleDateString('es-CL', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    }), []);
-    const nowTimestamp = () => new Date().toLocaleString('es-CL', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    });
+    // Cálculos de control diario con formato MANUAL y SEGURO (DD/MM/YYYY)
+    const todayStr = useMemo(() => {
+        const d = new Date();
+        return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+    }, []);
+
+    const nowTimestamp = () => {
+        const d = new Date();
+        const date = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+        const time = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
+        return `${date}, ${time}`;
+    };
 
     const dailyStats = useMemo(() => {
         const todayGlosas = existingGlosas.filter(g => {
