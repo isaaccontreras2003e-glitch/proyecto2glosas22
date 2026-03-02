@@ -399,19 +399,25 @@ function Home() {
     if (error) console.error('Error actualizando estado:', error);
   };
 
+
+
   const handleUpdateGlosa = async (updatedGlosa: Glosa) => {
-    const updatedGlosas = glosas.map(g => g.id === updatedGlosa.id ? updatedGlosa : g);
-    setGlosas(updatedGlosas);
-    localStorage.setItem('cached_glosas', JSON.stringify(updatedGlosas));
+    setGlosas(prev => {
+      const updated = prev.map(g => g.id === updatedGlosa.id ? updatedGlosa : g);
+      localStorage.setItem('cached_glosas', JSON.stringify(updated));
+      return updated;
+    });
 
     const { error } = await supabase.from('glosas').update(updatedGlosa).eq('id', updatedGlosa.id);
     if (error) console.error('Error actualizando glosa:', error);
   };
 
   const handleDeleteGlosa = async (id: string) => {
-    const updatedGlosas = glosas.filter(g => g.id !== id);
-    setGlosas(updatedGlosas);
-    localStorage.setItem('cached_glosas', JSON.stringify(updatedGlosas));
+    setGlosas(prev => {
+      const updated = prev.filter(g => g.id !== id);
+      localStorage.setItem('cached_glosas', JSON.stringify(updated));
+      return updated;
+    });
 
     const { error } = await supabase.from('glosas').delete().eq('id', id);
     if (error) console.error('Error eliminando glosa:', error);
@@ -1431,13 +1437,13 @@ function Home() {
                             const last10 = glosas.slice(0, 10).map(g => `• ${g.factura} | ${g.seccion} | ${g.fecha}`).join('\n');
                             const todayRecords = glosas.filter(g => (g.fecha || '').includes(todayManual));
 
-                            alert(`DIAGNÓSTICO V8.3 (ÚLTIMO INTENTO):\n\n` +
+                            alert(`DIAGNÓSTICO V8.4 (SISTEMA INTEGRAL):\n\n` +
                               `EN NUBE (Total): ${glosas.length}\n` +
                               `EN MEMORIA HOY (${todayManual}): ${todayRecords.length} encontrados\n\n` +
                               `VISTA ACTUAL: ${currentMainSection}\n` +
                               `REGISTROS HOY EN ESTA VISTA: ${todayRecords.filter(g => (g.seccion?.toUpperCase() || 'GLOSAS') === currentMainSection.toUpperCase()).length}\n\n` +
-                              `ÚLTIMOS 10 EN MEMORIA:\n${last10 || 'Ninguno'}\n\n` +
-                              `Si REVISIÓN DE HOY es > 0 pero no los ves en la tabla, refresca.`);
+                              `DATOS EN RAM (Últimos 10):\n${last10 || 'Ninguno'}\n\n` +
+                              `Si tus facturas de hoy NO están en los "Últimos 10", es que no se guardaron. Si ESTÁN ahí pero no en la tabla, es un error de filtro.`);
                           }}
                           className="btn btn-secondary"
                           style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}
