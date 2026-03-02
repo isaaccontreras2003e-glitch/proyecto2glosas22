@@ -203,85 +203,76 @@ function Home() {
   }, [user?.id, loadData]);
 
   // Migración de datos desde localStorage a Supabase (SUPER ESCANEO V5.1 - Sensible a Contexto)
-  useEffect(() => {
-    const migrateData = async () => {
-      try {
-        const isMigrated = localStorage.getItem('migrated_to_supabase_v5_final_context');
-        if (isMigrated === 'true') return;
+  const migrateData = useCallback(async (force = false) => {
+    try {
+      const isMigrated = localStorage.getItem('migrated_to_supabase_v5_final_context');
+      if (isMigrated === 'true' && !force) return;
 
-        console.log('--- INICIANDO SUPER ESCANEO DE CONTEXTO V5.1 ---');
-        let recoveredGlosas: any[] = [];
-        let recoveredIngresos: any[] = [];
-        const seenIds = new Set();
+      console.log(`--- INICIANDO ${force ? 'RESCATE PROFUNDO' : 'SUPER ESCANEO'} V8.7 ---`);
+      let recoveredGlosas: any[] = [];
+      let recoveredIngresos: any[] = [];
+      const seenIds = new Set(glosas.map(g => g.id)); // No duplicar lo que ya está en RAM
 
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (!key) continue;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key) continue;
 
-          try {
-            const val = localStorage.getItem(key);
-            if (!val || (!val.includes('[') && !val.includes('{'))) continue;
+        try {
+          const val = localStorage.getItem(key);
+          if (!val || (!val.includes('[') && !val.includes('{'))) continue;
 
-            const parsed = JSON.parse(val);
-            const items = Array.isArray(parsed) ? parsed : [parsed];
+          const parsed = JSON.parse(val);
+          const items = Array.isArray(parsed) ? parsed : [parsed];
 
-            // Inteligencia de sección mejorada: Prioriza Contexto Actual
-            let inferredSection = currentMainSection || 'GLOSAS';
-            const kLower = key.toLowerCase();
-            if (kLower.includes('medic')) inferredSection = 'MEDICAMENTOS';
-            if (kLower.includes('ratif')) inferredSection = 'RATIFICADAS';
-            if (kLower.includes('glosa') && !kLower.includes('ratif')) inferredSection = 'GLOSAS';
+          // Inteligencia de sección mejorada
+          let inferredSection = currentMainSection || 'GLOSAS';
+          const kLower = key.toLowerCase();
+          if (kLower.includes('medic')) inferredSection = 'MEDICAMENTOS';
+          if (kLower.includes('ratif')) inferredSection = 'RATIFICADAS';
 
-            for (const item of items) {
-              if (!item || typeof item !== 'object') continue;
+          for (const item of items) {
+            if (!item || typeof item !== 'object') continue;
 
-              // Normalizar sección del item o usar la inferida
-              const itemSection = (item.seccion?.toUpperCase() || inferredSection.toUpperCase());
+            const itemSection = (item.seccion?.toUpperCase() || inferredSection.toUpperCase());
 
-              if (item.factura && (item.valor_glosa !== undefined || item.servicio !== undefined)) {
-                const id = item.id || `rec_${item.factura}_${item.valor_glosa}`;
-                if (!seenIds.has(id)) {
-                  recoveredGlosas.push({
-                    ...item,
-                    id: id.toString(),
-                    seccion: itemSection
-                  });
-                  seenIds.add(id);
-                }
-              }
-              else if (item.factura && (item.valor_aceptado !== undefined || item.valor_no_aceptado !== undefined)) {
-                const id = item.id || `rec_ing_${item.factura}_${item.valor_aceptado}`;
-                if (!seenIds.has(id)) {
-                  recoveredIngresos.push({
-                    ...item,
-                    id: id.toString(),
-                    seccion: itemSection
-                  });
-                  seenIds.add(id);
-                }
+            if (item.factura && (item.valor_glosa !== undefined || item.servicio !== undefined)) {
+              const id = item.id || `rec_${item.factura}_${item.valor_glosa}_${Date.now()}`;
+              if (!seenIds.has(id)) {
+                recoveredGlosas.push({ ...item, id: id.toString(), seccion: itemSection });
+                seenIds.add(id);
               }
             }
-          } catch (e) { }
-        }
-
-        if (recoveredGlosas.length > 0 || recoveredIngresos.length > 0) {
-          console.log(`V5.1 CONTEXTO: Encontrados ${recoveredGlosas.length} glosas y ${recoveredIngresos.length} ingresos.`);
-          if (recoveredGlosas.length > 0) await supabase.from('glosas').upsert(recoveredGlosas);
-          if (recoveredIngresos.length > 0) await supabase.from('ingresos').upsert(recoveredIngresos);
-          localStorage.setItem('migrated_to_supabase_v5_final_context', 'true');
-          loadData(true);
-        } else {
-          localStorage.setItem('migrated_to_supabase_v5_final_context', 'true');
-        }
-      } catch (err: any) {
-        console.error('Error durante la recuperación:', err);
-      } finally {
-        setLoading(false);
+            else if (item.factura && (item.valor_aceptado !== undefined || item.valor_no_aceptado !== undefined)) {
+              const id = item.id || `rec_ing_${item.factura}_${item.valor_aceptado}_${Date.now()}`;
+              if (!seenIds.has(id)) {
+                recoveredIngresos.push({ ...item, id: id.toString(), seccion: itemSection });
+                seenIds.add(id);
+              }
+            }
+          }
+        } catch (e) { }
       }
-    };
 
+      if (recoveredGlosas.length > 0 || recoveredIngresos.length > 0) {
+        if (recoveredGlosas.length > 0) await supabase.from('glosas').upsert(recoveredGlosas);
+        if (recoveredIngresos.length > 0) await supabase.from('ingresos').upsert(recoveredIngresos);
+        showToast(`¡Rescate exitoso! ${recoveredGlosas.length} registros recuperados.`, 'success');
+        loadData(true);
+      } else if (force) {
+        showToast('No se encontraron más registros para recuperar.', 'info');
+      }
+
+      localStorage.setItem('migrated_to_supabase_v5_final_context', 'true');
+    } catch (err: any) {
+      console.error('Error durante la recuperación:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [glosas, currentMainSection, loadData, showToast]);
+
+  useEffect(() => {
     if (isMounted) migrateData();
-  }, [isMounted]);
+  }, [isMounted, migrateData]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('Todos');
@@ -1485,14 +1476,15 @@ function Home() {
                             const last10 = glosas.slice(0, 10).map(g => `• ${g.factura} | ${g.seccion} | ${g.fecha}`).join('\n');
                             const todayRecords = glosas.filter(g => (g.fecha || '').includes(todayManual));
 
-                            alert(`DIAGNÓSTICO V8.5 (ESCUDO DE PERSISTENCIA):\n\n` +
+                            const confirmRescue = window.confirm(`DIAGNÓSTICO V8.7 (RESCATE PROFUNDO):\n\n` +
                               `EN NUBE (Total): ${glosas.length}\n` +
-                              `EN MEMORIA HOY (${todayManual}): ${todayRecords.length} encontrados\n\n` +
-                              `ESCUDO (Buffer): ${buffer.length} registros protegidos localmente\n` +
-                              `VISTA ACTUAL: ${currentMainSection}\n` +
-                              `REGISTROS HOY EN ESTA VISTA: ${todayRecords.filter(g => (g.seccion?.toUpperCase() || 'GLOSAS') === currentMainSection.toUpperCase()).length}\n\n` +
-                              `DATOS EN RAM (Últimos 10):\n${last10 || 'Ninguno'}\n\n` +
-                              `Si tus facturas NO están en RAM pero sí en ESCUDO, avísame.`);
+                              `HOY EN RAM: ${todayRecords.length}\n` +
+                              `ESCUDO (Buffer): ${buffer.length}\n\n` +
+                              `¿Deseas ejecutar un ESCANEO FORZADO para buscar tus 3 facturas perdidas?`);
+
+                            if (confirmRescue) {
+                              migrateData(true);
+                            }
                           }}
                           className="btn btn-secondary"
                           style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}
