@@ -132,7 +132,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
             valor_aceptado: valorAceptado,
             fecha: nowTimestamp(),
             registrada_internamente: false,
-            seccion: currentSeccion
+            seccion: currentSeccion.toUpperCase()
         });
 
         // Mostrar éxito

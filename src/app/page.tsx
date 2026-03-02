@@ -187,14 +187,14 @@ function Home() {
     }
   }, [user?.id, loadData]);
 
-  // Migración de datos desde localStorage a Supabase (Escaneo Profundo)
+  // Migración de datos desde localStorage a Supabase (SUPER ESCANEO V5 - Sensible a Secciones)
   useEffect(() => {
     const migrateData = async () => {
       try {
-        const isMigrated = localStorage.getItem('migrated_to_supabase_v4_final');
+        const isMigrated = localStorage.getItem('migrated_to_supabase_v5_sections');
         if (isMigrated === 'true') return;
 
-        console.log('--- INICIANDO SUPER ESCANEO DE RECUPERACIÓN V4 ---');
+        console.log('--- INICIANDO SUPER ESCANEO DE SECCIONES V5 ---');
         let recoveredGlosas: any[] = [];
         let recoveredIngresos: any[] = [];
         const seenIds = new Set();
@@ -210,19 +210,37 @@ function Home() {
             const parsed = JSON.parse(val);
             const items = Array.isArray(parsed) ? parsed : [parsed];
 
+            // Determinar sección probable por la llave
+            let inferredSection = 'GLOSAS';
+            const kLower = key.toLowerCase();
+            if (kLower.includes('medic')) inferredSection = 'MEDICAMENTOS';
+            if (kLower.includes('ratif')) inferredSection = 'RATIFICADAS';
+
             for (const item of items) {
               if (!item || typeof item !== 'object') continue;
+
+              // Normalizar sección del item o usar la inferida
+              const itemSection = (item.seccion?.toUpperCase() || inferredSection.toUpperCase());
+
               if (item.factura && (item.valor_glosa !== undefined || item.servicio !== undefined)) {
                 const id = item.id || `rec_${item.factura}_${item.valor_glosa}`;
                 if (!seenIds.has(id)) {
-                  recoveredGlosas.push({ ...item, id: id.toString(), seccion: item.seccion || 'GLOSAS' });
+                  recoveredGlosas.push({
+                    ...item,
+                    id: id.toString(),
+                    seccion: itemSection
+                  });
                   seenIds.add(id);
                 }
               }
               else if (item.factura && (item.valor_aceptado !== undefined || item.valor_no_aceptado !== undefined)) {
                 const id = item.id || `rec_ing_${item.factura}_${item.valor_aceptado}`;
                 if (!seenIds.has(id)) {
-                  recoveredIngresos.push({ ...item, id: id.toString(), seccion: item.seccion || 'GLOSAS' });
+                  recoveredIngresos.push({
+                    ...item,
+                    id: id.toString(),
+                    seccion: itemSection
+                  });
                   seenIds.add(id);
                 }
               }
@@ -231,13 +249,13 @@ function Home() {
         }
 
         if (recoveredGlosas.length > 0 || recoveredIngresos.length > 0) {
-          console.log(`SUPER ESCANEO: Encontrados ${recoveredGlosas.length} glosas y ${recoveredIngresos.length} ingresos.`);
+          console.log(`V5 SECCIONES: Encontrados ${recoveredGlosas.length} glosas y ${recoveredIngresos.length} ingresos.`);
           if (recoveredGlosas.length > 0) await supabase.from('glosas').upsert(recoveredGlosas);
           if (recoveredIngresos.length > 0) await supabase.from('ingresos').upsert(recoveredIngresos);
-          localStorage.setItem('migrated_to_supabase_v4_final', 'true');
+          localStorage.setItem('migrated_to_supabase_v5_sections', 'true');
           loadData(true);
         } else {
-          localStorage.setItem('migrated_to_supabase_v4_final', 'true');
+          localStorage.setItem('migrated_to_supabase_v5_sections', 'true');
         }
       } catch (err: any) {
         console.error('Error durante la recuperación:', err);
@@ -1318,8 +1336,8 @@ function Home() {
                         <motion.button
                           whileHover={{ scale: 1.05, opacity: 1 }}
                           onClick={async () => {
-                            if (!confirm('Esta acción forzará un nuevo escaneo profundo de todo tu navegador para buscar datos perdidos. ¿Continuar?')) return;
-                            localStorage.removeItem('migrated_to_supabase_v4_final');
+                            if (!confirm('Esta acción forzará un nuevo escaneo profundo V5 de todo tu navegador (incluyendo Medicamentos). ¿Continuar?')) return;
+                            localStorage.removeItem('migrated_to_supabase_v5_sections');
                             window.location.reload();
                           }}
                           className="btn btn-secondary"
@@ -1332,7 +1350,7 @@ function Home() {
                         <motion.button
                           whileHover={{ scale: 1.05, opacity: 1 }}
                           onClick={async () => {
-                            if (!confirm('SINCRO UNIVERSAL: Intentará subir CUALQUIER dato de glosa/ingreso encontrado en este navegador a la nube. ¿Deseas continuar?')) return;
+                            if (!confirm('SINCRO UNIVERSAL V5: Intentará subir CUALQUIER dato encontrado categorizándolo por sección (Glosas/Med/Rat). ¿Continuar?')) return;
                             setLoading(true);
                             try {
                               let count = 0;
@@ -1343,15 +1361,26 @@ function Home() {
                                 if (val && (val.includes('factura') || val.includes('valor_glosa'))) {
                                   try {
                                     const parsed = JSON.parse(val);
-                                    const data = Array.isArray(parsed) ? parsed : [parsed];
-                                    if (data[0]?.factura) {
-                                      await supabase.from(key.includes('ingreso') ? 'ingresos' : 'glosas').upsert(data);
-                                      count += data.length;
+                                    const items = Array.isArray(parsed) ? parsed : [parsed];
+
+                                    // Inteligencia de sección
+                                    let inferred = 'GLOSAS';
+                                    if (key.toLowerCase().includes('medic')) inferred = 'MEDICAMENTOS';
+                                    if (key.toLowerCase().includes('ratif')) inferred = 'RATIFICADAS';
+
+                                    const prepared = items.map(it => ({
+                                      ...it,
+                                      seccion: it.seccion?.toUpperCase() || inferred
+                                    })).filter(it => it && it.factura);
+
+                                    if (prepared.length > 0) {
+                                      await supabase.from(key.includes('ingreso') ? 'ingresos' : 'glosas').upsert(prepared);
+                                      count += prepared.length;
                                     }
                                   } catch (e) { }
                                 }
                               }
-                              showToast(`Sincronización finalizada.`, 'success');
+                              showToast(`Sincronización Inteligente finalizada.`, 'success');
                               loadData(true);
                             } catch (e) {
                               showToast('Error en sincronización.', 'error');
@@ -1374,12 +1403,13 @@ function Home() {
                               medicamentos: glosas.filter(g => (g as any).seccion === 'MEDICAMENTOS' || (g as any).seccion === 'medicamentos').length,
                               ratificadas: glosas.filter(g => (g as any).seccion === 'RATIFICADAS').length,
                             };
-                            alert(`INFORME DE SALUD DE DATOS:\n\n` +
-                              `• GLOSAS: ${sections.glosas} registros\n` +
-                              `• MEDICAMENTOS: ${sections.medicamentos} registros\n` +
-                              `• RATIFICADAS: ${sections.ratificadas} registros\n\n` +
-                              `Total en Nube: ${glosas.length}\n` +
-                              `Estado: Sincronizado correctamente.`);
+                            alert(`INFORME DE SALUD (V5 SECCIONES):\n\n` +
+                              `• GLOSAS: ${sections.glosas} registros en nube\n` +
+                              `• MEDICAMENTOS: ${sections.medicamentos} registros en nube\n` +
+                              `• RATIFICADAS: ${sections.ratificadas} registros en nube\n\n` +
+                              `Total Nube: ${glosas.length}\n` +
+                              `Total local detectado: ${localStorage.length} llaves\n\n` +
+                              `Estado: Si faltan datos en Medicamentos, usa FORZAR NUEVO ESCANEO.`);
                           }}
                           className="btn btn-secondary"
                           style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}
