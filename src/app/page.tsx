@@ -836,11 +836,10 @@ function Home() {
     link.click();
   };
 
-  if (!isMounted) return <div style={{ background: '#06040d', minHeight: '100vh' }}></div>;
-
-
   // v9.0: REINTENTO AUTOMÁTICO DE SINCRONIZACIÓN (Auto-Sync)
+  // IMPORTANTE: este hook debe estar ANTES de cualquier return condicional
   useEffect(() => {
+    if (!isMounted) return; // Saltamos si no está montado, pero el hook siempre se llama
     const autoSync = async () => {
       // Solo reintentar glosas que no estén sincronizadas
       const pendingGlosas = glosas.filter(g => g.sincronizado === false);
@@ -863,7 +862,9 @@ function Home() {
 
     const interval = setInterval(autoSync, 60000); // Cada 1 minuto para mayor seguridad
     return () => clearInterval(interval);
-  }, [glosas]);
+  }, [glosas, isMounted]);
+
+  if (!isMounted) return <div style={{ background: '#06040d', minHeight: '100vh' }}></div>;
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)', position: 'relative' }}>
