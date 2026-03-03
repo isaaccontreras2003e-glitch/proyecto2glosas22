@@ -1,7 +1,7 @@
 'use client';
 // DEPLOYMENT TRIGGER: Reverting to Dark Premium Theme - 2026-02-27
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Dashboard } from '@/components/Dashboard';
 import { GlosaForm } from '@/components/GlosaForm';
 import { GlosaTable } from '@/components/GlosaTable';
@@ -31,6 +31,7 @@ interface Glosa {
   fecha: string;
   registrada_internamente?: boolean;
   seccion?: string;
+  sincronizado?: boolean;
 }
 
 interface Ingreso {
@@ -40,6 +41,7 @@ interface Ingreso {
   valor_no_aceptado: number;
   fecha: string;
   seccion?: string;
+  sincronizado?: boolean;
 }
 
 function Home() {
@@ -129,10 +131,13 @@ function Home() {
             const localOnly = prev.filter(p => !cloudIds.has(p.id));
 
             // Unir Nube + Memoria Local + Buffer de Emergencia
-            const combined = [...gRes.data];
+            // Unir Nube (Marcada como Sincronizada) + Memoria Local + Buffer de Emergencia
+            const combined = [
+              ...gRes.data.map((c: any) => ({ ...c, sincronizado: true })),
+            ];
             [...localOnly, ...emergencyBuffer].forEach(item => {
               if (!cloudIds.has(item.id)) {
-                combined.push(item);
+                combined.push({ ...item, sincronizado: false });
               }
             });
 
@@ -153,7 +158,15 @@ function Home() {
           setIngresos(prev => {
             const cloudIds = new Set(iRes.data.map((c: any) => c.id));
             const localOnly = prev.filter(p => !cloudIds.has(p.id));
-            const combined = [...localOnly, ...iRes.data];
+            const combined = [
+              ...iRes.data.map((c: any) => ({ ...c, sincronizado: true })),
+              ...localOnly.map(l => ({ ...l, sincronizado: false }))
+            ].sort((a, b) => {
+              if (!a.fecha || !b.fecha) return 0;
+              const dateA = a.fecha.split(',')[0].trim().split('/').reverse().join('');
+              const dateB = b.fecha.split(',')[0].trim().split('/').reverse().join('');
+              return dateB.localeCompare(dateA);
+            });
             localStorage.setItem('cached_ingresos', JSON.stringify(combined));
             return combined;
           });
@@ -378,9 +391,10 @@ function Home() {
     const backupBuffer = JSON.parse(localStorage.getItem('emergency_buffer') || '[]');
     localStorage.setItem('emergency_buffer', JSON.stringify([newGlosa, ...backupBuffer]));
 
-    // Optimista
+    // Optimista con estado Local (🟡)
+    const glosaConEstado: Glosa = { ...newGlosa, sincronizado: false };
     setGlosas(prev => {
-      const updated = [newGlosa, ...prev];
+      const updated = [glosaConEstado, ...prev];
       localStorage.setItem('cached_glosas', JSON.stringify(updated));
       return updated;
     });
@@ -389,9 +403,11 @@ function Home() {
     const { error } = await supabase.from('glosas').insert([newGlosa]);
     if (error) {
       console.error('Error sincronizando nueva glosa:', error);
-      showToast('Error de red. El dato se guardará localmente.', 'info');
+      showToast('Guardado localmente. Se subirá automáticamente al recuperar conexión.', 'info');
     } else {
       console.log('✅ Sincronizado con Supabase:', newGlosa.id);
+      // Actualizar estado a Sincronizado (🟢)
+      setGlosas(prev => prev.map(g => g.id === newGlosa.id ? { ...g, sincronizado: true } : g));
       // Si tuvo éxito, podemos limpiar del buffer
       const currentBuffer = JSON.parse(localStorage.getItem('emergency_buffer') || '[]');
       localStorage.setItem('emergency_buffer', JSON.stringify(currentBuffer.filter((g: any) => g.id !== newGlosa.id)));
@@ -449,12 +465,22 @@ function Home() {
   };
 
   const handleAddIngreso = async (newIngreso: Ingreso) => {
-    const updatedIngresos = [newIngreso, ...ingresos];
-    setIngresos(updatedIngresos);
-    localStorage.setItem('cached_ingresos', JSON.stringify(updatedIngresos));
+    // Optimista Local (🟡)
+    const ingresoConEstado = { ...newIngreso, sincronizado: false };
+    setIngresos(prev => {
+      const updated = [ingresoConEstado, ...prev];
+      localStorage.setItem('cached_ingresos', JSON.stringify(updated));
+      return updated;
+    });
 
     const { error } = await supabase.from('ingresos').insert([newIngreso]);
-    if (error) console.error('Error sincronizando ingreso:', error);
+    if (error) {
+      console.error('Error sincronizando ingreso:', error);
+      showToast('Guardado localmente. Se subirá de fondo.', 'info');
+    } else {
+      // Éxito (🟢)
+      setIngresos(prev => prev.map(i => i.id === newIngreso.id ? { ...i, sincronizado: true } : i));
+    }
   };
 
   const handleDeleteIngreso = async (id: string) => {
@@ -800,11 +826,32 @@ function Home() {
 
   if (!isMounted) return <div style={{ background: '#06040d', minHeight: '100vh' }}></div>;
 
-  // Cálculos para el Donut Chart - Uso los totales reales para las estadísticas globales
-  const totalStates = stats.pendingCount + stats.respondedCount + stats.acceptedCount || 1;
-  const pPending = (stats.pendingCount / totalStates) * 100;
-  const pResponded = (stats.respondedCount / totalStates) * 100;
-  const pAccepted = (stats.acceptedCount / totalStates) * 100;
+
+  // v9.0: REINTENTO AUTOMÁTICO DE SINCRONIZACIÓN (Auto-Sync)
+  useEffect(() => {
+    const autoSync = async () => {
+      // Solo reintentar glosas que no estén sincronizadas
+      const pendingGlosas = glosas.filter(g => g.sincronizado === false);
+
+      if (pendingGlosas.length > 0) {
+        console.log(`--- [v9.0] Auto-Sync: Reintentando ${pendingGlosas.length} glosas ---`);
+        for (const item of pendingGlosas) {
+          // Extraer campos para evitar errores de red si hay metadatos extras
+          const { sincronizado, ...cleanItem } = item as any;
+          const { error } = await supabase.from('glosas').insert([cleanItem]);
+          if (!error) {
+            setGlosas(prev => prev.map(g => g.id === item.id ? { ...g, sincronizado: true } : g));
+            // Limpiar del buffer de emergencia si tuvo éxito
+            const currentBuffer = JSON.parse(localStorage.getItem('emergency_buffer') || '[]');
+            localStorage.setItem('emergency_buffer', JSON.stringify(currentBuffer.filter((g: any) => g.id !== item.id)));
+          }
+        }
+      }
+    };
+
+    const interval = setInterval(autoSync, 60000); // Cada 1 minuto para mayor seguridad
+    return () => clearInterval(interval);
+  }, [glosas]);
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)', position: 'relative' }}>
@@ -1204,14 +1251,15 @@ function Home() {
                     <div style={{ marginTop: '3.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '2.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
                         <div style={{ width: '4px', height: '24px', background: 'var(--primary)', borderRadius: '2px' }}></div>
-                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'white', margin: 0 }}>Tus Registros de Hoy ({currentMainSection})</h3>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'white', margin: 0 }}>Pendientes de Ingreso Interno ({currentMainSection})</h3>
                       </div>
 
                       <GlosaTable
                         glosas={currentSectionGlosas.filter(g => {
                           const today = new Date();
                           const todayStr = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
-                          return (g.fecha || '').includes(todayStr);
+                          // v9.0: FLUJO DE DESCARGA - Solo mostrar si NO está registrada internamente
+                          return (g.fecha || '').includes(todayStr) && !g.registrada_internamente;
                         })}
                         onUpdateStatus={handleUpdateStatus}
                         onUpdateGlosa={handleUpdateGlosa}

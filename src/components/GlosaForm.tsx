@@ -122,7 +122,10 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
             return;
         }
 
-        if (isDuplicateExact && !forceSubmit) return; // Bloquear si es duplicado exacto sin confirmación
+        if (facturaExiste) {
+            showToast('❌ ERROR CRÍTICO: Esta factura ya existe en el sistema. No se permiten duplicados.', 'error');
+            return;
+        }
 
         const uniqueId = typeof window !== 'undefined' && window.crypto && (window.crypto as any).randomUUID
             ? (window.crypto as any).randomUUID()
@@ -378,11 +381,20 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
                     ) : (
                         <button
                             type="submit"
-                            className="btn btn-primary"
-                            style={{ width: '100%', gap: '0.75rem', marginTop: '1rem' }}
+                            disabled={!!facturaExiste}
+                            className={`btn btn-primary ${facturaExiste ? 'btn-disabled' : ''}`}
+                            style={{
+                                width: '100%',
+                                gap: '0.75rem',
+                                marginTop: '1rem',
+                                opacity: facturaExiste ? 0.5 : 1,
+                                cursor: facturaExiste ? 'not-allowed' : 'pointer',
+                                background: facturaExiste ? 'rgba(239,68,68,0.2)' : undefined,
+                                borderColor: facturaExiste ? '#ef4444' : undefined
+                            }}
                         >
-                            {forceSubmit ? <AlertTriangle size={18} /> : <Plus size={18} />}
-                            {forceSubmit ? 'Confirmar Registro Duplicado' : 'Guardar Registro'}
+                            {facturaExiste ? <AlertTriangle size={18} /> : <Plus size={18} />}
+                            {facturaExiste ? 'FACTURA YA EXISTE (BLOQUEDO)' : 'Guardar Registro'}
                         </button>
                     )
                 )}

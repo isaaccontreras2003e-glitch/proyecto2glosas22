@@ -19,6 +19,7 @@ interface Glosa {
     fecha: string;
     registrada_internamente?: boolean;
     seccion?: string;
+    sincronizado?: boolean;
 }
 
 interface GlosaTableProps {
@@ -339,9 +340,14 @@ export const GlosaTable = ({
                                                 </motion.button>
                                             </td>
                                             <td style={{ padding: '1.25rem 1rem', fontWeight: 600, color: glosa.registrada_internamente ? '#10b981' : (isDupe ? '#f87171' : 'white') }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                                                     {isDupe && <Copy size={13} style={{ flexShrink: 0 }} />}
-                                                    {glosa.factura}
+                                                    <span>{glosa.factura}</span>
+                                                    {glosa.sincronizado ? (
+                                                        <div title="Sincronizado en la nube" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 5px #10b981' }}></div>
+                                                    ) : (
+                                                        <div title="Guardado localmente (Pendiente de subir)" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b', boxShadow: '0 0 5px #f59e0b' }}></div>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td style={{ padding: '1.25rem 1rem', color: 'var(--text-secondary)', maxWidth: '200px' }}>
