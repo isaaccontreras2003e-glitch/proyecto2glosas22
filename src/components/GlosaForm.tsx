@@ -92,15 +92,19 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
         );
     }, [formData.factura, existingGlosas]);
 
-    // Detectar si es duplicado exacto (factura + servicio + valor)
-    const isDuplicateExact = useMemo(() => {
-        if (!formData.factura || !formData.servicio || !formData.valor_glosa) return false;
-        return existingGlosas.some(
-            g =>
-                g.factura.trim().toLowerCase() === formData.factura.trim().toLowerCase() &&
-                g.servicio.trim().toLowerCase() === formData.servicio.trim().toLowerCase() &&
-                g.valor_glosa === parseFloat(formData.valor_glosa)
-        );
+    // v9.1: Protección de integridad con navegación segura
+    const isDupeMatch = useMemo(() => {
+        if (!formData.factura || !formData.servicio) return false;
+        const formFact = (formData.factura || '').trim().toLowerCase();
+        const formServ = (formData.servicio || '').trim().toLowerCase();
+        const formValor = parseFloat(formData.valor_glosa) || 0;
+
+        return (existingGlosas || []).some(g => {
+            if (!g) return false;
+            const gFact = (g.factura || '').trim().toLowerCase();
+            const gServ = (g.servicio || '').trim().toLowerCase();
+            return gFact === formFact && gServ === formServ && g.valor_glosa === formValor;
+        });
     }, [formData, existingGlosas]);
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -219,7 +223,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
                                 placeholder="Ej: FAC-10020"
                                 value={formData.factura}
                                 style={{
-                                    borderColor: isDuplicateExact
+                                    borderColor: isDupeMatch
                                         ? 'rgba(239,68,68,0.6)'
                                         : facturaExiste
                                             ? 'rgba(245,158,11,0.6)'
@@ -247,7 +251,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
                                 }}>
                                     <AlertTriangle size={14} style={{ marginTop: '1px', flexShrink: 0 }} />
                                     <div>
-                                        {isDuplicateExact
+                                        {isDupeMatch
                                             ? <><strong>⚠ DUPLICADO EXACTO:</strong> Esta factura ya tiene registrado el mismo servicio y valor.</>
                                             : <><strong>Factura ya ingresada</strong> con {facturaMatch!.length} registro(s): {facturaMatch!.map(g => g.servicio).join(', ')}.</>
                                         }

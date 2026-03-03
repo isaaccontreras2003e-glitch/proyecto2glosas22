@@ -130,21 +130,25 @@ function Home() {
             const cloudIds = new Set(gRes.data.map((c: any) => c.id));
             const localOnly = prev.filter(p => !cloudIds.has(p.id));
 
-            // Unir Nube + Memoria Local + Buffer de Emergencia
             // Unir Nube (Marcada como Sincronizada) + Memoria Local + Buffer de Emergencia
-            const combined = [
-              ...gRes.data.map((c: any) => ({ ...c, sincronizado: true })),
-            ];
+            // USANDO MAP PARA EVITAR DUPLICADOS DE IDS (Causa de crash)
+            const glosaMap = new Map();
+
+            // 1. Prioridad: Datos de la Nube (Sincronizados)
+            gRes.data.forEach((c: any) => {
+              glosaMap.set(c.id, { ...c, sincronizado: true });
+            });
+
+            // 2. Complemento: Local y Buffer (Pendientes)
             [...localOnly, ...emergencyBuffer].forEach(item => {
-              if (!cloudIds.has(item.id)) {
-                combined.push({ ...item, sincronizado: false });
+              if (!glosaMap.has(item.id)) {
+                glosaMap.set(item.id, { ...item, sincronizado: false });
               }
             });
 
-            const sorted = combined.sort((a, b) => {
-              if (!a.fecha || !b.fecha) return 0;
-              const dateA = a.fecha.split(',')[0].trim().split('/').reverse().join('');
-              const dateB = b.fecha.split(',')[0].trim().split('/').reverse().join('');
+            const sorted = Array.from(glosaMap.values()).sort((a: any, b: any) => {
+              const dateA = (a.fecha || '').split(',')[0].trim().split('/').reverse().join('') || '0';
+              const dateB = (b.fecha || '').split(',')[0].trim().split('/').reverse().join('') || '0';
               return dateB.localeCompare(dateA);
             });
 
@@ -158,13 +162,19 @@ function Home() {
           setIngresos(prev => {
             const cloudIds = new Set(iRes.data.map((c: any) => c.id));
             const localOnly = prev.filter(p => !cloudIds.has(p.id));
-            const combined = [
-              ...iRes.data.map((c: any) => ({ ...c, sincronizado: true })),
-              ...localOnly.map(l => ({ ...l, sincronizado: false }))
-            ].sort((a, b) => {
-              if (!a.fecha || !b.fecha) return 0;
-              const dateA = a.fecha.split(',')[0].trim().split('/').reverse().join('');
-              const dateB = b.fecha.split(',')[0].trim().split('/').reverse().join('');
+
+            // MAP PARA INGRESOS TAMBIÉN (Prevención de duplicados)
+            const ingresoMap = new Map();
+            iRes.data.forEach((c: any) => ingresoMap.set(c.id, { ...c, sincronizado: true }));
+            localOnly.forEach(l => {
+              if (!ingresoMap.has(l.id)) {
+                ingresoMap.set(l.id, { ...l, sincronizado: false });
+              }
+            });
+
+            const combined = Array.from(ingresoMap.values()).sort((a: any, b: any) => {
+              const dateA = (a.fecha || '').split(',')[0].trim().split('/').reverse().join('') || '0';
+              const dateB = (b.fecha || '').split(',')[0].trim().split('/').reverse().join('') || '0';
               return dateB.localeCompare(dateA);
             });
             localStorage.setItem('cached_ingresos', JSON.stringify(combined));

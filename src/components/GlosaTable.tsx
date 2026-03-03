@@ -84,7 +84,10 @@ export const GlosaTable = ({
         const seen = new Map<string, string>();
         const dupes = new Set<string>();
         glosas.forEach(g => {
-            const key = `${g.factura.trim().toLowerCase()}|${g.servicio.trim().toLowerCase()}|${g.valor_glosa}`;
+            if (!g || !g.id) return;
+            const fact = (g.factura || '').trim().toLowerCase();
+            const serv = (g.servicio || '').trim().toLowerCase();
+            const key = `${fact}|${serv}|${g.valor_glosa}`;
             if (seen.has(key)) {
                 dupes.add(g.id);
                 dupes.add(seen.get(key)!);
