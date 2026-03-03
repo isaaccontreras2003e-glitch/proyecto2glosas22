@@ -13,8 +13,10 @@ import { useRouter } from 'next/navigation';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ToastProvider, useToast } from '@/lib/contexts/ToastContext';
 
-const formatPesos = (value: number): string => {
-  return Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const formatPesos = (value: any): string => {
+  const num = typeof value === 'number' ? value : parseFloat(value);
+  if (isNaN(num)) return '0';
+  return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 };
 
 interface Glosa {

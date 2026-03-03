@@ -240,8 +240,8 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
                                     marginTop: '0.5rem',
                                     padding: '0.6rem 0.85rem',
                                     borderRadius: '10px',
-                                    background: `rgba(${isDuplicateExact ? '239,68,68' : '245,158,11'},0.08)`,
-                                    border: `1px solid rgba(${isDuplicateExact ? '239,68,68' : '245,158,11'},0.25)`,
+                                    background: `rgba(${isDupeMatch ? '239,68,68' : '245,158,11'},0.08)`,
+                                    border: `1px solid rgba(${isDupeMatch ? '239,68,68' : '245,158,11'},0.25)`,
                                     display: 'flex',
                                     alignItems: 'flex-start',
                                     gap: '0.6rem',
@@ -362,7 +362,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
 
                 {/* Botón principal o botón de confirmación si es duplicado exacto */}
                 {isAdmin && (
-                    isDuplicateExact && !forceSubmit ? (
+                    isDupeMatch && !forceSubmit ? (
                         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
                             <button
                                 type="button"

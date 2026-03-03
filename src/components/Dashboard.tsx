@@ -4,8 +4,10 @@ import { FileText, DollarSign, Clock, CheckCircle, TrendingUp, Filter, PieChart,
 // Build Trigger: v2.0.2 - Redesign Force Sync REFRESH
 import { Card } from './Card';
 
-const formatPesos = (value: number): string => {
-    return Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const formatPesos = (value: any): string => {
+    const num = typeof value === 'number' ? value : parseFloat(value);
+    if (isNaN(num)) return '0';
+    return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 };
 
 interface Glosa {

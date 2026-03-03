@@ -16,8 +16,11 @@ interface ExecutiveReportProps {
     };
 }
 
-const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
+const formatCurrency = (value: any) => {
+    const num = typeof value === 'number' ? value : parseFloat(value);
+    if (isNaN(num)) return '$0';
+    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(num);
+};
 
 export const ExecutiveReport = ({ stats }: ExecutiveReportProps) => {
     const kpis = [
