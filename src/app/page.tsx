@@ -1,11 +1,12 @@
 'use client';
-// DEPLOYMENT TRIGGER: Reverting to Dark Premium Theme - 2026-02-27
+// HARDENING v10.0 - Protección completa contra errores comunes y agresivos
 
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Dashboard } from '@/components/Dashboard';
 import { GlosaForm } from '@/components/GlosaForm';
 import { GlosaTable } from '@/components/GlosaTable';
 import { supabase } from '@/lib/supabase';
+import { safeNumber, safeArray, safeStorage } from '@/lib/safeUtils';
 import { LayoutDashboard, TrendingUp, Wallet, Activity, Trash2, Download, ListChecks, PieChart, ChevronUp, RefreshCw, ClipboardList, LogOut, FileText, CheckCircle, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/contexts/AuthContext';
@@ -125,25 +126,24 @@ function Home() {
         if (gRes?.error) throw gRes.error;
         if (iRes?.error) throw iRes.error;
 
-        if (gRes && gRes.data) {
+        if (gRes && Array.isArray(gRes.data)) {
           // MEJORADO: Merge inteligente que no destruye el estado local optimista
           setGlosas(prev => {
-            const emergencyBuffer = JSON.parse(localStorage.getItem('emergency_buffer') || '[]');
-            const cloudIds = new Set(gRes.data.map((c: any) => c.id));
-            const localOnly = prev.filter(p => !cloudIds.has(p.id));
+            const emergencyBuffer = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
+            const cloudIds = new Set(safeArray(gRes.data).map((c: any) => c.id));
+            const localOnly = safeArray(prev).filter(p => !cloudIds.has(p.id));
 
-            // Unir Nube (Marcada como Sincronizada) + Memoria Local + Buffer de Emergencia
-            // USANDO MAP PARA EVITAR DUPLICADOS DE IDS (Causa de crash)
+            // USANDO MAP PARA EVITAR DUPLICADOS DE IDS
             const glosaMap = new Map();
 
-            // 1. Prioridad: Datos de la Nube (Sincronizados)
-            gRes.data.forEach((c: any) => {
-              glosaMap.set(c.id, { ...c, sincronizado: true });
+            // 1. Prioridad: Datos de la Nube
+            safeArray(gRes.data).forEach((c: any) => {
+              if (c && c.id) glosaMap.set(c.id, { ...c, sincronizado: true });
             });
 
-            // 2. Complemento: Local y Buffer (Pendientes)
+            // 2. Complemento: Local y Buffer
             [...localOnly, ...emergencyBuffer].forEach(item => {
-              if (!glosaMap.has(item.id)) {
+              if (item && item.id && !glosaMap.has(item.id)) {
                 glosaMap.set(item.id, { ...item, sincronizado: false });
               }
             });
@@ -154,22 +154,23 @@ function Home() {
               return dateB.localeCompare(dateA);
             });
 
-            localStorage.setItem('cached_glosas', JSON.stringify(sorted));
+            safeStorage.setJson('cached_glosas', sorted);
             return sorted;
           });
           lastFetchedUserId.current = user.id;
         }
 
-        if (iRes && iRes.data) {
+        if (iRes && Array.isArray(iRes.data)) {
           setIngresos(prev => {
-            const cloudIds = new Set(iRes.data.map((c: any) => c.id));
-            const localOnly = prev.filter(p => !cloudIds.has(p.id));
+            const cloudIds = new Set(safeArray(iRes.data).map((c: any) => c.id));
+            const localOnly = safeArray(prev).filter(p => !cloudIds.has(p.id));
 
-            // MAP PARA INGRESOS TAMBIÉN (Prevención de duplicados)
             const ingresoMap = new Map();
-            iRes.data.forEach((c: any) => ingresoMap.set(c.id, { ...c, sincronizado: true }));
+            safeArray(iRes.data).forEach((c: any) => {
+              if (c && c.id) ingresoMap.set(c.id, { ...c, sincronizado: true });
+            });
             localOnly.forEach(l => {
-              if (!ingresoMap.has(l.id)) {
+              if (l && l.id && !ingresoMap.has(l.id)) {
                 ingresoMap.set(l.id, { ...l, sincronizado: false });
               }
             });
@@ -179,7 +180,7 @@ function Home() {
               const dateB = (b.fecha || '').split(',')[0].trim().split('/').reverse().join('') || '0';
               return dateB.localeCompare(dateA);
             });
-            localStorage.setItem('cached_ingresos', JSON.stringify(combined));
+            safeStorage.setJson('cached_ingresos', combined);
             return combined;
           });
         }
@@ -205,17 +206,15 @@ function Home() {
     await attemptFetch();
   }, [user?.id]);
 
-  // Cargar datos desde caché local (INSTANTÁNEO)
+  // Cargar datos desde caché local (INSTANTÁNEO) — con safeStorage para modo privado
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const g = localStorage.getItem('cached_glosas');
-      const i = localStorage.getItem('cached_ingresos');
-      if (g) setGlosas(JSON.parse(g));
-      if (i) setIngresos(JSON.parse(i));
-      if (g || i) {
-        setLoading(false); // Quitar loader si hay caché
-        setLastUpdate(new Date());
-      }
+    const g = safeStorage.getJson<Glosa[]>('cached_glosas', []);
+    const i = safeStorage.getJson<Ingreso[]>('cached_ingresos', []);
+    if (g.length > 0) setGlosas(g);
+    if (i.length > 0) setIngresos(i);
+    if (g.length > 0 || i.length > 0) {
+      setLoading(false);
+      setLastUpdate(new Date());
     }
   }, []);
 
@@ -358,105 +357,116 @@ function Home() {
   }, [glosas, currentMainSection]);
 
   const stats = useMemo(() => {
-    const currentUpper = currentMainSection.toUpperCase();
-    const sectionGlosas = glosas.filter(g => ((g as any).seccion?.toUpperCase() || 'GLOSAS') === currentUpper);
-    const sectionIngresos = ingresos.filter(i => ((i as any).seccion?.toUpperCase() || 'GLOSAS') === currentUpper);
+    try {
+      const currentUpper = currentMainSection.toUpperCase();
+      const sectionGlosas = safeArray(glosas).filter(g => ((g as any).seccion?.toUpperCase() || 'GLOSAS') === currentUpper);
+      const sectionIngresos = safeArray(ingresos).filter(i => ((i as any).seccion?.toUpperCase() || 'GLOSAS') === currentUpper);
 
-    const totalGlosadoValue = sectionGlosas.reduce((acc, curr) => acc + curr.valor_glosa, 0);
-    const glosaAceptado = sectionGlosas.reduce((acc, curr) => acc + (curr.valor_aceptado || 0), 0);
-    const ingresoAceptado = sectionIngresos.reduce((acc, curr) => acc + (curr.valor_aceptado || 0), 0);
-    const totalAceptadoValue = glosaAceptado + ingresoAceptado;
+      const totalGlosadoValue = sectionGlosas.reduce((acc, curr) => acc + safeNumber(curr.valor_glosa), 0);
+      const glosaAceptado = sectionGlosas.reduce((acc, curr) => acc + safeNumber(curr.valor_aceptado), 0);
+      const ingresoAceptado = sectionIngresos.reduce((acc, curr) => acc + safeNumber(curr.valor_aceptado), 0);
+      const totalAceptadoValue = glosaAceptado + ingresoAceptado;
 
-    const glosaNoAceptado = sectionGlosas.reduce((acc, curr) => {
-      if (curr.valor_no_aceptado !== undefined && curr.valor_no_aceptado !== null) return acc + curr.valor_no_aceptado;
-      if (curr.estado !== 'Pendiente') return acc + (curr.valor_glosa - (curr.valor_aceptado || 0));
-      return acc;
-    }, 0);
-    const ingresoNoAceptado = sectionIngresos.reduce((acc, curr) => acc + (curr.valor_no_aceptado || 0), 0);
-    const totalNoAceptadoValue = glosaNoAceptado + ingresoNoAceptado;
+      const glosaNoAceptado = sectionGlosas.reduce((acc, curr) => {
+        const noAcep = safeNumber(curr.valor_no_aceptado, -1);
+        if (noAcep >= 0) return acc + noAcep;
+        if (curr.estado !== 'Pendiente') return acc + (safeNumber(curr.valor_glosa) - safeNumber(curr.valor_aceptado));
+        return acc;
+      }, 0);
+      const ingresoNoAceptado = sectionIngresos.reduce((acc, curr) => acc + safeNumber(curr.valor_no_aceptado), 0);
+      const totalNoAceptadoValue = glosaNoAceptado + ingresoNoAceptado;
 
-    const totalRegistradoInternoValue = sectionGlosas.filter(g => g.registrada_internamente).reduce((acc, curr) => acc + curr.valor_glosa, 0);
+      const totalRegistradoInternoValue = sectionGlosas
+        .filter(g => g.registrada_internamente)
+        .reduce((acc, curr) => acc + safeNumber(curr.valor_glosa), 0);
 
-    const pendingValue = totalGlosadoValue - totalAceptadoValue - totalNoAceptadoValue;
+      const pendingValue = totalGlosadoValue - totalAceptadoValue - totalNoAceptadoValue;
 
-    return {
-      totalCount: sectionGlosas.length,
-      totalGlosado: totalGlosadoValue,
-      totalAceptado: totalAceptadoValue,
-      totalPendiente: Math.max(0, pendingValue),
-      totalRegistradoInterno: totalRegistradoInternoValue,
-      totalNoAceptado: totalNoAceptadoValue,
-      percentAceptado: totalGlosadoValue > 0 ? Math.round((totalAceptadoValue / totalGlosadoValue) * 100) : 0,
-      percentRegistrado: totalGlosadoValue > 0 ? Math.round((totalRegistradoInternoValue / totalGlosadoValue) * 100) : 0,
-
-      // Legacy fields to support other UI parts
-      totalValue: totalGlosadoValue,
-      totalIngresos: totalAceptadoValue,
-      pendingCount: sectionGlosas.filter(g => g.estado === 'Pendiente').length,
-      respondedCount: sectionGlosas.filter(g => g.estado === 'Respondida').length,
-      acceptedCount: sectionGlosas.filter(g => g.estado === 'Aceptada' || sectionIngresos.some(i => i.factura === g.factura)).length,
-    };
+      return {
+        totalCount: sectionGlosas.length,
+        totalGlosado: totalGlosadoValue,
+        totalAceptado: totalAceptadoValue,
+        totalPendiente: Math.max(0, pendingValue),
+        totalRegistradoInterno: totalRegistradoInternoValue,
+        totalNoAceptado: totalNoAceptadoValue,
+        percentAceptado: totalGlosadoValue > 0 ? Math.round((totalAceptadoValue / totalGlosadoValue) * 100) : 0,
+        percentRegistrado: totalGlosadoValue > 0 ? Math.round((totalRegistradoInternoValue / totalGlosadoValue) * 100) : 0,
+        totalValue: totalGlosadoValue,
+        totalIngresos: totalAceptadoValue,
+        pendingCount: sectionGlosas.filter(g => g.estado === 'Pendiente').length,
+        respondedCount: sectionGlosas.filter(g => g.estado === 'Respondida').length,
+        acceptedCount: sectionGlosas.filter(g => g.estado === 'Aceptada' || sectionIngresos.some(i => i.factura === g.factura)).length,
+      };
+    } catch (err) {
+      console.error('[stats] Error calculando estadísticas:', err);
+      return { totalCount: 0, totalGlosado: 0, totalAceptado: 0, totalPendiente: 0, totalRegistradoInterno: 0, totalNoAceptado: 0, percentAceptado: 0, percentRegistrado: 0, totalValue: 0, totalIngresos: 0, pendingCount: 0, respondedCount: 0, acceptedCount: 0 };
+    }
   }, [glosas, ingresos, currentMainSection]);
 
   const handleAddGlosa = async (newGlosa: Glosa) => {
     // Escudo de Persistencia: Guardar en un buffer aparte para emergencias
-    const backupBuffer = JSON.parse(localStorage.getItem('emergency_buffer') || '[]');
-    localStorage.setItem('emergency_buffer', JSON.stringify([newGlosa, ...backupBuffer]));
+    const backupBuffer = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
+    safeStorage.setJson('emergency_buffer', [newGlosa, ...backupBuffer]);
 
-    // Optimista con estado Local (🟡)
+    // Optimista con estado Local
     const glosaConEstado: Glosa = { ...newGlosa, sincronizado: false };
     setGlosas(prev => {
-      const updated = [glosaConEstado, ...prev];
-      localStorage.setItem('cached_glosas', JSON.stringify(updated));
+      const updated = [glosaConEstado, ...safeArray(prev)];
+      safeStorage.setJson('cached_glosas', updated);
       return updated;
     });
 
-    // Sincronizar
-    const { error } = await supabase.from('glosas').insert([newGlosa]);
-    if (error) {
-      console.error('Error sincronizando nueva glosa:', error);
-      showToast('Guardado localmente. Se subirá automáticamente al recuperar conexión.', 'info');
-    } else {
-      console.log('✅ Sincronizado con Supabase:', newGlosa.id);
-      // Actualizar estado a Sincronizado (🟢)
-      setGlosas(prev => prev.map(g => g.id === newGlosa.id ? { ...g, sincronizado: true } : g));
-      // Si tuvo éxito, podemos limpiar del buffer
-      const currentBuffer = JSON.parse(localStorage.getItem('emergency_buffer') || '[]');
-      localStorage.setItem('emergency_buffer', JSON.stringify(currentBuffer.filter((g: any) => g.id !== newGlosa.id)));
+    // Sincronizar con Supabase
+    try {
+      const { error } = await supabase.from('glosas').insert([newGlosa]);
+      if (error) {
+        console.error('Error sincronizando nueva glosa:', error);
+        showToast('Guardado localmente. Se subirá automáticamente al recuperar conexión.', 'info');
+      } else {
+        setGlosas(prev => safeArray(prev).map(g => g.id === newGlosa.id ? { ...g, sincronizado: true } : g));
+        const currentBuffer = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
+        safeStorage.setJson('emergency_buffer', currentBuffer.filter((g: any) => g.id !== newGlosa.id));
+      }
+    } catch (err: any) {
+      console.error('Error crítico al insertar glosa:', err);
+      showToast('Error de conexión. Datos guardados localmente.', 'info');
     }
   };
 
   const handleUpdateStatus = async (id: string, newEstado: string) => {
     setGlosas(prev => {
-      const updated = prev.map(g => g.id === id ? { ...g, estado: newEstado } : g);
-      localStorage.setItem('cached_glosas', JSON.stringify(updated));
+      const updated = safeArray(prev).map(g => g.id === id ? { ...g, estado: newEstado } : g);
+      safeStorage.setJson('cached_glosas', updated);
       return updated;
     });
-
-    const { error } = await supabase.from('glosas').update({ estado: newEstado }).eq('id', id);
-    if (error) console.error('Error actualizando estado:', error);
+    try {
+      const { error } = await supabase.from('glosas').update({ estado: newEstado }).eq('id', id);
+      if (error) console.error('Error actualizando estado:', error);
+    } catch (err) { console.error('Error crítico actualizando estado:', err); }
   };
 
   const handleUpdateGlosa = async (updatedGlosa: Glosa) => {
     setGlosas(prev => {
-      const updated = prev.map(g => g.id === updatedGlosa.id ? updatedGlosa : g);
-      localStorage.setItem('cached_glosas', JSON.stringify(updated));
+      const updated = safeArray(prev).map(g => g.id === updatedGlosa.id ? updatedGlosa : g);
+      safeStorage.setJson('cached_glosas', updated);
       return updated;
     });
-
-    const { error } = await supabase.from('glosas').update(updatedGlosa).eq('id', updatedGlosa.id);
-    if (error) console.error('Error actualizando glosa:', error);
+    try {
+      const { error } = await supabase.from('glosas').update(updatedGlosa).eq('id', updatedGlosa.id);
+      if (error) console.error('Error actualizando glosa:', error);
+    } catch (err) { console.error('Error crítico actualizando glosa:', err); }
   };
 
   const handleDeleteGlosa = async (id: string) => {
     setGlosas(prev => {
-      const updated = prev.filter(g => g.id !== id);
-      localStorage.setItem('cached_glosas', JSON.stringify(updated));
+      const updated = safeArray(prev).filter(g => g.id !== id);
+      safeStorage.setJson('cached_glosas', updated);
       return updated;
     });
-
-    const { error } = await supabase.from('glosas').delete().eq('id', id);
-    if (error) console.error('Error eliminando glosa:', error);
+    try {
+      const { error } = await supabase.from('glosas').delete().eq('id', id);
+      if (error) console.error('Error eliminando glosa:', error);
+    } catch (err) { console.error('Error crítico eliminando glosa:', err); }
   };
 
   const handleDeleteDuplicates = async () => {
@@ -477,31 +487,34 @@ function Home() {
   };
 
   const handleAddIngreso = async (newIngreso: Ingreso) => {
-    // Optimista Local (🟡)
     const ingresoConEstado = { ...newIngreso, sincronizado: false };
     setIngresos(prev => {
-      const updated = [ingresoConEstado, ...prev];
-      localStorage.setItem('cached_ingresos', JSON.stringify(updated));
+      const updated = [ingresoConEstado, ...safeArray(prev)];
+      safeStorage.setJson('cached_ingresos', updated);
       return updated;
     });
-
-    const { error } = await supabase.from('ingresos').insert([newIngreso]);
-    if (error) {
-      console.error('Error sincronizando ingreso:', error);
-      showToast('Guardado localmente. Se subirá de fondo.', 'info');
-    } else {
-      // Éxito (🟢)
-      setIngresos(prev => prev.map(i => i.id === newIngreso.id ? { ...i, sincronizado: true } : i));
+    try {
+      const { error } = await supabase.from('ingresos').insert([newIngreso]);
+      if (error) {
+        console.error('Error sincronizando ingreso:', error);
+        showToast('Guardado localmente. Se subirá de fondo.', 'info');
+      } else {
+        setIngresos(prev => safeArray(prev).map(i => i.id === newIngreso.id ? { ...i, sincronizado: true } : i));
+      }
+    } catch (err: any) {
+      console.error('Error crítico al insertar ingreso:', err);
+      showToast('Error de conexión. Datos guardados localmente.', 'info');
     }
   };
 
   const handleDeleteIngreso = async (id: string) => {
-    const updatedIngresos = ingresos.filter(i => i.id !== id);
+    const updatedIngresos = safeArray(ingresos).filter(i => i.id !== id);
     setIngresos(updatedIngresos);
-    localStorage.setItem('cached_ingresos', JSON.stringify(updatedIngresos));
-
-    const { error } = await supabase.from('ingresos').delete().eq('id', id);
-    if (error) console.error('Error eliminando ingreso:', error);
+    safeStorage.setJson('cached_ingresos', updatedIngresos);
+    try {
+      const { error } = await supabase.from('ingresos').delete().eq('id', id);
+      if (error) console.error('Error eliminando ingreso:', error);
+    } catch (err) { console.error('Error crítico eliminando ingreso:', err); }
   };
 
   const consolidado = useMemo(() => {
@@ -601,8 +614,8 @@ function Home() {
   const handleSyncLocalCheckpoints = async () => {
     try {
       setLoading(true);
-      const localGlosas = JSON.parse(localStorage.getItem('cached_glosas') || '[]');
-      const markedLocally = localGlosas.filter((lg: any) => lg.registrada_internamente);
+      const localGlosas = safeStorage.getJson<Glosa[]>('cached_glosas', []);
+      const markedLocally = safeArray(localGlosas).filter((lg: any) => lg.registrada_internamente);
 
       if (markedLocally.length === 0) {
         alert('ℹ️ No se detectaron marcas locales pendientes de sincronizar.');
@@ -702,8 +715,8 @@ function Home() {
     if (!confirm('Esta acción subirá todos tus datos locales actuales a la nube. ¿Deseas continuar?')) return;
     try {
       setLoading(true);
-      const localGlosas = JSON.parse(localStorage.getItem('cached_glosas') || '[]');
-      const localIngresos = JSON.parse(localStorage.getItem('cached_ingresos') || '[]');
+      const localGlosas = safeStorage.getJson<Glosa[]>('cached_glosas', []);
+      const localIngresos = safeStorage.getJson<Ingreso[]>('cached_ingresos', []);
 
       if (localGlosas.length > 0) {
         await supabase.from('glosas').upsert(localGlosas);

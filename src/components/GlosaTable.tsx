@@ -2,9 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { Card } from './Card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, X, ClipboardList, Calendar, Info, Tag, Hash, Activity, Pencil, Save, DollarSign, Trash2, AlertTriangle, Copy, CheckCircle2 } from 'lucide-react';
+import { safeNumber } from '@/lib/safeUtils';
 
-const formatPesos = (value: number): string =>
-    Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const formatPesos = (value: any): string => {
+    const n = safeNumber(value);
+    return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
 
 interface Glosa {
     id: string;
@@ -83,11 +86,12 @@ export const GlosaTable = ({
     const duplicateIds = useMemo(() => {
         const seen = new Map<string, string>();
         const dupes = new Set<string>();
-        glosas.forEach(g => {
-            if (!g || !g.id) return;
+        // Guard: filtrar elementos nulos/undefined ANTES del loop
+        const safeGlosas = (glosas || []).filter(g => g && g.id);
+        safeGlosas.forEach(g => {
             const fact = (g.factura || '').trim().toLowerCase();
             const serv = (g.servicio || '').trim().toLowerCase();
-            const key = `${fact}|${serv}|${g.valor_glosa}`;
+            const key = `${fact}|${serv}|${safeNumber(g.valor_glosa)}`;
             if (seen.has(key)) {
                 dupes.add(g.id);
                 dupes.add(seen.get(key)!);
@@ -299,14 +303,15 @@ export const GlosaTable = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {glosas.length === 0 ? (
+                            {/* Guard: filtrar elementos nulos antes de renderizar */}
+                            {(glosas || []).filter(g => g && g.id).length === 0 ? (
                                 <tr>
                                     <td colSpan={5} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                                         No hay registros de glosas disponibles.
                                     </td>
                                 </tr>
                             ) : (
-                                glosas.map((glosa, index) => {
+                                (glosas || []).filter(g => g && g.id).map((glosa, index) => {
                                     const isDupe = duplicateIds.has(glosa.id);
                                     return (
                                         <tr
