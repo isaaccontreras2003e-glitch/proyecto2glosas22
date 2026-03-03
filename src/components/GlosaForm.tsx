@@ -169,7 +169,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, currentSeccion, isAdmin 
 
     const formTitle = currentSeccion === 'MEDICAMENTOS' ? 'Registrar Medicamentos' : 'Registrar Gestión de Glosa';
     const facturaExiste = facturaMatch && facturaMatch.length > 0;
-    const alertColor = isDuplicateExact ? '#ef4444' : '#f59e0b';
+    const alertColor = isDupeMatch ? '#ef4444' : '#f59e0b';
 
     return (
         <Card
