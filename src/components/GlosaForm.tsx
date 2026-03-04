@@ -94,9 +94,9 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
             todayGlosas.reduce((acc, g) => acc + (parseFloat(g.valor_glosa as any) || 0), 0) +
             todayIngresos.reduce((acc, i) => acc + (parseFloat(i.valor_aceptado as any) || 0), 0);
 
-        // Valor aceptado = valor_aceptado de glosas + valor_aceptado de ingresos
+        // Valor aceptado = valor_aceptado solo de glosas ACEPTADAS + valor_aceptado de ingresos
         const valorAceptado =
-            todayGlosas.reduce((acc, g) => acc + (parseFloat(g.valor_aceptado as any) || 0), 0) +
+            todayGlosas.filter(g => g.estado === 'Aceptada').reduce((acc, g) => acc + (parseFloat(g.valor_aceptado as any) || 0), 0) +
             todayIngresos.reduce((acc, i) => acc + (parseFloat(i.valor_aceptado as any) || 0), 0);
 
         return {
