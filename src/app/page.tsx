@@ -899,7 +899,7 @@ function Home() {
   if (!isMounted) return <div style={{ background: '#06040d', minHeight: '100vh' }}></div>;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)', position: 'relative' }}>
+    <div className="app-layout" style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)', position: 'relative' }}>
       {/* Loading overlay - Top Level */}
       <AnimatePresence>
         {((loading || authLoading) && !forcedEntry) && (
@@ -965,20 +965,7 @@ function Home() {
         initial={{ x: -280 }}
         animate={{ x: 0 }}
         transition={{ duration: 0.8, ease: "circOut" }}
-        style={{
-          width: '280px',
-          borderRight: '1px solid var(--border)',
-          padding: '2rem 1rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1rem',
-          position: 'sticky',
-          top: 0,
-          height: '100vh',
-          background: 'rgba(4, 7, 19, 0.95)',
-          backdropFilter: 'blur(40px)',
-          zIndex: 100
-        }}
+        className="app-sidebar custom-scrollbar"
       >
         <div style={{ padding: '0 1rem', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
