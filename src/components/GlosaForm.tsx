@@ -60,14 +60,13 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
     const dailyStats = useMemo(() => {
         const normalizeDate = (d: string) => {
             if (!d) return '';
-            // Handle DD/MM/YYYY, HH:mm:ss vs DD/MM/YYYY vs YYYY-MM-DD
             const datePart = d.split(',')[0].trim();
             return datePart.replace(/[-\.]/g, '/');
         };
 
         const todayNormalized = normalizeDate(todayStr);
 
-        // 1. Filtrar Glosas de hoy (sin importar si están registradas internamente)
+        // 1. Filtrar Glosas de hoy
         const todayGlosas = (existingGlosas || []).filter(g => {
             if (!g.fecha) return false;
             const matchesDate = normalizeDate(g.fecha) === todayNormalized;
@@ -90,14 +89,21 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
             ...todayIngresos.map(i => i.factura)
         ]).size;
 
+        // Valor total ingresado = valor_glosa de glosas + valor_aceptado de ingresos
         const totalValue =
             todayGlosas.reduce((acc, g) => acc + (parseFloat(g.valor_glosa as any) || 0), 0) +
+            todayIngresos.reduce((acc, i) => acc + (parseFloat(i.valor_aceptado as any) || 0), 0);
+
+        // Valor aceptado = valor_aceptado de glosas + valor_aceptado de ingresos
+        const valorAceptado =
+            todayGlosas.reduce((acc, g) => acc + (parseFloat(g.valor_aceptado as any) || 0), 0) +
             todayIngresos.reduce((acc, i) => acc + (parseFloat(i.valor_aceptado as any) || 0), 0);
 
         return {
             count: todayGlosas.length + todayIngresos.length,
             facturas: uniqueFacturas,
-            value: totalValue
+            value: totalValue,
+            valorAceptado
         };
     }, [existingGlosas, existingIngresos, todayStr, currentSeccion]);
 
@@ -423,7 +429,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                     )
                 )}
 
-                {/* Indicadores de Control Diario - v9.5 RESISTENTE */}
+                {/* Indicadores de Control Diario */}
                 <div style={{
                     marginTop: '2.5rem',
                     padding: '1.5rem',
@@ -431,20 +437,24 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                     borderRadius: '1.75rem',
                     border: '1px solid rgba(139, 92, 246, 0.2)',
                     display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '2rem',
+                    gridTemplateColumns: '1fr 1fr 1fr',
+                    gap: '1.25rem',
                     boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
                 }}>
                     <div style={{ borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem' }}>
                         <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>INGRESOS DIARIOS</p>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', flexWrap: 'wrap' }}>
                             <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{dailyStats.count}</span>
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>({dailyStats.facturas} facturas hoy)</span>
                         </div>
                     </div>
-                    <div>
+                    <div style={{ borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem' }}>
                         <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>VALOR TOTAL INGRESADO</p>
-                        <p style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--primary)', textShadow: '0 0 20px rgba(139, 92, 246, 0.3)' }}>${new Intl.NumberFormat('es-CO').format(dailyStats.value)}</p>
+                        <p style={{ fontSize: '1.4rem', fontWeight: 950, color: 'var(--primary)', textShadow: '0 0 20px rgba(139, 92, 246, 0.3)' }}>${new Intl.NumberFormat('es-CO').format(dailyStats.value)}</p>
+                    </div>
+                    <div>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>VALOR ACEPTADO</p>
+                        <p style={{ fontSize: '1.4rem', fontWeight: 950, color: '#10b981', textShadow: '0 0 20px rgba(16,185,129,0.3)' }}>${new Intl.NumberFormat('es-CO').format(dailyStats.valorAceptado)}</p>
                     </div>
                 </div>
             </form>
