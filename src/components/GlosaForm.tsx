@@ -5,6 +5,7 @@ import { Save, Plus, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './Card';
 import { useToast } from '@/lib/contexts/ToastContext';
+import { sanitizeGlosaForm } from '@/lib/sanitize';
 
 interface Glosa {
     id: string;
@@ -162,9 +163,10 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
             ? (window.crypto as any).randomUUID()
             : Math.random().toString(36).substring(2) + Date.now().toString(36);
 
-        onAddGlosa({
+        // Sanitize all fields before storing (XSS protection)
+        const sanitizedData = sanitizeGlosaForm({
             ...formData,
-            factura, // Usamos la versión sanitizada (con trim)
+            factura,
             servicio,
             id: uniqueId,
             valor_glosa: valor,
@@ -173,6 +175,8 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
             registrada_internamente: false,
             seccion: currentSeccion.toUpperCase()
         });
+
+        onAddGlosa(sanitizedData);
 
         // Mostrar éxito instantáneo
         setShowSuccess(true);
