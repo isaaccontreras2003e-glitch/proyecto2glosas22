@@ -39,6 +39,9 @@ export default function LoginPage() {
         const cleanEmail = email.trim();
         const cleanPassword = password;
 
+        // DEBUG: Log the used URL (visible in browser F12)
+        console.log("Conectando a Supabase URL:", (supabase as any).supabaseUrl);
+
         try {
             const { data, error: authError } = await supabase.auth.signInWithPassword({
                 email: cleanEmail,
@@ -50,6 +53,8 @@ export default function LoginPage() {
                     setError('Correo o contraseña incorrectos.');
                 } else if (authError.message.includes('rate limit')) {
                     setError('Supabase ha bloqueado temporalmente esta IP. Espera unos minutos.');
+                } else if (authError.message === 'Failed to fetch') {
+                    setError('Error de conexión (DNS/Typo). Verifica las variables de entorno en Vercel.');
                 } else {
                     setError(authError.message);
                 }
