@@ -33,27 +33,16 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      // Next.js scripts + framer-motion inline scripts
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-      // Allow inline styles (required by framer-motion and inline style props)
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.vercel.app",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      // Google Fonts
-      "font-src 'self' https://fonts.gstatic.com",
-      // Images: self + base64 data URIs
-      "img-src 'self' data: blob:",
-      // API connections: app itself + Supabase
-      `connect-src 'self' https://${supabaseHost} wss://${supabaseHost}`,
-      // No frames allowed
+      "font-src 'self' https://fonts.gstatic.com data:",
+      "img-src 'self' data: blob: https://*.supabase.co",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.vercel.app",
       "frame-src 'none'",
       "frame-ancestors 'none'",
-      // No object embeds
       "object-src 'none'",
-      // Base URI restricted
       "base-uri 'self'",
-      // Form submission only to self
       "form-action 'self'",
-      // Upgrade insecure requests in production
-      "upgrade-insecure-requests",
     ].join("; "),
   },
 ];
