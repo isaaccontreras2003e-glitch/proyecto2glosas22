@@ -1150,8 +1150,8 @@ function Home() {
           </div>
         </header>
 
-        {/* Info Box / Footer del Header (Opcional) */}
-        <div style={{ marginBottom: '2rem', marginTop: '-0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+        {/* Info Box / Footer del Header */}
+        <div style={{ marginBottom: '2rem', marginTop: '-0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
           <p style={{
             fontSize: '0.7rem',
             color: 'rgba(255,255,255,0.3)',
@@ -1163,6 +1163,22 @@ function Home() {
           }}>
             <ClipboardList size={12} />
             SISTEMA DE AUDITORÍA MÉDICA V2.1
+          </p>
+          {/* Fecha de creación del software */}
+          <p style={{
+            fontSize: '0.65rem',
+            color: 'rgba(0,242,254,0.45)',
+            fontWeight: 700,
+            letterSpacing: '0.06em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            background: 'rgba(0,242,254,0.04)',
+            border: '1px solid rgba(0,242,254,0.1)',
+            borderRadius: '6px',
+            padding: '2px 10px'
+          }}>
+            🗓 Creado el 23 · Feb · 2026
           </p>
           <p style={{
             fontSize: '0.7rem',
