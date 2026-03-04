@@ -1,14 +1,29 @@
+'use client';
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, DollarSign, Clock, CheckCircle, TrendingUp, Filter, PieChart, Activity, ChevronDown, AlertTriangle, LayoutDashboard } from 'lucide-react';
-// Build Trigger: v2.0.2 - Redesign Force Sync REFRESH
-import { Card } from './Card';
+import {
+    FileText, DollarSign, TrendingUp, TrendingDown,
+    CheckCircle, Clock, Activity, ChevronDown, BarChart2,
+    AlertTriangle, ListChecks, ArrowRight, Filter
+} from 'lucide-react';
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 const formatPesos = (value: any): string => {
     const num = typeof value === 'number' ? value : parseFloat(value);
     if (isNaN(num)) return '0';
-    return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return '$' + Math.round(num).toLocaleString('es-CO');
 };
+
+const getStatusColor = (estado: string) => {
+    switch (estado) {
+        case 'Aceptada': return { bg: '#fff1f1', text: '#dc2626', dot: '#ef4444', label: 'ACEPTADA' };
+        case 'Respondida': return { bg: '#f0fdf4', text: '#16a34a', dot: '#22c55e', label: 'RESPONDIDA' };
+        default: return { bg: '#fef9ec', text: '#b45309', dot: '#f59e0b', label: 'EN REVISIÓN' };
+    }
+};
+
+// ─── Interfaces ──────────────────────────────────────────────────────────────
 
 interface Glosa {
     id: string;
@@ -16,10 +31,13 @@ interface Glosa {
     servicio: string;
     orden_servicio: string;
     valor_glosa: number;
+    valor_aceptado?: number;
     descripcion: string;
     tipo_glosa: string;
     estado: string;
     fecha: string;
+    registrada_internamente?: boolean;
+    seccion?: string;
 }
 
 interface DashboardProps {
@@ -38,351 +56,503 @@ interface DashboardProps {
     };
 }
 
-const Sparkline = ({ data, color }: { data: number[], color: string }) => {
-    const points = data.map((val, i) => ({
-        x: (i / (data.length - 1)) * 100,
-        y: 100 - (val / 100) * 80 - 10
-    }));
+// ─── Donut Chart ─────────────────────────────────────────────────────────────
 
-    const pathData = `M 0,100 ${points.map(p => `L ${p.x},${p.y}`).join(' ')} L 100,100 Z`;
-    const lineData = `M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`;
+const DonutChart = ({ slices, total }: { slices: { value: number; color: string; label: string }[]; total: number }) => {
+    const SIZE = 160;
+    const STROKE = 20;
+    const R = (SIZE - STROKE) / 2;
+    const CIRC = 2 * Math.PI * R;
+    const CENTER = SIZE / 2;
+
+    let offset = 0;
 
     return (
-        <div style={{ width: '100%', height: '120px', position: 'relative', marginTop: '1rem' }}>
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-                <defs>
-                    <linearGradient id={`grad-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor={color} stopOpacity="0.2" />
-                        <stop offset="100%" stopColor={color} stopOpacity="0" />
-                    </linearGradient>
-                    <filter id="glow">
-                        <feGaussianBlur stdDeviation="1.5" result="blur" />
-                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                    </filter>
-                </defs>
-                <motion.path
-                    d={pathData}
-                    fill={`url(#grad-${color})`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 2 }}
-                />
-                <motion.path
-                    d={lineData}
-                    fill="none"
-                    stroke={color}
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    filter="url(#glow)"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: 2.5, ease: "easeInOut" }}
-                />
+        <div style={{ position: 'relative', width: SIZE, height: SIZE, flexShrink: 0 }}>
+            <svg width={SIZE} height={SIZE} style={{ transform: 'rotate(-90deg)' }}>
+                <circle cx={CENTER} cy={CENTER} r={R} fill="none" stroke="#f1f5f9" strokeWidth={STROKE} />
+                {slices.map((s, i) => {
+                    const dash = total > 0 ? (s.value / total) * CIRC : 0;
+                    const gap = CIRC - dash;
+                    const el = (
+                        <motion.circle
+                            key={i}
+                            cx={CENTER} cy={CENTER} r={R}
+                            fill="none"
+                            stroke={s.color}
+                            strokeWidth={STROKE}
+                            strokeLinecap="round"
+                            strokeDasharray={`${dash} ${gap}`}
+                            strokeDashoffset={-offset}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: i * 0.15, duration: 0.6 }}
+                        />
+                    );
+                    offset += dash;
+                    return el;
+                })}
             </svg>
+            <div style={{
+                position: 'absolute', inset: 0, display: 'flex',
+                flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+            }}>
+                <span style={{ fontSize: '1.8rem', fontWeight: 900, color: '#1e293b' }}>{total}</span>
+                <span style={{ fontSize: '0.6rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Glosas</span>
+            </div>
         </div>
     );
 };
 
-export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stats: executiveStats }: DashboardProps) => {
+// ─── Bar Row ─────────────────────────────────────────────────────────────────
+
+const BarRow = ({ label, value, percent, color }: { label: string; value: number; percent: number; color: string }) => (
+    <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#334155' }}>{label}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b' }}>{value}</span>
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8', minWidth: '36px', textAlign: 'right' }}>{percent}%</span>
+            </div>
+        </div>
+        <div style={{ height: '6px', background: '#f1f5f9', borderRadius: '999px', overflow: 'hidden' }}>
+            <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(100, percent)}%` }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+                style={{ height: '100%', background: color, borderRadius: '999px' }}
+            />
+        </div>
+    </div>
+);
+
+// ─── Recent Activity Item ─────────────────────────────────────────────────────
+
+const RecentItem = ({ glosa }: { glosa: Glosa }) => {
+    const s = getStatusColor(glosa.estado);
+    return (
+        <motion.div
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '0.85rem 1rem',
+                background: '#fff',
+                borderRadius: '14px',
+                border: '1px solid #f1f5f9',
+                gap: '1rem'
+            }}
+        >
+            <div style={{
+                width: '36px', height: '36px', borderRadius: '10px',
+                background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+            }}>
+                <FileText size={16} color={s.text} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1e293b', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {glosa.factura}
+                </p>
+                <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {glosa.servicio || 'Sin servicio'}
+                </p>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <p style={{ fontSize: '0.85rem', fontWeight: 900, color: '#1e293b', margin: 0 }}>
+                    {formatPesos(glosa.valor_glosa)}
+                </p>
+                <span style={{
+                    fontSize: '0.6rem', fontWeight: 800,
+                    background: s.bg, color: s.text,
+                    padding: '2px 8px', borderRadius: '999px',
+                    display: 'inline-block', marginTop: '3px'
+                }}>
+                    {s.label}
+                </span>
+            </div>
+        </motion.div>
+    );
+};
+
+// ─── KPI Card ────────────────────────────────────────────────────────────────
+
+const KpiCard = ({
+    label, value, badge, badgeColor, sub, icon, iconBg
+}: {
+    label: string; value: string; badge?: string; badgeColor?: string;
+    sub?: string; icon: React.ReactNode; iconBg: string;
+}) => (
+    <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{
+            background: '#fff',
+            borderRadius: '20px',
+            border: '1px solid #f1f5f9',
+            padding: '1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+        }}
+    >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                {label}
+            </span>
+            {badge && (
+                <span style={{
+                    fontSize: '0.65rem', fontWeight: 800,
+                    color: badgeColor || '#16a34a',
+                    background: badgeColor ? `${badgeColor}18` : '#f0fdf4',
+                    padding: '2px 8px', borderRadius: '999px'
+                }}>
+                    {badge}
+                </span>
+            )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '0.5rem' }}>
+            <div>
+                <p style={{ fontSize: '1.55rem', fontWeight: 950, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>{value}</p>
+                {sub && <p style={{ fontSize: '0.68rem', color: '#94a3b8', margin: '4px 0 0 0', fontWeight: 500 }}>{sub}</p>}
+            </div>
+            <div style={{
+                width: '40px', height: '40px', borderRadius: '12px',
+                background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+            }}>
+                {icon}
+            </div>
+        </div>
+    </motion.div>
+);
+
+// ─── Main Dashboard ───────────────────────────────────────────────────────────
+
+export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stats }: DashboardProps) => {
     const [selectedService, setSelectedService] = useState('Todos');
     const [selectedType, setSelectedType] = useState('Todos');
 
-    // 0. Extract unique services dynamically from data
+    // ── Available services from data
     const availableServices = useMemo(() => {
         const services = Array.from(new Set(allGlosas.map(g => g.servicio).filter(Boolean)));
         return ['Todos', ...services.sort()];
     }, [allGlosas]);
 
-    // 1. Filter logic
-    const glosas = useMemo(() => {
-        return allGlosas.filter(g => {
-            const matchService = selectedService === 'Todos' || g.servicio === selectedService;
-            const matchType = selectedType === 'Todos' || g.tipo_glosa === selectedType;
-            return matchService && matchType;
+    // ── Filtered glosas
+    const glosas = useMemo(() => allGlosas.filter(g => {
+        const matchService = selectedService === 'Todos' || g.servicio === selectedService;
+        const matchType = selectedType === 'Todos' || g.tipo_glosa === selectedType;
+        return matchService && matchType;
+    }), [allGlosas, selectedService, selectedType]);
+
+    const filteredConsolidado = useMemo(() => allConsolidado.filter(item => {
+        const matchService = selectedService === 'Todos' || item.servicios?.includes(selectedService);
+        const matchType = selectedType === 'Todos' || item.tipos?.includes(selectedType);
+        return matchService && matchType;
+    }), [allConsolidado, selectedService, selectedType]);
+
+    // ── KPI values
+    const totalGlosado = filteredConsolidado.reduce((a, c) => a + c.glosado, 0);
+    const totalAceptado = filteredConsolidado.reduce((a, c) => a + c.aceptado, 0);
+    const totalNoAcep = filteredConsolidado.reduce((a, c) => a + c.noAceptado, 0);
+    const totalFacturas = filteredConsolidado.length;
+    const percentSuccess = totalGlosado > 0 ? Math.round((totalAceptado / totalGlosado) * 100) : 0;
+
+    // ── Glosas por Tipo (bar chart)
+    const tiposData = useMemo(() => {
+        const map: Record<string, number> = {};
+        glosas.forEach(g => {
+            const t = g.tipo_glosa || 'Sin Tipo';
+            map[t] = (map[t] || 0) + 1;
         });
-    }, [allGlosas, selectedService, selectedType]);
-    const filteredConsolidado = useMemo(() => {
-        return allConsolidado.filter(item => {
-            const matchService = selectedService === 'Todos' || item.servicios?.includes(selectedService);
-            const matchType = selectedType === 'Todos' || item.tipos?.includes(selectedType);
-            return matchService && matchType;
-        });
-    }, [allConsolidado, selectedService, selectedType]);
-
-    // 2. Metrics for the 4 Cards
-    const metrics = useMemo(() => {
-        const totalValue = filteredConsolidado.reduce((acc, curr) => acc + curr.glosado, 0);
-        const totalCount = glosas.length; // Count of individual glosa lines
-
-        // Financial metrics from filtered consolidated list (Truth)
-        const acceptedValue = filteredConsolidado.reduce((acc, curr) => acc + curr.aceptado, 0);
-        const noAcceptedValue = filteredConsolidado.reduce((acc, curr) => acc + curr.noAceptado, 0);
-        const totalRespondedValue = acceptedValue + noAcceptedValue;
-
-        const acceptedCount = glosas.filter(g => g.estado === 'Aceptada').length;
-
-        // Percentages
-        const percentResponded = totalValue > 0 ? (totalRespondedValue / totalValue) * 100 : 0;
-
-        // Breakdown relative to TOTAL RESPONDED (requested by user for 100% base)
-        const percentAcceptedTotal = totalRespondedValue > 0 ? (acceptedValue / totalRespondedValue) * 100 : 0;
-        const percentNoAcceptedTotal = totalRespondedValue > 0 ? (noAcceptedValue / totalRespondedValue) * 100 : 0;
-
-        return {
-            totalValue,
-            totalCount,
-            acceptedValue,
-            noAcceptedValue,
-            totalRespondedValue,
-            acceptedCount,
-            percentResponded,
-            percentAcceptedTotal,
-            percentNoAcceptedTotal,
-            waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
-        };
-    }, [glosas, filteredConsolidado]);
-
-    // 3. Category Bars
-    const categories = useMemo(() => {
-        const types = ['Tarifas', 'Soportes', 'RIPS', 'Autorización'];
         const total = glosas.length || 1;
-        return types.map(t => {
-            const count = glosas.filter(g => g.tipo_glosa === t).length;
-            const p = Math.round((count / total) * 100);
-            return { label: t, p, count };
-        });
+        const colors = ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444'];
+        return Object.entries(map)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([label, value], i) => ({
+                label,
+                value,
+                percent: Math.round((value / total) * 100),
+                color: colors[i % colors.length]
+            }));
     }, [glosas]);
 
-    // 4. Status Stats (Bottom legend)
-    const statusStats = useMemo(() => {
-        const total = glosas.length || 1;
-        const pending = glosas.filter(g => g.estado === 'Pendiente').length;
-        const responded = glosas.filter(g => g.estado === 'Respondida').length;
-        const accepted = glosas.filter(g => g.estado === 'Aceptada').length;
-
+    // ── Donut: estado de glosas
+    const donutSlices = useMemo(() => {
+        const pendiente = glosas.filter(g => g.estado === 'Pendiente').length;
+        const respondida = glosas.filter(g => g.estado === 'Respondida').length;
+        const aceptada = glosas.filter(g => g.estado === 'Aceptada').length;
         return [
-            { label: 'PEND.', p: Math.round((pending / total) * 100), color: 'rgba(255,255,255,0.2)' },
-            { label: 'RESP.', p: Math.round((responded / total) * 100), color: 'var(--primary)' },
-            { label: 'ACEPT.', p: Math.round((accepted / total) * 100), color: '#ff4d4d' }
+            { label: 'Aceptadas', value: aceptada, color: '#ef4444' },
+            { label: 'Pendientes', value: pendiente, color: '#f59e0b' },
+            { label: 'Respondidas', value: respondida, color: '#3b82f6' },
         ];
     }, [glosas]);
 
+    // ── Actividad reciente (últimas 5)
+    const recentGlosas = useMemo(() => [...glosas]
+        .sort((a, b) => {
+            const parse = (d: string) => {
+                if (!d) return 0;
+                const [datePart] = d.split(',');
+                const parts = datePart.trim().split('/');
+                if (parts.length < 3) return 0;
+                return new Date(+parts[2], +parts[1] - 1, +parts[0]).getTime();
+            };
+            return parse(b.fecha) - parse(a.fecha);
+        })
+        .slice(0, 5), [glosas]);
+
+    // ── Top consolidado (mayor diferencia)
+    const topConsolidado = useMemo(() => [...filteredConsolidado]
+        .sort((a, b) => b.diferencia - a.diferencia)
+        .slice(0, 4), [filteredConsolidado]);
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {/* Header Section from Screenshot */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <LayoutDashboard size={20} color="var(--primary)" />
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 950, color: 'white', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                        TABLERO DE MANDO - AUDITORÍA MÉDICA
-                        <span style={{ fontSize: '0.55rem', background: 'var(--primary)', color: '#000', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.75rem', verticalAlign: 'middle', fontWeight: 900 }}>COI V3.0</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', fontFamily: 'var(--font-geist-sans, Inter, sans-serif)' }}>
+
+            {/* ── Header ── */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: 950, color: 'white', margin: 0 }}>
+                        Resumen de Auditoría
                     </h2>
+                    <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', margin: '4px 0 0 0' }}>
+                        Panel de control · Glosas Médicas
+                    </p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                    <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <label style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>SERVICIO</label>
-                        <div style={{ position: 'relative' }}>
-                            <select
-                                value={selectedService}
-                                onChange={(e) => setSelectedService(e.target.value)}
-                                style={{ background: 'rgba(20,20,30,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.4rem 2rem 0.4rem 0.75rem', color: 'white', fontSize: '0.75rem', fontWeight: 700, appearance: 'none', minWidth: '160px' }}
-                            >
-                                {availableServices.map(s => (
-                                    <option key={s} value={s}>{s}</option>
-                                ))}
-                            </select>
-                            <ChevronDown size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} />
-                        </div>
+                {/* ── Filters ── */}
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    {/* Servicio */}
+                    <div style={{ position: 'relative' }}>
+                        <select
+                            value={selectedService}
+                            onChange={e => setSelectedService(e.target.value)}
+                            style={{
+                                appearance: 'none',
+                                background: 'rgba(255,255,255,0.06)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '10px',
+                                padding: '0.45rem 2rem 0.45rem 0.75rem',
+                                color: 'white',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                outline: 'none',
+                                minWidth: '130px'
+                            }}
+                        >
+                            {availableServices.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                        <ChevronDown size={12} style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)', pointerEvents: 'none' }} />
                     </div>
-                    <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <label style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>TIPO GLOSA</label>
-                        <div style={{ position: 'relative' }}>
-                            <select
-                                value={selectedType}
-                                onChange={(e) => setSelectedType(e.target.value)}
-                                style={{ background: 'rgba(20,20,30,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.4rem 2rem 0.4rem 0.75rem', color: 'white', fontSize: '0.75rem', fontWeight: 700, appearance: 'none', minWidth: '160px' }}
-                            >
-                                <option>Todos</option>
-                                <option>Tarifas</option>
-                                <option>Soportes</option>
-                                <option>RIPS</option>
-                                <option>Autorización</option>
-                            </select>
-                            <Clock size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} />
-                        </div>
+
+                    {/* Tipo Glosa */}
+                    <div style={{ position: 'relative' }}>
+                        <select
+                            value={selectedType}
+                            onChange={e => setSelectedType(e.target.value)}
+                            style={{
+                                appearance: 'none',
+                                background: 'rgba(255,255,255,0.06)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '10px',
+                                padding: '0.45rem 2rem 0.45rem 0.75rem',
+                                color: 'white',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                outline: 'none',
+                                minWidth: '130px'
+                            }}
+                        >
+                            <option value="Todos">Todos los tipos</option>
+                            <option value="Tarifas">Tarifas</option>
+                            <option value="Soportes">Soportes</option>
+                            <option value="RIPS">RIPS</option>
+                            <option value="Autorización">Autorización</option>
+                        </select>
+                        <ChevronDown size={12} style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)', pointerEvents: 'none' }} />
                     </div>
                 </div>
             </div>
 
-            {/* 4 Cards Grid (FUNCTIONAL VERSION) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
-                <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <DollarSign size={16} color="var(--primary)" />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '0.75rem', color: '#ff4d4d', fontWeight: 950 }}>${formatPesos(metrics.acceptedValue)}</span>
-                                <span style={{ fontSize: '0.55rem', color: 'rgba(255,77,77,0.5)', fontWeight: 800 }}>({metrics.percentAcceptedTotal.toFixed(1)}% de lo gestionado)</span>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 950 }}>${formatPesos(metrics.noAcceptedValue)}</span>
-                                <span style={{ fontSize: '0.55rem', color: 'rgba(139,92,246,0.5)', fontWeight: 800 }}>({metrics.percentNoAcceptedTotal.toFixed(1)}% de lo gestionado)</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>IMPORTE TOTAL GLOSADO</p>
-                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>${formatPesos(metrics.totalValue)}</h2>
-                    </div>
-                    <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                        <div style={{ height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '100px', display: 'flex' }}>
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${Math.min(100, metrics.percentResponded)}%` }}
-                                style={{ height: '100%', background: 'linear-gradient(90deg, #ff4d4d, var(--primary))', borderRadius: '100px', boxShadow: '0 0 10px var(--primary-glow)' }}
-                            />
-                        </div>
-                        <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px', fontWeight: 700 }}>TOTAL VALORES RESPONDIDOS</p>
-                    </div>
-                </Card>
-
-                <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <FileText size={16} color="var(--secondary)" />
-                        </div>
-                        <span style={{ fontSize: '0.6rem', color: 'var(--secondary)', fontWeight: 800 }}>PROYECTADO</span>
-                    </div>
-                    <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>TOTAL FACTURAS</p>
-                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>{metrics.totalCount}</h2>
-                    </div>
-                    <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                        <p style={{ fontSize: '0.7rem', color: 'white', fontWeight: 800, margin: 0 }}>{glosas.filter(g => g.estado !== 'Pendiente').length} de {metrics.totalCount}</p>
-                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>GESTIONADAS</p>
-                    </div>
-                </Card>
-
-                <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{ width: '32px', height: '32px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <AlertTriangle size={16} color="#ff4d4d" />
-                        </div>
-                        <span style={{ fontSize: '0.65rem', color: '#ff4d4d', fontWeight: 900 }}>PÉRDIDA IPS</span>
-                    </div>
-                    <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>VALORES ACEPTADOS (PAGO)</p>
-                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: '#ff4d4d' }}>-${formatPesos(metrics.acceptedValue)}</h2>
-                    </div>
-                    <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                            <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>IMPACTO EN FACTURACIÓN</span>
-                            <span style={{ fontSize: '0.55rem', color: '#ff4d4d', fontWeight: 950 }}>{metrics.totalValue > 0 ? ((metrics.acceptedValue / metrics.totalValue) * 100).toFixed(1) : 0}%</span>
-                        </div>
-                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${Math.min(100, metrics.totalValue > 0 ? (metrics.acceptedValue / metrics.totalValue) * 100 : 0)}%` }}
-                                style={{ height: '100%', background: '#ff4d4d', borderRadius: '10px', boxShadow: '0 0 10px rgba(255, 77, 77, 0.3)' }}
-                            />
-                        </div>
-                    </div>
-                </Card>
-
-                <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{ width: '32px', height: '32px', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <TrendingUp size={16} color="#f59e0b" />
-                        </div>
-                        <span style={{ fontSize: '0.6rem', color: '#f59e0b', fontWeight: 800 }}>% DE ACEPTACIÓN</span>
-                    </div>
-                    <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>FACTURAS CON ERROR</p>
-                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>{metrics.acceptedCount}</h2>
-                    </div>
-                    <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                        <p style={{ fontSize: '0.65rem', color: 'white', fontWeight: 800, margin: 0 }}>
-                            {metrics.totalCount > 0 ? ((metrics.acceptedCount / metrics.totalCount) * 100).toFixed(1) : 0}% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>Frecuencia</span>
-                        </p>
-                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>INCIDENCIA DE ERROR</p>
-                    </div>
-                </Card>
+            {/* ── KPI Cards ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+                <KpiCard
+                    label="Valor Glosado"
+                    value={formatPesos(totalGlosado)}
+                    badge={`+${percentSuccess}%`}
+                    badgeColor="#16a34a"
+                    sub="vs. mes anterior"
+                    icon={<TrendingUp size={18} color="#8b5cf6" />}
+                    iconBg="rgba(139,92,246,0.1)"
+                />
+                <KpiCard
+                    label="Valor Aceptado"
+                    value={formatPesos(totalAceptado)}
+                    badge={`${percentSuccess}% Success`}
+                    badgeColor="#16a34a"
+                    sub="Tasa de recuperación efectiva"
+                    icon={<CheckCircle size={18} color="#10b981" />}
+                    iconBg="rgba(16,185,129,0.1)"
+                />
+                <KpiCard
+                    label="No Aceptado"
+                    value={formatPesos(totalNoAcep)}
+                    badge={totalGlosado > 0 ? `${Math.round((totalNoAcep / totalGlosado) * 100)}%` : '0%'}
+                    badgeColor="#ef4444"
+                    sub="Pendiente de conciliación"
+                    icon={<TrendingDown size={18} color="#ef4444" />}
+                    iconBg="rgba(239,68,68,0.1)"
+                />
+                <KpiCard
+                    label="Facturas Glosadas"
+                    value={totalFacturas.toString()}
+                    badge={`${glosas.length} Total`}
+                    badgeColor="#3b82f6"
+                    sub={`${glosas.filter(g => g.estado !== 'Pendiente').length} gestionadas · ${glosas.filter(g => g.estado === 'Pendiente').length} en revisión`}
+                    icon={<FileText size={18} color="#3b82f6" />}
+                    iconBg="rgba(59,130,246,0.1)"
+                />
             </div>
 
-            {/* Bottom Section: Categories and Status */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem' }}>
-                {/* Distribution Section (LEFT) */}
-                <Card style={{ padding: '2rem' }}>
-                    <h3 style={{ fontSize: '0.85rem', fontWeight: 900, marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <Activity size={16} color="var(--primary)" /> DISTRIBUCIÓN POR CATEGORÍA
-                    </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-                        {categories.map(cat => (
-                            <div key={cat.label}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', fontWeight: 800, marginBottom: '0.6rem' }}>
-                                    <span style={{ opacity: 0.4, textTransform: 'uppercase' }}>{cat.label}</span>
-                                    <span>
-                                        <span style={{ marginRight: '1rem' }}>{cat.count}</span>
-                                        <span style={{ opacity: 0.4 }}>{cat.p}%</span>
+            {/* ── Middle: Tipo Bar Chart + Estado Donut ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1rem' }}>
+
+                {/* Glosas por Tipo */}
+                <div style={{
+                    background: '#fff',
+                    borderRadius: '20px',
+                    border: '1px solid #f1f5f9',
+                    padding: '1.5rem',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
+                        <BarChart2 size={16} color="#3b82f6" />
+                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e293b' }}>Glosas por Tipo</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        {tiposData.length === 0 ? (
+                            <p style={{ color: '#94a3b8', fontSize: '0.8rem', textAlign: 'center', padding: '2rem 0' }}>Sin datos para mostrar.</p>
+                        ) : tiposData.map(t => (
+                            <BarRow key={t.label} label={t.label} value={t.value} percent={t.percent} color={t.color} />
+                        ))}
+                    </div>
+                </div>
+
+                {/* Estado de Glosas (Donut) */}
+                <div style={{
+                    background: '#fff',
+                    borderRadius: '20px',
+                    border: '1px solid #f1f5f9',
+                    padding: '1.5rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1.25rem',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <Activity size={16} color="#8b5cf6" />
+                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e293b' }}>Estado de Glosas</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <DonutChart slices={donutSlices} total={glosas.length} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {donutSlices.map(s => (
+                            <div key={s.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: s.color, flexShrink: 0 }} />
+                                    <span style={{ fontSize: '0.75rem', color: '#475569' }}>{s.label}</span>
+                                </div>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1e293b' }}>
+                                    {glosas.length > 0 ? Math.round((s.value / glosas.length) * 100) : 0}%
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Bottom: Top Facturas + Actividad Reciente ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+
+                {/* Top Facturas con Mayor Diferencia */}
+                <div style={{
+                    background: '#fff',
+                    borderRadius: '20px',
+                    border: '1px solid #f1f5f9',
+                    padding: '1.5rem',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <AlertTriangle size={16} color="#f59e0b" />
+                            <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e293b' }}>Mayor Impacto</span>
+                        </div>
+                        <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Diferencia
+                        </span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                        {topConsolidado.length === 0 ? (
+                            <p style={{ color: '#94a3b8', fontSize: '0.8rem', textAlign: 'center', padding: '2rem 0' }}>Sin datos.</p>
+                        ) : topConsolidado.map((c, i) => (
+                            <div key={c.factura} style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                padding: '0.75rem 0.85rem',
+                                background: i === 0 ? '#fefce8' : '#f8fafc',
+                                borderRadius: '12px',
+                                border: `1px solid ${i === 0 ? '#fef08a' : '#f1f5f9'}`
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+                                    <span style={{
+                                        width: '22px', height: '22px', borderRadius: '8px',
+                                        background: i === 0 ? '#f59e0b' : '#e2e8f0',
+                                        color: i === 0 ? 'white' : '#64748b',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: '0.65rem', fontWeight: 900, flexShrink: 0
+                                    }}>{i + 1}</span>
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {c.factura}
                                     </span>
                                 </div>
-                                <div style={{ height: '4px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${Math.min(100, cat.p)}%` }}
-                                        style={{ height: '100%', background: 'linear-gradient(90deg, var(--primary), var(--secondary))', borderRadius: '10px', boxShadow: `0 0 10px var(--primary-glow)` }}
-                                    />
-                                </div>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 900, color: c.diferencia > 0 ? '#16a34a' : '#dc2626', flexShrink: 0 }}>
+                                    {formatPesos(c.diferencia)}
+                                </span>
                             </div>
                         ))}
                     </div>
-                </Card>
+                </div>
 
-                {/* Management Status (RIGHT) */}
-                <Card style={{ padding: '2rem', display: 'flex', flexDirection: 'column' }}>
-                    <h3 style={{ fontSize: '0.85rem', fontWeight: 900, marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <PieChart size={16} color="var(--primary)" /> ESTADO DE GESTIÓN
-                    </h3>
-                    <div style={{ position: 'relative', width: '200px', height: '200px', margin: '0 auto 2.5rem auto' }}>
-                        <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
-                            <circle cx="50" cy="50" r="44" fill="transparent" stroke="rgba(255,255,255,0.03)" strokeWidth="12" />
-                            {statusStats.map((s, i) => {
-                                let offset = 0;
-                                for (let j = 0; j < i; j++) offset += statusStats[j].p;
-                                return (
-                                    <motion.circle
-                                        key={s.label}
-                                        cx="50" cy="50" r="44" fill="transparent"
-                                        stroke={s.color} strokeWidth="12" strokeLinecap="round"
-                                        strokeDasharray={`${(s.p / 100) * 276.32} 276.32`}
-                                        strokeDashoffset={-((offset / 100) * 276.32)}
-                                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                    />
-                                );
-                            })}
-                        </svg>
-                        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ fontSize: '0.6rem', opacity: 0.4, fontWeight: 800 }}>REGISTROS</span>
-                            <span style={{ fontSize: '2rem', fontWeight: 950 }}>{glosas.length}</span>
+                {/* Actividad Reciente */}
+                <div style={{
+                    background: '#fff',
+                    borderRadius: '20px',
+                    border: '1px solid #f1f5f9',
+                    padding: '1.5rem',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <ListChecks size={16} color="#10b981" />
+                            <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e293b' }}>Actividad Reciente</span>
                         </div>
+                        <span style={{ fontSize: '0.7rem', color: '#3b82f6', fontWeight: 700, cursor: 'pointer' }}>Ver todas</span>
                     </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
-                        {statusStats.map(s => (
-                            <div key={s.label} style={{ background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.03)', textAlign: 'center' }}>
-                                <p style={{ fontSize: '0.5rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', margin: '0 0 4px 0' }}>{s.label}</p>
-                                <p style={{ fontSize: '1rem', fontWeight: 950, margin: 0, color: s.color === 'rgba(255,255,255,0.2)' ? 'white' : s.color }}>{s.p}%</p>
-                            </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                        {recentGlosas.length === 0 ? (
+                            <p style={{ color: '#94a3b8', fontSize: '0.8rem', textAlign: 'center', padding: '2rem 0' }}>Sin actividad reciente.</p>
+                        ) : recentGlosas.map(g => (
+                            <RecentItem key={g.id} glosa={g} />
                         ))}
                     </div>
-                </Card>
+                </div>
             </div>
+
         </div>
     );
 };
-
-

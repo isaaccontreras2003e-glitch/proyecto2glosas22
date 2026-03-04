@@ -7,7 +7,7 @@ import { GlosaForm } from '@/components/GlosaForm';
 import { GlosaTable } from '@/components/GlosaTable';
 import { supabase } from '@/lib/supabase';
 import { safeNumber, safeArray, safeStorage } from '@/lib/safeUtils';
-import { LayoutDashboard, TrendingUp, Wallet, Activity, Trash2, Download, ListChecks, PieChart, ChevronUp, RefreshCw, ClipboardList, LogOut, FileText, CheckCircle, Clock } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Wallet, Activity, Trash2, Download, ListChecks, PieChart, ChevronUp, RefreshCw, ClipboardList, LogOut, FileText, CheckCircle, Clock, Cloud, CloudOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -49,7 +49,7 @@ interface Ingreso {
 
 function Home() {
   const [activeSection, setActiveSection] = useState<'dashboard' | 'ingreso' | 'consolidado' | 'valores'>('dashboard');
-  const [currentMainSection, setCurrentMainSection] = useState<'GLOSAS' | 'RATIFICADAS' | 'MEDICAMENTOS'>('GLOSAS');
+  const [currentMainSection, setCurrentMainSection] = useState<'GLOSAS' | 'MEDICAMENTOS'>('GLOSAS');
   const [glosas, setGlosas] = useState<Glosa[]>([]);
   const [ingresos, setIngresos] = useState<Ingreso[]>([]);
   const [isMounted, setIsMounted] = useState(false);
@@ -71,7 +71,8 @@ function Home() {
     }
     // Si el usuario tiene una sección asignada y no es admin, forzar esa sección
     if (user && role !== 'admin' && seccion_asignada) {
-      setCurrentMainSection(seccion_asignada as any);
+      const safeSection = (seccion_asignada === 'RATIFICADAS' ? 'GLOSAS' : seccion_asignada) as any;
+      setCurrentMainSection(safeSection);
     }
   }, [user, authLoading, router, role, seccion_asignada]);
 
@@ -252,7 +253,6 @@ function Home() {
           let inferredSection = currentMainSection || 'GLOSAS';
           const kLower = key.toLowerCase();
           if (kLower.includes('medic')) inferredSection = 'MEDICAMENTOS';
-          if (kLower.includes('ratif')) inferredSection = 'RATIFICADAS';
 
           for (const item of items) {
             if (!item || typeof item !== 'object') continue;
@@ -487,6 +487,10 @@ function Home() {
   };
 
   const handleAddIngreso = async (newIngreso: Ingreso) => {
+    // Escudo de Persistencia: Guardar en un buffer aparte para emergencias
+    const backupBuffer = safeStorage.getJson<Ingreso[]>('emergency_buffer_ingresos', []);
+    safeStorage.setJson('emergency_buffer_ingresos', [newIngreso, ...backupBuffer]);
+
     const ingresoConEstado = { ...newIngreso, sincronizado: false };
     setIngresos(prev => {
       const updated = [ingresoConEstado, ...safeArray(prev)];
@@ -500,6 +504,9 @@ function Home() {
         showToast('Guardado localmente. Se subirá de fondo.', 'info');
       } else {
         setIngresos(prev => safeArray(prev).map(i => i.id === newIngreso.id ? { ...i, sincronizado: true } : i));
+        // Limpiar del buffer de emergencia si tuvo éxito
+        const currentBuffer = safeStorage.getJson<Ingreso[]>('emergency_buffer_ingresos', []);
+        safeStorage.setJson('emergency_buffer_ingresos', currentBuffer.filter((i: any) => i.id !== newIngreso.id));
       }
     } catch (err: any) {
       console.error('Error crítico al insertar ingreso:', err);
@@ -854,28 +861,40 @@ function Home() {
   useEffect(() => {
     if (!isMounted) return; // Saltamos si no está montado, pero el hook siempre se llama
     const autoSync = async () => {
-      // Solo reintentar glosas que no estén sincronizadas
+      // 1. Reintentar GLOSAS
       const pendingGlosas = glosas.filter(g => g.sincronizado === false);
-
       if (pendingGlosas.length > 0) {
-        console.log(`--- [v9.0] Auto-Sync: Reintentando ${pendingGlosas.length} glosas ---`);
+        console.log(`--- [v9.1] Auto-Sync Glosas: Reintentando ${pendingGlosas.length} ---`);
         for (const item of pendingGlosas) {
-          // Extraer campos para evitar errores de red si hay metadatos extras
           const { sincronizado, ...cleanItem } = item as any;
           const { error } = await supabase.from('glosas').insert([cleanItem]);
           if (!error) {
             setGlosas(prev => prev.map(g => g.id === item.id ? { ...g, sincronizado: true } : g));
-            // Limpiar del buffer de emergencia si tuvo éxito
-            const currentBuffer = JSON.parse(localStorage.getItem('emergency_buffer') || '[]');
-            localStorage.setItem('emergency_buffer', JSON.stringify(currentBuffer.filter((g: any) => g.id !== item.id)));
+            const currentBuffer = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
+            safeStorage.setJson('emergency_buffer', currentBuffer.filter((g: any) => g.id !== item.id));
+          }
+        }
+      }
+
+      // 2. Reintentar INGRESOS (NUEVO v9.1)
+      const pendingIngresos = ingresos.filter(i => i.sincronizado === false);
+      if (pendingIngresos.length > 0) {
+        console.log(`--- [v9.1] Auto-Sync Ingresos: Reintentando ${pendingIngresos.length} ---`);
+        for (const item of pendingIngresos) {
+          const { sincronizado, ...cleanItem } = item as any;
+          const { error } = await supabase.from('ingresos').insert([cleanItem]);
+          if (!error) {
+            setIngresos(prev => prev.map(i => i.id === item.id ? { ...i, sincronizado: true } : i));
+            const currentBuffer = safeStorage.getJson<Ingreso[]>('emergency_buffer_ingresos', []);
+            safeStorage.setJson('emergency_buffer_ingresos', currentBuffer.filter((i: any) => i.id !== item.id));
           }
         }
       }
     };
 
-    const interval = setInterval(autoSync, 60000); // Cada 1 minuto para mayor seguridad
+    const interval = setInterval(autoSync, 60000); // Cada 1 minuto
     return () => clearInterval(interval);
-  }, [glosas, isMounted]);
+  }, [glosas, ingresos, isMounted]);
 
   if (!isMounted) return <div style={{ background: '#06040d', minHeight: '100vh' }}></div>;
 
@@ -1002,7 +1021,6 @@ function Home() {
                 }}
               >
                 <option value="GLOSAS">GLOSAS</option>
-                <option value="RATIFICADAS">GLOSAS RATIFICADAS</option>
                 <option value="MEDICAMENTOS">MEDICAMENTOS</option>
               </select>
             </div>
@@ -1181,9 +1199,7 @@ function Home() {
                 padding: '1rem 1.5rem',
                 background: currentMainSection === 'GLOSAS'
                   ? 'rgba(139, 92, 246, 0.05)'
-                  : currentMainSection === 'MEDICAMENTOS'
-                    ? 'rgba(16, 185, 129, 0.05)'
-                    : 'rgba(245, 158, 11, 0.05)',
+                  : 'rgba(16, 185, 129, 0.05)',
                 borderBottom: '1px solid rgba(255,255,255,0.05)',
                 margin: '-2rem -2rem 2rem -2rem',
                 position: 'sticky',
@@ -1198,13 +1214,13 @@ function Home() {
                     position: 'absolute',
                     left: 0,
                     top: 0,
-                    background: currentMainSection === 'GLOSAS' ? '#8b5cf6' : currentMainSection === 'MEDICAMENTOS' ? '#10b981' : '#f59e0b',
-                    boxShadow: `0 0 15px ${currentMainSection === 'GLOSAS' ? '#8b5cf6' : currentMainSection === 'MEDICAMENTOS' ? '#10b981' : '#f59e0b'}`
+                    background: currentMainSection === 'GLOSAS' ? '#8b5cf6' : '#10b981',
+                    boxShadow: `0 0 15px ${currentMainSection === 'GLOSAS' ? '#8b5cf6' : '#10b981'}`
                   }} />
                   <span style={{
                     fontSize: '0.65rem',
                     fontWeight: 900,
-                    color: currentMainSection === 'GLOSAS' ? '#a78bfa' : currentMainSection === 'MEDICAMENTOS' ? '#34d399' : '#fbbf24',
+                    color: currentMainSection === 'GLOSAS' ? '#a78bfa' : '#34d399',
                     letterSpacing: '0.2em',
                     textTransform: 'uppercase'
                   }}>Sección Activa</span>
@@ -1219,7 +1235,6 @@ function Home() {
                   }}>
                     {currentMainSection === 'GLOSAS' && <FileText size={20} color="#8b5cf6" />}
                     {currentMainSection === 'MEDICAMENTOS' && <Activity size={20} color="#10b981" />}
-                    {currentMainSection === 'RATIFICADAS' && <CheckCircle size={20} color="#f59e0b" />}
                     {currentMainSection}
                   </h2>
                 </div>
@@ -1269,6 +1284,7 @@ function Home() {
                     <GlosaForm
                       onAddGlosa={handleAddGlosa}
                       existingGlosas={glosas}
+                      existingIngresos={ingresos}
                       currentSeccion={currentMainSection}
                       isAdmin={role === 'admin'}
                     />
@@ -1489,7 +1505,7 @@ function Home() {
                         <motion.button
                           whileHover={{ scale: 1.05, opacity: 1 }}
                           onClick={async () => {
-                            if (!confirm('SINCRO UNIVERSAL V5: Intentará subir CUALQUIER dato encontrado categorizándolo por sección (Glosas/Med/Rat). ¿Continuar?')) return;
+                            if (!confirm('SINCRO UNIVERSAL: Intentará subir CUALQUIER dato encontrado categorizándolo por sección (Glosas/Med). ¿Continuar?')) return;
                             setLoading(true);
                             try {
                               let count = 0;
@@ -1505,7 +1521,6 @@ function Home() {
                                     // Inteligencia de sección
                                     let inferred = 'GLOSAS';
                                     if (key.toLowerCase().includes('medic')) inferred = 'MEDICAMENTOS';
-                                    if (key.toLowerCase().includes('ratif')) inferred = 'RATIFICADAS';
 
                                     const prepared = items.map(it => ({
                                       ...it,
@@ -1538,9 +1553,7 @@ function Home() {
                           whileHover={{ scale: 1.05, opacity: 1 }}
                           onClick={() => {
                             const sections = {
-                              glosas: glosas.filter(g => (g as any).seccion === 'GLOSAS' || !(g as any).seccion).length,
                               medicamentos: glosas.filter(g => (g as any).seccion === 'MEDICAMENTOS' || (g as any).seccion === 'medicamentos').length,
-                              ratificadas: glosas.filter(g => (g as any).seccion === 'RATIFICADAS').length,
                             };
                             const todayManual = (() => {
                               const d = new Date();
@@ -1730,7 +1743,18 @@ const IngresoList = ({
                 <div style={{ position: 'relative', zIndex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
                     <h4 style={{ color: 'white', fontWeight: 900, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>{i.factura}</h4>
-                    <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Activity size={10} /> {i.fecha}</span>
+                    <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <Activity size={10} /> {i.fecha}
+                      {i.sincronizado === false ? (
+                        <span style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.2rem', marginLeft: '0.5rem' }}>
+                          <CloudOff size={10} /> PENDIENTE
+                        </span>
+                      ) : (
+                        <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.2rem', marginLeft: '0.5rem' }}>
+                          <Cloud size={10} /> NUBE
+                        </span>
+                      )}
+                    </span>
                   </div>
                   <div style={{ display: 'flex', gap: '1.5rem' }}>
                     <div>
