@@ -68,7 +68,7 @@ body {
   color: var(--foreground);
   background: var(--background);
   background-image:
-    linear-gradient(rgba(4, 7, 19, 0.85), rgba(4, 7, 19, 0.95)),
+    linear-gradient(rgba(4, 7, 19, 0.5), rgba(4, 7, 19, 0.7)),
     url('/images/billing-bg-soft.png');
   background-size: cover;
   background-position: center;
