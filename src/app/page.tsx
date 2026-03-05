@@ -899,7 +899,7 @@ function Home() {
   if (!isMounted) return <div style={{ background: '#06040d', minHeight: '100vh' }}></div>;
 
   return (
-    <div className="app-layout" style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)', position: 'relative' }}>
+    <div className="app-layout" style={{ display: 'flex', minHeight: '100vh', position: 'relative' }}>
       {/* Loading overlay - Top Level */}
       <AnimatePresence>
         {((loading || authLoading) && !forcedEntry) && (

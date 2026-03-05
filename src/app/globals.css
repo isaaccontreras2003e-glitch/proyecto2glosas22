@@ -104,6 +104,7 @@ p {
   max-width: 1600px;
   margin: 0 auto;
   padding: var(--space-xl);
+  background: transparent;
 }
 
 /* ── Card ───────────────────────────────────────────── */
@@ -260,7 +261,7 @@ textarea.input {
   position: sticky;
   top: 0;
   height: 100vh;
-  background: rgba(4, 7, 19, 0.95);
+  background: rgba(4, 7, 19, 0.4);
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
   z-index: 100;
