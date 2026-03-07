@@ -255,20 +255,15 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <FileText size={16} color="var(--secondary)" />
                         </div>
-                        <span style={{ fontSize: '0.6rem', color: 'var(--secondary)', fontWeight: 800 }}>AUDITORÍA DIARIA</span>
+                        <span style={{ fontSize: '0.6rem', color: 'var(--secondary)', fontWeight: 800 }}>PROYECTADO</span>
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>FACTURAS INGRESADAS HOY</p>
-                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>
-                            {glosas.filter(g => {
-                                const today = new Date();
-                                const todayStr = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
-                                return (g.fecha || '').includes(todayStr);
-                            }).length}
-                        </h2>
+                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>TOTAL FACTURAS</p>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>{metrics.totalCount}</h2>
                     </div>
                     <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>PROGRESO DE CARGA DIARIA</p>
+                        <p style={{ fontSize: '0.7rem', color: 'white', fontWeight: 800, margin: 0 }}>{glosas.filter(g => g.estado !== 'Pendiente').length} de {metrics.totalCount}</p>
+                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>GESTIONADAS</p>
                     </div>
                 </Card>
 
