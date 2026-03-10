@@ -356,58 +356,75 @@ function Home() {
     });
   }, [glosas, currentMainSection]);
 
+  const consolidado = useMemo(() => {
+    const parseDate = (d: string) => {
+      if (!d || d === '---') return 0;
+      const [datePart] = d.split(',');
+      const parts = datePart.split('/');
+      if (parts.length < 3) return new Date(d).getTime() || 0;
+      return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
+    };
+
+    const currentUpper = currentMainSection.toUpperCase();
+    const sectionGlosas = safeArray(glosas).filter(g => (((g as any).seccion || 'GLOSAS').toUpperCase()) === currentUpper);
+    const sectionIngresos = safeArray(ingresos).filter(i => (((i as any).seccion || 'GLOSAS').toUpperCase()) === currentUpper);
+
+    const facturas = new Set([
+      ...sectionGlosas.map(g => (g.factura || '').trim().toUpperCase()),
+      ...sectionIngresos.map(i => (i.factura || '').trim().toUpperCase())
+    ].filter(Boolean));
+
+    return Array.from(facturas).map(f => {
+      const factGlosas = sectionGlosas.filter(g => (g.factura || '').trim().toUpperCase() === f);
+      const factIngresos = sectionIngresos.filter(i => (i.factura || '').trim().toUpperCase() === f);
+
+      const sumGlosasValor = factGlosas.reduce((acc, g) => acc + safeNumber(g.valor_glosa), 0);
+      const factTotalAceptadoIngresos = factIngresos.reduce((acc, i) => acc + safeNumber(i.valor_aceptado), 0);
+      const factTotalNoAceptadoIngresos = factIngresos.reduce((acc, i) => acc + safeNumber(i.valor_no_aceptado), 0);
+
+      const factTotalAceptadoGlosas = factGlosas.reduce((acc, g) => acc + safeNumber(g.valor_aceptado), 0);
+      const factTotalNoAceptadoGlosas = factGlosas.reduce((acc, g) => {
+        if (g.valor_no_aceptado !== undefined && g.valor_no_aceptado !== null) return acc + safeNumber(g.valor_no_aceptado);
+        if (g.estado !== 'Pendiente') return acc + (safeNumber(g.valor_glosa) - safeNumber(g.valor_aceptado));
+        return acc;
+      }, 0);
+
+      const hasIngresos = factIngresos.length > 0;
+      const aceptado = hasIngresos ? factTotalAceptadoIngresos : factTotalAceptadoGlosas;
+      const noAceptado = hasIngresos ? factTotalNoAceptadoIngresos : factTotalNoAceptadoGlosas;
+
+      const servicios = Array.from(new Set(factGlosas.map(g => g.servicio).filter(Boolean)));
+      const tipos = Array.from(new Set(factGlosas.map(g => g.tipo_glosa).filter(Boolean)));
+
+      const fechasGlosas = factGlosas.map(g => parseDate(g.fecha));
+      const fechasIngresos = factIngresos.map(i => parseDate(i.fecha));
+      const todasLasFechas = [...fechasGlosas, ...fechasIngresos].filter(Boolean);
+      const maxFechaTimestamp = todasLasFechas.length > 0 ? Math.max(...todasLasFechas) : 0;
+      const fechaActividad = maxFechaTimestamp > 0 ? new Date(maxFechaTimestamp).toLocaleDateString('es-ES') : '---';
+
+      return {
+        factura: f,
+        glosado: sumGlosasValor,
+        aceptado,
+        noAceptado,
+        servicios,
+        tipos,
+        fecha: fechaActividad,
+        timestamp: maxFechaTimestamp,
+        diferencia: sumGlosasValor - aceptado - noAceptado,
+        tieneIngreso: factIngresos.length > 0
+      };
+    }).sort((a, b) => b.timestamp - a.timestamp);
+  }, [glosas, ingresos, currentMainSection]);
+
   const stats = useMemo(() => {
     try {
+      const totalGlosadoValue = consolidado.reduce((acc, curr) => acc + curr.glosado, 0);
+      const totalAceptadoValue = consolidado.reduce((acc, curr) => acc + curr.aceptado, 0);
+      const totalNoAceptadoValue = consolidado.reduce((acc, curr) => acc + curr.noAceptado, 0);
+
       const currentUpper = currentMainSection.toUpperCase();
       const sectionGlosas = safeArray(glosas).filter(g => (((g as any).seccion || 'GLOSAS').toUpperCase()) === currentUpper);
-      const sectionIngresos = safeArray(ingresos).filter(i => (((i as any).seccion || 'GLOSAS').toUpperCase()) === currentUpper);
-
-      // ESTRATEGIA: Agrupamos por factura para reconciliación total (NORMALIZADO A MAYÚSCULAS)
-      const facturasSet = new Set([
-        ...sectionGlosas.map(g => (g.factura || '').trim().toUpperCase()),
-        ...sectionIngresos.map(i => (i.factura || '').trim().toUpperCase())
-      ]);
-
-      // DEBUG: Verificar si hay ingresos fuera de estas facturas
-      const allIngresosValue = safeArray(ingresos).reduce((acc, i) => acc + safeNumber(i.valor_aceptado), 0);
-      const sectionIngresosValue = sectionIngresos.reduce((acc, i) => acc + safeNumber(i.valor_aceptado), 0);
-      console.log(`[DEBUG STATS] Global: ${allIngresosValue} | Sección (${currentUpper}): ${sectionIngresosValue}`);
-
-      let totalGlosadoValue = 0;
-      let totalAceptadoValue = 0;
-      let totalNoAceptadoValue = 0;
-
-      facturasSet.forEach(f => {
-        if (!f) return;
-        const factGlosas = sectionGlosas.filter(g => (g.factura || '').trim().toUpperCase() === f);
-        const factIngresos = sectionIngresos.filter(i => (i.factura || '').trim().toUpperCase() === f);
-
-        // Totales base
-        const sumGlosasValor = factGlosas.reduce((acc, g) => acc + safeNumber(g.valor_glosa), 0);
-
-        // Valor aceptado & No aceptado: PRIORIDAD ESTRICTA
-        const sumIngresosAceptado = factIngresos.reduce((acc, i) => acc + safeNumber(i.valor_aceptado), 0);
-        const sumIngresosNoAceptado = factIngresos.reduce((acc, i) => acc + safeNumber(i.valor_no_aceptado), 0);
-
-        const sumGlosasAceptado = factGlosas.reduce((acc, g) => acc + safeNumber(g.valor_aceptado), 0);
-        const sumGlosasNoAceptado = factGlosas.reduce((acc, g) => {
-          if (g.valor_no_aceptado !== undefined && g.valor_no_aceptado !== null) return acc + safeNumber(g.valor_no_aceptado);
-          if (g.estado !== 'Pendiente') return acc + (safeNumber(g.valor_glosa) - safeNumber(g.valor_aceptado));
-          return acc;
-        }, 0);
-
-        // REGLA DE NEGOCIO: Si existe AL MENOS UN registro de ingreso (pago), 
-        // usamos los valores de ingresos, incluso si son cero.
-        const hasIngresos = factIngresos.length > 0;
-        const currentAceptado = hasIngresos ? sumIngresosAceptado : sumGlosasAceptado;
-        const currentNoAceptado = hasIngresos ? sumIngresosNoAceptado : sumGlosasNoAceptado;
-
-        // RECONCILIACIÓN DE GLOSA: El importe glosado es ESTRICTAMENTE el valor ingresado en la glosa
-        // según preferencia del usuario ("valor total de todas las glosas que he ingresado")
-        totalGlosadoValue += sumGlosasValor;
-        totalAceptadoValue += currentAceptado;
-        totalNoAceptadoValue += currentNoAceptado;
-      });
 
       const totalRegistradoInternoValue = sectionGlosas
         .filter(g => g.registrada_internamente)
@@ -417,6 +434,7 @@ function Home() {
 
       return {
         totalCount: sectionGlosas.length,
+        totalFacturas: consolidado.length,
         totalGlosado: totalGlosadoValue,
         totalAceptado: totalAceptadoValue,
         totalPendiente: Math.max(0, pendingValue),
@@ -428,28 +446,23 @@ function Home() {
         totalIngresos: totalAceptadoValue,
         pendingCount: sectionGlosas.filter(g => g.estado === 'Pendiente').length,
         respondedCount: sectionGlosas.filter(g => g.estado === 'Respondida').length,
-        acceptedCount: sectionGlosas.filter(g => g.estado === 'Aceptada' || sectionIngresos.some(i => i.factura === g.factura)).length,
+        acceptedCount: consolidado.filter(item => item.tieneIngreso).length,
       };
     } catch (err) {
       console.error('[stats] Error calculando estadísticas:', err);
-      return { totalCount: 0, totalGlosado: 0, totalAceptado: 0, totalPendiente: 0, totalRegistradoInterno: 0, totalNoAceptado: 0, percentAceptado: 0, percentRegistrado: 0, totalValue: 0, totalIngresos: 0, pendingCount: 0, respondedCount: 0, acceptedCount: 0 };
+      return { totalCount: 0, totalFacturas: 0, totalGlosado: 0, totalAceptado: 0, totalPendiente: 0, totalRegistradoInterno: 0, totalNoAceptado: 0, percentAceptado: 0, percentRegistrado: 0, totalValue: 0, totalIngresos: 0, pendingCount: 0, respondedCount: 0, acceptedCount: 0 };
     }
-  }, [glosas, ingresos, currentMainSection]);
+  }, [glosas, consolidado, currentMainSection]);
 
   const handleAddGlosa = async (newGlosa: Glosa) => {
-    // Escudo de Persistencia: Guardar en un buffer aparte para emergencias
     const backupBuffer = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
     safeStorage.setJson('emergency_buffer', [newGlosa, ...backupBuffer]);
-
-    // Optimista con estado Local
     const glosaConEstado: Glosa = { ...newGlosa, sincronizado: false };
     setGlosas(prev => {
       const updated = [glosaConEstado, ...safeArray(prev)];
       safeStorage.setJson('cached_glosas', updated);
       return updated;
     });
-
-    // Sincronizar con Supabase
     try {
       const { error } = await supabase.from('glosas').insert([newGlosa]);
       if (error) {
@@ -507,11 +520,7 @@ function Home() {
     const toDelete: string[] = [];
     glosas.forEach(g => {
       const key = `${g.factura.trim().toLowerCase()}|${g.servicio.trim().toLowerCase()}|${g.valor_glosa}`;
-      if (!seen.has(key)) {
-        seen.set(key, g.id);
-      } else {
-        toDelete.push(g.id);
-      }
+      if (!seen.has(key)) seen.set(key, g.id); else toDelete.push(g.id);
     });
     if (toDelete.length > 0) {
       await supabase.from('glosas').delete().in('id', toDelete);
@@ -520,10 +529,8 @@ function Home() {
   };
 
   const handleAddIngreso = async (newIngreso: Ingreso) => {
-    // Escudo de Persistencia: Guardar en un buffer aparte para emergencias
     const backupBuffer = safeStorage.getJson<Ingreso[]>('emergency_buffer_ingresos', []);
     safeStorage.setJson('emergency_buffer_ingresos', [newIngreso, ...backupBuffer]);
-
     const ingresoConEstado = { ...newIngreso, sincronizado: false };
     setIngresos(prev => {
       const updated = [ingresoConEstado, ...safeArray(prev)];
@@ -537,7 +544,6 @@ function Home() {
         showToast('Guardado localmente. Se subirá de fondo.', 'info');
       } else {
         setIngresos(prev => safeArray(prev).map(i => i.id === newIngreso.id ? { ...i, sincronizado: true } : i));
-        // Limpiar del buffer de emergencia si tuvo éxito
         const currentBuffer = safeStorage.getJson<Ingreso[]>('emergency_buffer_ingresos', []);
         safeStorage.setJson('emergency_buffer_ingresos', currentBuffer.filter((i: any) => i.id !== newIngreso.id));
       }
@@ -556,74 +562,6 @@ function Home() {
       if (error) console.error('Error eliminando ingreso:', error);
     } catch (err) { console.error('Error crítico eliminando ingreso:', err); }
   };
-
-  const consolidado = useMemo(() => {
-    const parseDate = (d: string) => {
-      if (!d || d === '---') return 0;
-      // Handle "DD/MM/YYYY, HH:mm:ss" or "DD/MM/YYYY"
-      const [datePart] = d.split(',');
-      const parts = datePart.split('/');
-      if (parts.length < 3) return new Date(d).getTime() || 0;
-      return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
-    };
-
-    const currentUpper = currentMainSection.toUpperCase();
-    const sectionGlosas = glosas.filter(g => ((g as any).seccion || 'GLOSAS').toUpperCase() === currentUpper);
-    const sectionIngresos = ingresos.filter(i => ((i as any).seccion || 'GLOSAS').toUpperCase() === currentUpper);
-
-    const facturas = new Set([
-      ...sectionGlosas.map(g => (g.factura || '').trim().toUpperCase()),
-      ...sectionIngresos.map(i => (i.factura || '').trim().toUpperCase())
-    ].filter(Boolean));
-
-    return Array.from(facturas).map(f => {
-      const factGlosas = sectionGlosas.filter(g => (g.factura || '').trim().toUpperCase() === f);
-      const factIngresos = sectionIngresos.filter(i => (i.factura || '').trim().toUpperCase() === f);
-
-      const sumGlosasValor = factGlosas.reduce((acc, g) => acc + g.valor_glosa, 0);
-
-      // Sumar aceptados & no aceptados de AMBOS con lógica de PRIORIDAD ESTRICTA para evitar duplicidad
-      const factTotalAceptadoIngresos = factIngresos.reduce((acc, i) => acc + (i.valor_aceptado || 0), 0);
-      const factTotalNoAceptadoIngresos = factIngresos.reduce((acc, i) => acc + (i.valor_no_aceptado || 0), 0);
-
-      const factTotalAceptadoGlosas = factGlosas.reduce((acc, g) => acc + (g.valor_aceptado || 0), 0);
-      const factTotalNoAceptadoGlosas = factGlosas.reduce((acc, g) => {
-        if (g.valor_no_aceptado !== undefined && g.valor_no_aceptado !== null) return acc + g.valor_no_aceptado;
-        if (g.estado !== 'Pendiente') return acc + (g.valor_glosa - (g.valor_aceptado || 0));
-        return acc;
-      }, 0);
-
-      const hasIngresos = factIngresos.length > 0;
-      let aceptado = hasIngresos ? factTotalAceptadoIngresos : factTotalAceptadoGlosas;
-      let noAceptado = hasIngresos ? factTotalNoAceptadoIngresos : factTotalNoAceptadoGlosas;
-
-      // RECONCILIACIÓN: El importe glosado es el valor literal de la glosa ingresada
-      const glosado = sumGlosasValor;
-
-      const servicios = Array.from(new Set(factGlosas.map(g => g.servicio).filter(Boolean)));
-      const tipos = Array.from(new Set(factGlosas.map(g => g.tipo_glosa).filter(Boolean)));
-
-      const fechasGlosas = factGlosas.map(g => parseDate(g.fecha));
-      const fechasIngresos = factIngresos.map(i => parseDate(i.fecha));
-      const todasLasFechas = [...fechasGlosas, ...fechasIngresos].filter(Boolean);
-
-      const maxFechaTimestamp = todasLasFechas.length > 0 ? Math.max(...todasLasFechas) : 0;
-      const fechaActividad = maxFechaTimestamp > 0 ? new Date(maxFechaTimestamp).toLocaleDateString('es-ES') : '---';
-
-      return {
-        factura: f,
-        glosado,
-        aceptado,
-        noAceptado,
-        servicios,
-        tipos,
-        fecha: fechaActividad,
-        timestamp: maxFechaTimestamp,
-        diferencia: glosado - aceptado - noAceptado, // DIFERENCIA REAL: Lo que queda por auditar/conciliar
-        tieneIngreso: factIngresos.length > 0
-      };
-    }).sort((a, b) => b.timestamp - a.timestamp);
-  }, [glosas, ingresos, currentMainSection]);
 
   const filteredConsolidado = useMemo(() => {
     return (consolidado || []).filter(item =>

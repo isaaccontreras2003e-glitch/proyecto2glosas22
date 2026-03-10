@@ -34,6 +34,7 @@ interface DashboardProps {
         percentAceptado: number;
         percentRegistrado: number;
         totalCount: number;
+        totalFacturas: number;
         acceptedCount: number;
         totalNoAceptado: number;
     };
@@ -111,24 +112,33 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
         });
     }, [allConsolidado, selectedService, selectedType]);
 
-    // 2. Metrics for the 4 Cards
+    // 2. Metrics for the 4 Cards (UNIFIED ENGINE)
     const metrics = useMemo(() => {
-        const totalValue = filteredConsolidado.reduce((acc, curr) => acc + curr.glosado, 0);
-        const totalCount = filteredConsolidado.length; // Count of unique invoices (Normalized)
+        // If no filters are applied, we can use the executiveStats directly for absolute agreement
+        const isFiltered = selectedService !== 'Todos' || selectedType !== 'Todos';
 
-        // Financial metrics from filtered consolidated list (Truth)
+        if (!isFiltered && executiveStats) {
+            return {
+                totalValue: executiveStats.totalGlosado,
+                totalCount: executiveStats.totalFacturas,
+                acceptedValue: executiveStats.totalAceptado,
+                noAcceptedValue: executiveStats.totalNoAceptado,
+                totalRespondedValue: executiveStats.totalAceptado + executiveStats.totalNoAceptado,
+                acceptedCount: executiveStats.acceptedCount,
+                percentResponded: executiveStats.totalGlosado > 0 ? ((executiveStats.totalAceptado + executiveStats.totalNoAceptado) / executiveStats.totalGlosado) * 100 : 0,
+                percentAcceptedTotal: executiveStats.percentAceptado,
+                percentNoAcceptedTotal: executiveStats.totalGlosado > 0 ? (executiveStats.totalNoAceptado / executiveStats.totalGlosado) * 100 : 0,
+                waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
+            };
+        }
+
+        // If filtered, recalculate using the exact same methodology
+        const totalValue = filteredConsolidado.reduce((acc, curr) => acc + curr.glosado, 0);
+        const totalCount = filteredConsolidado.length;
         const acceptedValue = filteredConsolidado.reduce((acc, curr) => acc + curr.aceptado, 0);
         const noAcceptedValue = filteredConsolidado.reduce((acc, curr) => acc + curr.noAceptado, 0);
         const totalRespondedValue = acceptedValue + noAcceptedValue;
-
-        // Percentages
         const acceptedCount = filteredConsolidado.filter(item => item.tieneIngreso).length;
-
-        // Breakdown relative to TOTAL GLOSADO (requested by user for exact matching)
-        const percentResponded = totalValue > 0 ? (totalRespondedValue / totalValue) * 100 : 0;
-
-        const percentAcceptedTotal = totalValue > 0 ? (acceptedValue / totalValue) * 100 : 0;
-        const percentNoAcceptedTotal = totalValue > 0 ? (noAcceptedValue / totalValue) * 100 : 0;
 
         return {
             totalValue,
@@ -137,12 +147,12 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
             noAcceptedValue,
             totalRespondedValue,
             acceptedCount,
-            percentResponded,
-            percentAcceptedTotal,
-            percentNoAcceptedTotal,
+            percentResponded: totalValue > 0 ? (totalRespondedValue / totalValue) * 100 : 0,
+            percentAcceptedTotal: totalValue > 0 ? (acceptedValue / totalValue) * 100 : 0,
+            percentNoAcceptedTotal: totalValue > 0 ? (noAcceptedValue / totalValue) * 100 : 0,
             waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
         };
-    }, [glosas, filteredConsolidado]);
+    }, [filteredConsolidado, selectedService, selectedType, executiveStats]);
 
     // 3. Category Bars
     const categories = useMemo(() => {
@@ -177,7 +187,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                     <LayoutDashboard size={20} color="var(--primary)" />
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 950, color: 'white', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                         TABLERO DE MANDO - AUDITORÍA MÉDICA
-                        <span style={{ fontSize: '0.55rem', background: 'var(--primary)', color: '#000', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.75rem', verticalAlign: 'middle', fontWeight: 900 }}>COI V3.1</span>
+                        <span style={{ fontSize: '0.55rem', background: 'var(--primary)', color: '#000', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.75rem', verticalAlign: 'middle', fontWeight: 900 }}>COI V.UNIFICADA</span>
                     </h2>
                 </div>
             </div>
