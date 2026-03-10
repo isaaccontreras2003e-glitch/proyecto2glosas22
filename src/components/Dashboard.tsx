@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+// V3.1 - Force Sync Update
 import { FileText, DollarSign, Clock, CheckCircle, TrendingUp, Filter, PieChart, Activity, ChevronDown, AlertTriangle, LayoutDashboard } from 'lucide-react';
 // Build Trigger: v2.0.2 - Redesign Force Sync REFRESH
 import { Card } from './Card';
