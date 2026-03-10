@@ -177,42 +177,42 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                     <LayoutDashboard size={20} color="var(--primary)" />
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 950, color: 'white', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                         TABLERO DE MANDO - AUDITORÍA MÉDICA
-                        <span style={{ fontSize: '0.55rem', background: 'var(--primary)', color: '#000', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.75rem', verticalAlign: 'middle', fontWeight: 900 }}>COI V3.0</span>
+                        <span style={{ fontSize: '0.55rem', background: 'var(--primary)', color: '#000', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.75rem', verticalAlign: 'middle', fontWeight: 900 }}>COI V3.1</span>
                     </h2>
                 </div>
+            </div>
 
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                    <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <label style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>SERVICIO</label>
-                        <div style={{ position: 'relative' }}>
-                            <select
-                                value={selectedService}
-                                onChange={(e) => setSelectedService(e.target.value)}
-                                style={{ background: 'rgba(20,20,30,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.4rem 2rem 0.4rem 0.75rem', color: 'white', fontSize: '0.75rem', fontWeight: 700, appearance: 'none', minWidth: '160px' }}
-                            >
-                                {availableServices.map(s => (
-                                    <option key={s} value={s}>{s}</option>
-                                ))}
-                            </select>
-                            <ChevronDown size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} />
-                        </div>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>SERVICIO</label>
+                    <div style={{ position: 'relative' }}>
+                        <select
+                            value={selectedService}
+                            onChange={(e) => setSelectedService(e.target.value)}
+                            style={{ background: 'rgba(20,20,30,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.4rem 2rem 0.4rem 0.75rem', color: 'white', fontSize: '0.75rem', fontWeight: 700, appearance: 'none', minWidth: '160px' }}
+                        >
+                            {availableServices.map(s => (
+                                <option key={s} value={s}>{s}</option>
+                            ))}
+                        </select>
+                        <ChevronDown size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} />
                     </div>
-                    <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <label style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>TIPO GLOSA</label>
-                        <div style={{ position: 'relative' }}>
-                            <select
-                                value={selectedType}
-                                onChange={(e) => setSelectedType(e.target.value)}
-                                style={{ background: 'rgba(20,20,30,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.4rem 2rem 0.4rem 0.75rem', color: 'white', fontSize: '0.75rem', fontWeight: 700, appearance: 'none', minWidth: '160px' }}
-                            >
-                                <option>Todos</option>
-                                <option>Tarifas</option>
-                                <option>Soportes</option>
-                                <option>RIPS</option>
-                                <option>Autorización</option>
-                            </select>
-                            <Clock size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} />
-                        </div>
+                </div>
+                <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>TIPO GLOSA</label>
+                    <div style={{ position: 'relative' }}>
+                        <select
+                            value={selectedType}
+                            onChange={(e) => setSelectedType(e.target.value)}
+                            style={{ background: 'rgba(20,20,30,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.4rem 2rem 0.4rem 0.75rem', color: 'white', fontSize: '0.75rem', fontWeight: 700, appearance: 'none', minWidth: '160px' }}
+                        >
+                            <option>Todos</option>
+                            <option>Tarifas</option>
+                            <option>Soportes</option>
+                            <option>RIPS</option>
+                            <option>Autorización</option>
+                        </select>
+                        <Clock size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} />
                     </div>
                 </div>
             </div>
@@ -374,8 +374,8 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             })}
                         </svg>
                         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ fontSize: '0.6rem', opacity: 0.4, fontWeight: 800 }}>REGISTROS</span>
-                            <span style={{ fontSize: '2rem', fontWeight: 950 }}>{glosas.length}</span>
+                            <span style={{ fontSize: '0.6rem', opacity: 0.4, fontWeight: 800 }}>FACTURAS</span>
+                            <span style={{ fontSize: '2rem', fontWeight: 950 }}>{metrics.totalCount}</span>
                         </div>
                     </div>
 
@@ -392,5 +392,3 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
         </div>
     );
 };
-
-
