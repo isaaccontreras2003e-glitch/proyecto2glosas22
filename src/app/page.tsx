@@ -363,18 +363,43 @@ function Home() {
       const sectionIngresos = safeArray(ingresos).filter(i => ((i as any).seccion?.toUpperCase() || 'GLOSAS') === currentUpper);
 
       const totalGlosadoValue = sectionGlosas.reduce((acc, curr) => acc + safeNumber(curr.valor_glosa), 0);
-      const glosaAceptado = sectionGlosas.reduce((acc, curr) => acc + safeNumber(curr.valor_aceptado), 0);
-      const ingresoAceptado = sectionIngresos.reduce((acc, curr) => acc + safeNumber(curr.valor_aceptado), 0);
-      const totalAceptadoValue = glosaAceptado + ingresoAceptado;
 
-      const glosaNoAceptado = sectionGlosas.reduce((acc, curr) => {
-        const noAcep = safeNumber(curr.valor_no_aceptado, -1);
-        if (noAcep >= 0) return acc + noAcep;
-        if (curr.estado !== 'Pendiente') return acc + (safeNumber(curr.valor_glosa) - safeNumber(curr.valor_aceptado));
-        return acc;
-      }, 0);
-      const ingresoNoAceptado = sectionIngresos.reduce((acc, curr) => acc + safeNumber(curr.valor_no_aceptado), 0);
-      const totalNoAceptadoValue = glosaNoAceptado + ingresoNoAceptado;
+      // ESTRATEGIA: Para evitar doble conteo, agrupamos por factura
+      const facturasSet = new Set([...sectionGlosas.map(g => g.factura), ...sectionIngresos.map(i => i.factura)]);
+
+      let totalAceptadoValue = 0;
+      let totalNoAceptadoValue = 0;
+
+      facturasSet.forEach(f => {
+        const factGlosas = sectionGlosas.filter(g => g.factura === f);
+        const factIngresos = sectionIngresos.filter(i => i.factura === f);
+
+        // Valor aceptado: Si hay ingresos manuales, usamos esos. Si no, usamos lo de las glosas aceptadas.
+        const sumIngresosAceptado = factIngresos.reduce((acc, i) => acc + safeNumber(i.valor_aceptado), 0);
+        const sumGlosasAceptado = factGlosas.reduce((acc, g) => acc + safeNumber(g.valor_aceptado), 0);
+
+        // REGLA DE NEGOCIO: Los ingresos manuales son la verdad absoluta. 
+        // Si hay ingresos manuales, ignoramos el valor_aceptado de la glosa para esa factura para no sumar doble.
+        if (sumIngresosAceptado > 0) {
+          totalAceptadoValue += sumIngresosAceptado;
+        } else {
+          totalAceptadoValue += sumGlosasAceptado;
+        }
+
+        // Valor no aceptado: Misma lógica
+        const sumIngresosNoAceptado = factIngresos.reduce((acc, i) => acc + safeNumber(i.valor_no_aceptado), 0);
+        const sumGlosasNoAceptado = factGlosas.reduce((acc, g) => {
+          if (g.valor_no_aceptado !== undefined && g.valor_no_aceptado !== null) return acc + safeNumber(g.valor_no_aceptado);
+          if (g.estado !== 'Pendiente') return acc + (safeNumber(g.valor_glosa) - safeNumber(g.valor_aceptado));
+          return acc;
+        }, 0);
+
+        if (sumIngresosNoAceptado > 0) {
+          totalNoAceptadoValue += sumIngresosNoAceptado;
+        } else {
+          totalNoAceptadoValue += sumGlosasNoAceptado;
+        }
+      });
 
       const totalRegistradoInternoValue = sectionGlosas
         .filter(g => g.registrada_internamente)
@@ -545,19 +570,21 @@ function Home() {
 
       const glosado = factGlosas.reduce((acc, g) => acc + g.valor_glosa, 0);
 
-      // Sumar aceptados de AMBOS (glosas e ingresos)
-      const aceptadoGlosas = factGlosas.reduce((acc, g) => acc + (g.valor_aceptado || 0), 0);
+      // Sumar aceptados de AMBOS con lógica de prioridad para evitar duplicidad
       const aceptadoIngresos = factIngresos.reduce((acc, i) => acc + (i.valor_aceptado || 0), 0);
-      const aceptado = aceptadoGlosas + aceptadoIngresos;
+      const aceptadoGlosas = factGlosas.reduce((acc, g) => acc + (g.valor_aceptado || 0), 0);
 
-      // Sumar no aceptados de AMBOS logicamente
+      let aceptado = aceptadoIngresos > 0 ? aceptadoIngresos : aceptadoGlosas;
+
+      // Sumar no aceptados de AMBOS con misma lógica
+      const noAceptadoIngresos = factIngresos.reduce((acc, i) => acc + (i.valor_no_aceptado || 0), 0);
       const noAceptadoGlosas = factGlosas.reduce((acc, g) => {
         if (g.valor_no_aceptado !== undefined && g.valor_no_aceptado !== null) return acc + g.valor_no_aceptado;
         if (g.estado !== 'Pendiente') return acc + (g.valor_glosa - (g.valor_aceptado || 0));
         return acc;
       }, 0);
-      const noAceptadoIngresos = factIngresos.reduce((acc, i) => acc + (i.valor_no_aceptado || 0), 0);
-      const noAceptado = noAceptadoGlosas + noAceptadoIngresos;
+
+      let noAceptado = noAceptadoIngresos > 0 ? noAceptadoIngresos : noAceptadoGlosas;
 
       const servicios = Array.from(new Set(factGlosas.map(g => g.servicio).filter(Boolean)));
       const tipos = Array.from(new Set(factGlosas.map(g => g.tipo_glosa).filter(Boolean)));
@@ -613,6 +640,53 @@ function Home() {
     } catch (err: any) {
       console.error('Test Connection Error:', err);
       showToast('❌ ERROR DE CONEXIÓN: ' + err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReconcilePayments = async () => {
+    if (!confirm('Esta acción buscará todas las glosas ACEPTADAS y generará registros de pago automáticos si no existen. ¿Deseas continuar?')) return;
+    try {
+      setLoading(true);
+      const currentUpper = currentMainSection.toUpperCase();
+      const glosasAceptadas = glosas.filter(g =>
+        g.estado === 'Aceptada' &&
+        ((g as any).seccion?.toUpperCase() || 'GLOSAS') === currentUpper
+      );
+
+      let created = 0;
+      for (const glosa of glosasAceptadas) {
+        // Verificar si ya existe un ingreso para esta factura con este valor
+        const exists = ingresos.some(i =>
+          i.factura === glosa.factura &&
+          i.valor_aceptado === glosa.valor_aceptado &&
+          ((i as any).seccion?.toUpperCase() || 'GLOSAS') === currentUpper
+        );
+
+        if (!exists) {
+          const newIngreso: Ingreso = {
+            id: 'auto_' + Math.random().toString(36).substr(2, 9),
+            factura: glosa.factura,
+            valor_aceptado: glosa.valor_aceptado,
+            valor_no_aceptado: glosa.valor_glosa - glosa.valor_aceptado,
+            fecha: new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+            seccion: currentUpper
+          };
+
+          const { error } = await supabase.from('ingresos').insert([newIngreso]);
+          if (!error) {
+            setIngresos(prev => [{ ...newIngreso, sincronizado: true }, ...prev]);
+            created++;
+          }
+        }
+      }
+
+      showToast(`✅ Sincronización completa: ${created} pagos automáticos generados.`, 'success');
+      loadData(true);
+    } catch (err: any) {
+      console.error('Error en reconciliación:', err);
+      showToast('❌ Error al reconciliar: ' + err.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -1503,6 +1577,16 @@ function Home() {
                         >
                           <RefreshCw size={12} />
                           FORZAR NUEVO ESCANEO
+                        </motion.button>
+
+                        <motion.button
+                          whileHover={{ scale: 1.05, opacity: 1 }}
+                          onClick={handleReconcilePayments}
+                          className="btn btn-secondary"
+                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#8b5cf6', borderColor: 'rgba(139,92,246,0.3)' }}
+                        >
+                          <TrendingUp size={12} />
+                          SINCRONIZAR PAGOS
                         </motion.button>
 
                         <motion.button
