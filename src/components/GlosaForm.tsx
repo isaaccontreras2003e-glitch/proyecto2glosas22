@@ -457,7 +457,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                     </div>
                     <div>
                         <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>VALOR ACEPTADO</p>
-                        <p style={{ fontSize: '1.4rem', fontWeight: 950, color: '#10b981', textShadow: '0 0 20px rgba(16,185,129,0.3)' }}>${new Intl.NumberFormat('es-CO').format(dailyStats.valorAceptado)}</p>
+                        <p style={{ fontSize: '1.4rem', fontWeight: 950, color: '#ef4444', textShadow: '0 0 20px rgba(239,68,68,0.3)' }}>${new Intl.NumberFormat('es-CO').format(dailyStats.valorAceptado)}</p>
                     </div>
                 </div>
             </form>
