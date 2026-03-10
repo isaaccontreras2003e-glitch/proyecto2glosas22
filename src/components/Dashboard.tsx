@@ -273,12 +273,11 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                     <div>
                         <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>FACTURAS INGRESADAS HOY</p>
                         <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>
-                            {/* Strictly count unique audited invoices for today */}
-                            {metrics.acceptedCount}
+                            {metrics.totalCount}
                         </h2>
                     </div>
                     <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>FACTURAS AUDITADAS TOTALES</p>
+                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>CONTEO ÚNICO DE FACTURAS</p>
                     </div>
                 </Card>
 
@@ -316,8 +315,8 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         <span style={{ fontSize: '0.6rem', color: '#f59e0b', fontWeight: 800 }}>% DE ACEPTACIÓN</span>
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>REGISTROS TOTALES</p>
-                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>{metrics.totalCount}</h2>
+                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>AUDITADAS (CON PAGO)</p>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>{metrics.acceptedCount}</h2>
                     </div>
                     <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
                         <p style={{ fontSize: '0.65rem', color: 'white', fontWeight: 800, margin: 0 }}>
@@ -381,8 +380,8 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             })}
                         </svg>
                         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ fontSize: '0.6rem', opacity: 0.4, fontWeight: 800 }}>AUDITADAS</span>
-                            <span style={{ fontSize: '2rem', fontWeight: 950 }}>{metrics.acceptedCount}</span>
+                            <span style={{ fontSize: '0.6rem', opacity: 0.4, fontWeight: 800 }}>INGRESADAS</span>
+                            <span style={{ fontSize: '2rem', fontWeight: 950 }}>{metrics.totalCount}</span>
                         </div>
                     </div>
 
