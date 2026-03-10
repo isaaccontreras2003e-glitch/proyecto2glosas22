@@ -271,7 +271,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         <span style={{ fontSize: '0.6rem', color: 'var(--secondary)', fontWeight: 800 }}>AUDITORÍA DIARIA</span>
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>FACTURAS INGRESADAS HOY</p>
+                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>TOTAL DE FACTURAS</p>
                         <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>
                             {metrics.totalCount}
                         </h2>
@@ -359,7 +359,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                 {/* Management Status (RIGHT) */}
                 <Card style={{ padding: '2rem', display: 'flex', flexDirection: 'column' }}>
                     <h3 style={{ fontSize: '0.85rem', fontWeight: 900, marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <PieChart size={16} color="var(--primary)" /> TOTAL GLOSAS
+                        <PieChart size={16} color="var(--primary)" /> TOTAL DE FACTURAS
                     </h3>
                     <div style={{ position: 'relative', width: '200px', height: '200px', margin: '0 auto 2.5rem auto' }}>
                         <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
@@ -380,7 +380,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             })}
                         </svg>
                         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ fontSize: '0.6rem', opacity: 0.4, fontWeight: 800 }}>INGRESADAS</span>
+                            <span style={{ fontSize: '0.6rem', opacity: 0.4, fontWeight: 800 }}>TOTAL FACTURAS</span>
                             <span style={{ fontSize: '2rem', fontWeight: 950 }}>{metrics.totalCount}</span>
                         </div>
                     </div>
