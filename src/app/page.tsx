@@ -376,19 +376,22 @@ function Home() {
         // Totales base
         const sumGlosasValor = factGlosas.reduce((acc, g) => acc + safeNumber(g.valor_glosa), 0);
 
-        // Valor aceptado
+        // Valor aceptado & No aceptado: PRIORIDAD ESTRICTA
         const sumIngresosAceptado = factIngresos.reduce((acc, i) => acc + safeNumber(i.valor_aceptado), 0);
-        const sumGlosasAceptado = factGlosas.reduce((acc, g) => acc + safeNumber(g.valor_aceptado), 0);
-        const currentAceptado = sumIngresosAceptado > 0 ? sumIngresosAceptado : sumGlosasAceptado;
-
-        // Valor no aceptado
         const sumIngresosNoAceptado = factIngresos.reduce((acc, i) => acc + safeNumber(i.valor_no_aceptado), 0);
+
+        const sumGlosasAceptado = factGlosas.reduce((acc, g) => acc + safeNumber(g.valor_aceptado), 0);
         const sumGlosasNoAceptado = factGlosas.reduce((acc, g) => {
           if (g.valor_no_aceptado !== undefined && g.valor_no_aceptado !== null) return acc + safeNumber(g.valor_no_aceptado);
           if (g.estado !== 'Pendiente') return acc + (safeNumber(g.valor_glosa) - safeNumber(g.valor_aceptado));
           return acc;
         }, 0);
-        const currentNoAceptado = sumIngresosNoAceptado > 0 ? sumIngresosNoAceptado : sumGlosasNoAceptado;
+
+        // REGLA DE NEGOCIO: Si existe AL MENOS UN registro de ingreso (pago), 
+        // usamos los valores de ingresos, incluso si son cero.
+        const hasIngresos = factIngresos.length > 0;
+        const currentAceptado = hasIngresos ? sumIngresosAceptado : sumGlosasAceptado;
+        const currentNoAceptado = hasIngresos ? sumIngresosNoAceptado : sumGlosasNoAceptado;
 
         // RECONCILIACIÓN DE GLOSA: El importe glosado debe ser al menos la suma de las respuestas
         // Esto evita que Respondido > Glosado si hay pagos sin glosas registradas.
@@ -567,19 +570,20 @@ function Home() {
 
       const sumGlosasValor = factGlosas.reduce((acc, g) => acc + g.valor_glosa, 0);
 
-      // Sumar aceptados de AMBOS con lógica de prioridad para evitar duplicidad
-      const aceptadoIngresos = factIngresos.reduce((acc, i) => acc + (i.valor_aceptado || 0), 0);
-      const aceptadoGlosas = factGlosas.reduce((acc, g) => acc + (g.valor_aceptado || 0), 0);
-      let aceptado = aceptadoIngresos > 0 ? aceptadoIngresos : aceptadoGlosas;
+      // Sumar aceptados & no aceptados de AMBOS con lógica de PRIORIDAD ESTRICTA para evitar duplicidad
+      const factTotalAceptadoIngresos = factIngresos.reduce((acc, i) => acc + (i.valor_aceptado || 0), 0);
+      const factTotalNoAceptadoIngresos = factIngresos.reduce((acc, i) => acc + (i.valor_no_aceptado || 0), 0);
 
-      // Sumar no aceptados de AMBOS con misma lógica
-      const noAceptadoIngresos = factIngresos.reduce((acc, i) => acc + (i.valor_no_aceptado || 0), 0);
-      const noAceptadoGlosas = factGlosas.reduce((acc, g) => {
+      const factTotalAceptadoGlosas = factGlosas.reduce((acc, g) => acc + (g.valor_aceptado || 0), 0);
+      const factTotalNoAceptadoGlosas = factGlosas.reduce((acc, g) => {
         if (g.valor_no_aceptado !== undefined && g.valor_no_aceptado !== null) return acc + g.valor_no_aceptado;
         if (g.estado !== 'Pendiente') return acc + (g.valor_glosa - (g.valor_aceptado || 0));
         return acc;
       }, 0);
-      let noAceptado = noAceptadoIngresos > 0 ? noAceptadoIngresos : noAceptadoGlosas;
+
+      const hasIngresos = factIngresos.length > 0;
+      let aceptado = hasIngresos ? factTotalAceptadoIngresos : factTotalAceptadoGlosas;
+      let noAceptado = hasIngresos ? factTotalNoAceptadoIngresos : factTotalNoAceptadoGlosas;
 
       // RECONCILIACIÓN: El importe glosado es el máximo entre el registro de glosa y la suma de respuestas
       const glosado = Math.max(sumGlosasValor, aceptado + noAceptado);
