@@ -393,10 +393,9 @@ function Home() {
         const currentAceptado = hasIngresos ? sumIngresosAceptado : sumGlosasAceptado;
         const currentNoAceptado = hasIngresos ? sumIngresosNoAceptado : sumGlosasNoAceptado;
 
-        // RECONCILIACIÓN DE GLOSA: El importe glosado debe ser al menos la suma de las respuestas
-        // Esto evita que Respondido > Glosado si hay pagos sin glosas registradas.
-        const respondedTotal = currentAceptado + currentNoAceptado;
-        totalGlosadoValue += Math.max(sumGlosasValor, respondedTotal);
+        // RECONCILIACIÓN DE GLOSA: El importe glosado es ESTRICTAMENTE el valor ingresado en la glosa
+        // según preferencia del usuario ("valor total de todas las glosas que he ingresado")
+        totalGlosadoValue += sumGlosasValor;
         totalAceptadoValue += currentAceptado;
         totalNoAceptadoValue += currentNoAceptado;
       });
@@ -585,8 +584,8 @@ function Home() {
       let aceptado = hasIngresos ? factTotalAceptadoIngresos : factTotalAceptadoGlosas;
       let noAceptado = hasIngresos ? factTotalNoAceptadoIngresos : factTotalNoAceptadoGlosas;
 
-      // RECONCILIACIÓN: El importe glosado es el máximo entre el registro de glosa y la suma de respuestas
-      const glosado = Math.max(sumGlosasValor, aceptado + noAceptado);
+      // RECONCILIACIÓN: El importe glosado es el valor literal de la glosa ingresada
+      const glosado = sumGlosasValor;
 
       const servicios = Array.from(new Set(factGlosas.map(g => g.servicio).filter(Boolean)));
       const tipos = Array.from(new Set(factGlosas.map(g => g.tipo_glosa).filter(Boolean)));
