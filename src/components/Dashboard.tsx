@@ -271,13 +271,17 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         <span style={{ fontSize: '0.6rem', color: 'var(--secondary)', fontWeight: 800 }}>AUDITORÍA DIARIA</span>
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>TOTAL DE FACTURAS</p>
+                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>TOTAL DE FACTURAS (HOY)</p>
                         <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>
-                            {metrics.totalCount}
+                            {new Set(glosas.filter(g => {
+                                const today = new Date();
+                                const todayStr = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+                                return (g.fecha || '').includes(todayStr);
+                            }).map(g => (g.factura || '').toUpperCase())).size}
                         </h2>
                     </div>
                     <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>CONTEO ÚNICO DE FACTURAS</p>
+                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>ÚNICAS HOY (TOTAL HISTÓRICO: {metrics.totalCount})</p>
                     </div>
                 </Card>
 
