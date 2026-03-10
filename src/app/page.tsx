@@ -365,6 +365,11 @@ function Home() {
       // ESTRATEGIA: Agrupamos por factura para reconciliación total
       const facturasSet = new Set([...sectionGlosas.map(g => g.factura), ...sectionIngresos.map(i => i.factura)]);
 
+      // DEBUG: Verificar si hay ingresos fuera de estas facturas
+      const allIngresosValue = safeArray(ingresos).reduce((acc, i) => acc + safeNumber(i.valor_aceptado), 0);
+      const sectionIngresosValue = sectionIngresos.reduce((acc, i) => acc + safeNumber(i.valor_aceptado), 0);
+      console.log(`[DEBUG STATS] Global: ${allIngresosValue} | Sección (${currentUpper}): ${sectionIngresosValue}`);
+
       let totalGlosadoValue = 0;
       let totalAceptadoValue = 0;
       let totalNoAceptadoValue = 0;
