@@ -1758,12 +1758,12 @@ const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: 
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="input-group">
-              <label className="label" style={{ color: '#ef4444' }}>Valor No Aceptado (Glosa)</label>
-              <input type="number" className="input" style={{ padding: '0.85rem 1rem', borderColor: 'rgba(239, 68, 68, 0.2)' }} placeholder="0.00" value={formData.valor_no_aceptado} onChange={(e) => setFormData({ ...formData, valor_no_aceptado: e.target.value })} disabled={!isAdmin} />
+              <label className="label" style={{ color: '#10b981' }}>Valor No Aceptado (Glosa)</label>
+              <input type="number" className="input" style={{ padding: '0.85rem 1rem', borderColor: 'rgba(16, 185, 129, 0.2)' }} placeholder="0.00" value={formData.valor_no_aceptado} onChange={(e) => setFormData({ ...formData, valor_no_aceptado: e.target.value })} disabled={!isAdmin} />
             </div>
             <div className="input-group">
-              <label className="label" style={{ color: '#10b981' }}>Valor Aceptado (Pago)</label>
-              <input type="number" className="input" style={{ padding: '0.85rem 1rem', borderColor: 'rgba(16, 185, 129, 0.3)' }} placeholder="0.00" value={formData.valor_aceptado} onChange={(e) => setFormData({ ...formData, valor_aceptado: e.target.value })} disabled={!isAdmin} />
+              <label className="label" style={{ color: '#ef4444' }}>Valor Aceptado (Pago)</label>
+              <input type="number" className="input" style={{ padding: '0.85rem 1rem', borderColor: 'rgba(239, 68, 68, 0.3)' }} placeholder="0.00" value={formData.valor_aceptado} onChange={(e) => setFormData({ ...formData, valor_aceptado: e.target.value })} disabled={!isAdmin} />
             </div>
           </div>
         </div>

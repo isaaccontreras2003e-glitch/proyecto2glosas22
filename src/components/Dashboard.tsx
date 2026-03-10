@@ -224,13 +224,15 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             <DollarSign size={16} color="var(--primary)" />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
+                            {/* Aceptado = ROJO (Pérdida para la IPS) */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '0.75rem', color: '#ff4d4d', fontWeight: 950 }}>${formatPesos(metrics.noAcceptedValue)}</span>
-                                <span style={{ fontSize: '0.55rem', color: 'rgba(255, 77, 77, 0.5)', fontWeight: 800 }}>({metrics.percentNoAcceptedTotal.toFixed(1)}% del total glosado)</span>
+                                <span style={{ fontSize: '0.75rem', color: '#ff4d4d', fontWeight: 950 }}>${formatPesos(metrics.acceptedValue)}</span>
+                                <span style={{ fontSize: '0.55rem', color: 'rgba(255, 77, 77, 0.5)', fontWeight: 800 }}>({metrics.percentAcceptedTotal.toFixed(1)}% del total glosado)</span>
                             </div>
+                            {/* No Aceptado = CYAN (Éxito/Recuperado) */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 950 }}>${formatPesos(metrics.acceptedValue)}</span>
-                                <span style={{ fontSize: '0.55rem', color: 'rgba(56, 189, 248, 0.5)', fontWeight: 800 }}>({metrics.percentAcceptedTotal.toFixed(1)}% del total glosado)</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 950 }}>${formatPesos(metrics.noAcceptedValue)}</span>
+                                <span style={{ fontSize: '0.55rem', color: 'rgba(56, 189, 248, 0.5)', fontWeight: 800 }}>({metrics.percentNoAcceptedTotal.toFixed(1)}% del total glosado)</span>
                             </div>
                         </div>
                     </div>
