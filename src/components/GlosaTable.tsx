@@ -549,7 +549,7 @@ export const GlosaTable = ({
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 <DetailItem icon={<DollarSign size={16} />} label="Valor Glosado" value={`$${formatPesos(selectedGlosa.valor_glosa)}`} isHighlight />
-                                <DetailItem icon={<DollarSign size={16} />} label="Valor Aceptado" value={`$${formatPesos(selectedGlosa.valor_aceptado)}`} isHighlight />
+                                <DetailItem icon={<DollarSign size={16} />} label="Valor Aceptado" value={`$${formatPesos(selectedGlosa.valor_aceptado)}`} isHighlight color="#ef4444" />
                                 <DetailItem icon={<Calendar size={16} />} label="Fecha de Registro" value={selectedGlosa.fecha} />
                                 {/* Build Sync: Timestamp V1.0 */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -655,12 +655,16 @@ export const GlosaTable = ({
     );
 };
 
-const DetailItem = ({ icon, label, value, isBold = false, isHighlight = false }: any) => (
+const DetailItem = ({ icon, label, value, isBold = false, isHighlight = false, color }: any) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ color: 'rgba(255,255,255,0.3)' }}>{icon}</span>
             <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
         </div>
-        <span style={{ fontSize: isHighlight ? '1.25rem' : '1rem', fontWeight: (isBold || isHighlight) ? 800 : 500, color: isHighlight ? 'var(--primary)' : 'white' }}>{value}</span>
+        <span style={{
+            fontSize: isHighlight ? '1.25rem' : '1rem',
+            fontWeight: (isBold || isHighlight) ? 800 : 500,
+            color: color || (isHighlight ? 'var(--primary)' : 'white')
+        }}>{value}</span>
     </div>
 );
