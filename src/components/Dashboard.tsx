@@ -125,9 +125,9 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
         // Percentages
         const percentResponded = totalValue > 0 ? (totalRespondedValue / totalValue) * 100 : 0;
 
-        // Breakdown relative to TOTAL RESPONDED (requested by user for 100% base)
-        const percentAcceptedTotal = totalRespondedValue > 0 ? (acceptedValue / totalRespondedValue) * 100 : 0;
-        const percentNoAcceptedTotal = totalRespondedValue > 0 ? (noAcceptedValue / totalRespondedValue) * 100 : 0;
+        // Breakdown relative to TOTAL GLOSADO (requested by user for exact matching)
+        const percentAcceptedTotal = totalValue > 0 ? (acceptedValue / totalValue) * 100 : 0;
+        const percentNoAcceptedTotal = totalValue > 0 ? (noAcceptedValue / totalValue) * 100 : 0;
 
         return {
             totalValue,
@@ -225,12 +225,12 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '0.75rem', color: '#ff4d4d', fontWeight: 950 }}>${formatPesos(metrics.acceptedValue)}</span>
-                                <span style={{ fontSize: '0.55rem', color: 'rgba(255,77,77,0.5)', fontWeight: 800 }}>({metrics.percentAcceptedTotal.toFixed(1)}% de lo gestionado)</span>
+                                <span style={{ fontSize: '0.75rem', color: '#ff4d4d', fontWeight: 950 }}>${formatPesos(metrics.noAcceptedValue)}</span>
+                                <span style={{ fontSize: '0.55rem', color: 'rgba(255, 77, 77, 0.5)', fontWeight: 800 }}>({metrics.percentNoAcceptedTotal.toFixed(1)}% del total glosado)</span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 950 }}>${formatPesos(metrics.noAcceptedValue)}</span>
-                                <span style={{ fontSize: '0.55rem', color: 'rgba(139,92,246,0.5)', fontWeight: 800 }}>({metrics.percentNoAcceptedTotal.toFixed(1)}% de lo gestionado)</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 950 }}>${formatPesos(metrics.acceptedValue)}</span>
+                                <span style={{ fontSize: '0.55rem', color: 'rgba(56, 189, 248, 0.5)', fontWeight: 800 }}>({metrics.percentAcceptedTotal.toFixed(1)}% del total glosado)</span>
                             </div>
                         </div>
                     </div>
