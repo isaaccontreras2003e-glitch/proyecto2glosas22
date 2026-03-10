@@ -606,7 +606,8 @@ function Home() {
         tipos,
         fecha: fechaActividad,
         timestamp: maxFechaTimestamp,
-        diferencia: glosado - aceptado - noAceptado // DIFERENCIA REAL: Lo que queda por auditar/conciliar
+        diferencia: glosado - aceptado - noAceptado, // DIFERENCIA REAL: Lo que queda por auditar/conciliar
+        tieneIngreso: factIngresos.length > 0
       };
     }).sort((a, b) => b.timestamp - a.timestamp);
   }, [glosas, ingresos, currentMainSection]);

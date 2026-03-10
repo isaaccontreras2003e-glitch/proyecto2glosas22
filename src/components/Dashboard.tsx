@@ -120,12 +120,12 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
         const noAcceptedValue = filteredConsolidado.reduce((acc, curr) => acc + curr.noAceptado, 0);
         const totalRespondedValue = acceptedValue + noAcceptedValue;
 
-        const acceptedCount = glosas.filter(g => g.estado === 'Aceptada').length;
-
         // Percentages
-        const percentResponded = totalValue > 0 ? (totalRespondedValue / totalValue) * 100 : 0;
+        const acceptedCount = filteredConsolidado.filter(item => item.tieneIngreso).length;
 
         // Breakdown relative to TOTAL GLOSADO (requested by user for exact matching)
+        const percentResponded = totalValue > 0 ? (totalRespondedValue / totalValue) * 100 : 0;
+
         const percentAcceptedTotal = totalValue > 0 ? (acceptedValue / totalValue) * 100 : 0;
         const percentNoAcceptedTotal = totalValue > 0 ? (noAcceptedValue / totalValue) * 100 : 0;
 
