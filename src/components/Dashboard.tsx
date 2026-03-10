@@ -281,7 +281,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         </h2>
                     </div>
                     <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>ÚNICAS HOY (TOTAL HISTÓRICO: {metrics.totalCount})</p>
+                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>ÚNICAS HOY</p>
                     </div>
                 </Card>
 
