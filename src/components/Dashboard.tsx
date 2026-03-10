@@ -113,7 +113,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
     // 2. Metrics for the 4 Cards
     const metrics = useMemo(() => {
         const totalValue = filteredConsolidado.reduce((acc, curr) => acc + curr.glosado, 0);
-        const totalCount = glosas.length; // Count of individual glosa lines
+        const totalCount = filteredConsolidado.length; // Count of unique invoices (Normalized)
 
         // Financial metrics from filtered consolidated list (Truth)
         const acceptedValue = filteredConsolidado.reduce((acc, curr) => acc + curr.aceptado, 0);
@@ -262,11 +262,11 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                     <div>
                         <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>FACTURAS INGRESADAS HOY</p>
                         <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>
-                            {glosas.filter(g => {
+                            {new Set(glosas.filter(g => {
                                 const today = new Date();
                                 const todayStr = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
                                 return (g.fecha || '').includes(todayStr);
-                            }).length}
+                            }).map(g => (g.factura || '').toUpperCase())).size}
                         </h2>
                     </div>
                     <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
@@ -283,7 +283,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                     </div>
                     <div>
                         <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>VALORES ACEPTADOS (PAGO)</p>
-                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: '#ff4d4d' }}>-${formatPesos(metrics.acceptedValue)}</h2>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: '#ff4d4d' }}>${formatPesos(metrics.acceptedValue)}</h2>
                     </div>
                     <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>

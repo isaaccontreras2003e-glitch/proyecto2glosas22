@@ -359,11 +359,14 @@ function Home() {
   const stats = useMemo(() => {
     try {
       const currentUpper = currentMainSection.toUpperCase();
-      const sectionGlosas = safeArray(glosas).filter(g => ((g as any).seccion?.toUpperCase() || 'GLOSAS') === currentUpper);
-      const sectionIngresos = safeArray(ingresos).filter(i => ((i as any).seccion?.toUpperCase() || 'GLOSAS') === currentUpper);
+      const sectionGlosas = safeArray(glosas).filter(g => (((g as any).seccion || 'GLOSAS').toUpperCase()) === currentUpper);
+      const sectionIngresos = safeArray(ingresos).filter(i => (((i as any).seccion || 'GLOSAS').toUpperCase()) === currentUpper);
 
-      // ESTRATEGIA: Agrupamos por factura para reconciliación total
-      const facturasSet = new Set([...sectionGlosas.map(g => g.factura), ...sectionIngresos.map(i => i.factura)]);
+      // ESTRATEGIA: Agrupamos por factura para reconciliación total (NORMALIZADO A MAYÚSCULAS)
+      const facturasSet = new Set([
+        ...sectionGlosas.map(g => (g.factura || '').trim().toUpperCase()),
+        ...sectionIngresos.map(i => (i.factura || '').trim().toUpperCase())
+      ]);
 
       // DEBUG: Verificar si hay ingresos fuera de estas facturas
       const allIngresosValue = safeArray(ingresos).reduce((acc, i) => acc + safeNumber(i.valor_aceptado), 0);
@@ -375,8 +378,9 @@ function Home() {
       let totalNoAceptadoValue = 0;
 
       facturasSet.forEach(f => {
-        const factGlosas = sectionGlosas.filter(g => g.factura === f);
-        const factIngresos = sectionIngresos.filter(i => i.factura === f);
+        if (!f) return;
+        const factGlosas = sectionGlosas.filter(g => (g.factura || '').trim().toUpperCase() === f);
+        const factIngresos = sectionIngresos.filter(i => (i.factura || '').trim().toUpperCase() === f);
 
         // Totales base
         const sumGlosasValor = factGlosas.reduce((acc, g) => acc + safeNumber(g.valor_glosa), 0);
@@ -563,14 +567,18 @@ function Home() {
       return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
     };
 
-    const sectionGlosas = glosas.filter(g => (g as any).seccion === currentMainSection || (!(g as any).seccion && currentMainSection === 'GLOSAS'));
-    const sectionIngresos = ingresos.filter(i => (i as any).seccion === currentMainSection || (!(i as any).seccion && currentMainSection === 'GLOSAS'));
+    const currentUpper = currentMainSection.toUpperCase();
+    const sectionGlosas = glosas.filter(g => ((g as any).seccion || 'GLOSAS').toUpperCase() === currentUpper);
+    const sectionIngresos = ingresos.filter(i => ((i as any).seccion || 'GLOSAS').toUpperCase() === currentUpper);
 
-    const facturas = new Set([...sectionGlosas.map(g => g.factura), ...sectionIngresos.map(i => i.factura)].filter(f => f && f.trim() !== ''));
+    const facturas = new Set([
+      ...sectionGlosas.map(g => (g.factura || '').trim().toUpperCase()),
+      ...sectionIngresos.map(i => (i.factura || '').trim().toUpperCase())
+    ].filter(Boolean));
 
     return Array.from(facturas).map(f => {
-      const factGlosas = sectionGlosas.filter(g => g.factura === f);
-      const factIngresos = sectionIngresos.filter(i => i.factura === f);
+      const factGlosas = sectionGlosas.filter(g => (g.factura || '').trim().toUpperCase() === f);
+      const factIngresos = sectionIngresos.filter(i => (i.factura || '').trim().toUpperCase() === f);
 
       const sumGlosasValor = factGlosas.reduce((acc, g) => acc + g.valor_glosa, 0);
 
