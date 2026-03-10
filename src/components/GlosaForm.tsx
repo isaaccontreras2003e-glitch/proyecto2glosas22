@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Save, Plus, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './Card';
@@ -44,6 +44,29 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
     const { showToast } = useToast();
     const [forceSubmit, setForceSubmit] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+
+    // PERSISTENCIA: Cargar datos guardados al montar
+    useEffect(() => {
+        const saved = localStorage.getItem(`glosa_form_draft_${currentSeccion}`);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                setFormData(prev => ({ ...prev, ...parsed }));
+            } catch (e) {
+                console.error('Error cargando borrador:', e);
+            }
+        }
+    }, [currentSeccion]);
+
+    // PERSISTENCIA: Guardar cambios automáticamente
+    useEffect(() => {
+        const hasData = Object.values(formData).some(val => val !== '' && val !== 'Tarifas' && val !== 'Pendiente');
+        if (hasData) {
+            localStorage.setItem(`glosa_form_draft_${currentSeccion}`, JSON.stringify(formData));
+        } else {
+            localStorage.removeItem(`glosa_form_draft_${currentSeccion}`);
+        }
+    }, [formData, currentSeccion]);
 
     // Cálculos de control diario con formato MANUAL y SEGURO (DD/MM/YYYY)
     const todayStr = useMemo(() => {
@@ -193,6 +216,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
             tipo_glosa: 'Tarifas',
             estado: 'Pendiente'
         });
+        localStorage.removeItem(`glosa_form_draft_${currentSeccion}`);
         setForceSubmit(false);
 
         console.log('✅ Registro enviado y formulario reseteado:', uniqueId);

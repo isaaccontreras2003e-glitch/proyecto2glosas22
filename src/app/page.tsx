@@ -1609,6 +1609,30 @@ function Home() {
 
 const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: (ingreso: Ingreso) => void, isAdmin: boolean, currentSeccion: string }) => {
   const [formData, setFormData] = useState({ factura: '', valor_aceptado: '', valor_no_aceptado: '' });
+  const key = `ingreso_form_draft_${currentSeccion}`;
+
+  // PERSISTENCIA: Cargar datos guardados
+  useEffect(() => {
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setFormData(prev => ({ ...prev, ...parsed }));
+      } catch (e) {
+        console.error('Error cargando borrador ingreso:', e);
+      }
+    }
+  }, [key]);
+
+  // PERSISTENCIA: Guardar cambios
+  useEffect(() => {
+    const hasData = Object.values(formData).some(val => val !== '');
+    if (hasData) {
+      localStorage.setItem(key, JSON.stringify(formData));
+    } else {
+      localStorage.removeItem(key);
+    }
+  }, [formData, key]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1622,6 +1646,7 @@ const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: 
       seccion: currentSeccion
     });
     setFormData({ factura: '', valor_aceptado: '', valor_no_aceptado: '' });
+    localStorage.removeItem(key);
   };
 
   return (
