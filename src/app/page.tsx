@@ -362,11 +362,10 @@ function Home() {
       const sectionGlosas = safeArray(glosas).filter(g => ((g as any).seccion?.toUpperCase() || 'GLOSAS') === currentUpper);
       const sectionIngresos = safeArray(ingresos).filter(i => ((i as any).seccion?.toUpperCase() || 'GLOSAS') === currentUpper);
 
-      const totalGlosadoValue = sectionGlosas.reduce((acc, curr) => acc + safeNumber(curr.valor_glosa), 0);
-
-      // ESTRATEGIA: Para evitar doble conteo, agrupamos por factura
+      // ESTRATEGIA: Agrupamos por factura para reconciliación total
       const facturasSet = new Set([...sectionGlosas.map(g => g.factura), ...sectionIngresos.map(i => i.factura)]);
 
+      let totalGlosadoValue = 0;
       let totalAceptadoValue = 0;
       let totalNoAceptadoValue = 0;
 
@@ -374,31 +373,29 @@ function Home() {
         const factGlosas = sectionGlosas.filter(g => g.factura === f);
         const factIngresos = sectionIngresos.filter(i => i.factura === f);
 
-        // Valor aceptado: Si hay ingresos manuales, usamos esos. Si no, usamos lo de las glosas aceptadas.
+        // Totales base
+        const sumGlosasValor = factGlosas.reduce((acc, g) => acc + safeNumber(g.valor_glosa), 0);
+
+        // Valor aceptado
         const sumIngresosAceptado = factIngresos.reduce((acc, i) => acc + safeNumber(i.valor_aceptado), 0);
         const sumGlosasAceptado = factGlosas.reduce((acc, g) => acc + safeNumber(g.valor_aceptado), 0);
+        const currentAceptado = sumIngresosAceptado > 0 ? sumIngresosAceptado : sumGlosasAceptado;
 
-        // REGLA DE NEGOCIO: Los ingresos manuales son la verdad absoluta. 
-        // Si hay ingresos manuales, ignoramos el valor_aceptado de la glosa para esa factura para no sumar doble.
-        if (sumIngresosAceptado > 0) {
-          totalAceptadoValue += sumIngresosAceptado;
-        } else {
-          totalAceptadoValue += sumGlosasAceptado;
-        }
-
-        // Valor no aceptado: Misma lógica
+        // Valor no aceptado
         const sumIngresosNoAceptado = factIngresos.reduce((acc, i) => acc + safeNumber(i.valor_no_aceptado), 0);
         const sumGlosasNoAceptado = factGlosas.reduce((acc, g) => {
           if (g.valor_no_aceptado !== undefined && g.valor_no_aceptado !== null) return acc + safeNumber(g.valor_no_aceptado);
           if (g.estado !== 'Pendiente') return acc + (safeNumber(g.valor_glosa) - safeNumber(g.valor_aceptado));
           return acc;
         }, 0);
+        const currentNoAceptado = sumIngresosNoAceptado > 0 ? sumIngresosNoAceptado : sumGlosasNoAceptado;
 
-        if (sumIngresosNoAceptado > 0) {
-          totalNoAceptadoValue += sumIngresosNoAceptado;
-        } else {
-          totalNoAceptadoValue += sumGlosasNoAceptado;
-        }
+        // RECONCILIACIÓN DE GLOSA: El importe glosado debe ser al menos la suma de las respuestas
+        // Esto evita que Respondido > Glosado si hay pagos sin glosas registradas.
+        const respondedTotal = currentAceptado + currentNoAceptado;
+        totalGlosadoValue += Math.max(sumGlosasValor, respondedTotal);
+        totalAceptadoValue += currentAceptado;
+        totalNoAceptadoValue += currentNoAceptado;
       });
 
       const totalRegistradoInternoValue = sectionGlosas
@@ -568,12 +565,11 @@ function Home() {
       const factGlosas = sectionGlosas.filter(g => g.factura === f);
       const factIngresos = sectionIngresos.filter(i => i.factura === f);
 
-      const glosado = factGlosas.reduce((acc, g) => acc + g.valor_glosa, 0);
+      const sumGlosasValor = factGlosas.reduce((acc, g) => acc + g.valor_glosa, 0);
 
       // Sumar aceptados de AMBOS con lógica de prioridad para evitar duplicidad
       const aceptadoIngresos = factIngresos.reduce((acc, i) => acc + (i.valor_aceptado || 0), 0);
       const aceptadoGlosas = factGlosas.reduce((acc, g) => acc + (g.valor_aceptado || 0), 0);
-
       let aceptado = aceptadoIngresos > 0 ? aceptadoIngresos : aceptadoGlosas;
 
       // Sumar no aceptados de AMBOS con misma lógica
@@ -583,8 +579,10 @@ function Home() {
         if (g.estado !== 'Pendiente') return acc + (g.valor_glosa - (g.valor_aceptado || 0));
         return acc;
       }, 0);
-
       let noAceptado = noAceptadoIngresos > 0 ? noAceptadoIngresos : noAceptadoGlosas;
+
+      // RECONCILIACIÓN: El importe glosado es el máximo entre el registro de glosa y la suma de respuestas
+      const glosado = Math.max(sumGlosasValor, aceptado + noAceptado);
 
       const servicios = Array.from(new Set(factGlosas.map(g => g.servicio).filter(Boolean)));
       const tipos = Array.from(new Set(factGlosas.map(g => g.tipo_glosa).filter(Boolean)));
@@ -605,7 +603,7 @@ function Home() {
         tipos,
         fecha: fechaActividad,
         timestamp: maxFechaTimestamp,
-        diferencia: glosado - aceptado
+        diferencia: glosado - aceptado - noAceptado // DIFERENCIA REAL: Lo que queda por auditar/conciliar
       };
     }).sort((a, b) => b.timestamp - a.timestamp);
   }, [glosas, ingresos, currentMainSection]);
