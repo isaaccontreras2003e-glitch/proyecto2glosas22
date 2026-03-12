@@ -128,6 +128,8 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                 percentResponded: executiveStats.totalGlosado > 0 ? ((executiveStats.totalAceptado + executiveStats.totalNoAceptado) / executiveStats.totalGlosado) * 100 : 0,
                 percentAcceptedTotal: executiveStats.percentAceptado,
                 percentNoAcceptedTotal: executiveStats.totalGlosado > 0 ? (executiveStats.totalNoAceptado / executiveStats.totalGlosado) * 100 : 0,
+                pendingValue: executiveStats.totalPendiente,
+                percentPendingTotal: executiveStats.totalGlosado > 0 ? (executiveStats.totalPendiente / executiveStats.totalGlosado) * 100 : 0,
                 waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
             };
         }
@@ -150,6 +152,8 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
             percentResponded: totalValue > 0 ? (totalRespondedValue / totalValue) * 100 : 0,
             percentAcceptedTotal: totalValue > 0 ? (acceptedValue / totalValue) * 100 : 0,
             percentNoAcceptedTotal: totalValue > 0 ? (noAcceptedValue / totalValue) * 100 : 0,
+            pendingValue: totalValue - acceptedValue - noAcceptedValue,
+            percentPendingTotal: totalValue > 0 ? ((totalValue - acceptedValue - noAcceptedValue) / totalValue) * 100 : 0,
             waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
         };
     }, [filteredConsolidado, selectedService, selectedType, executiveStats]);
@@ -244,6 +248,11 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 950 }}>${formatPesos(metrics.noAcceptedValue)}</span>
                                 <span style={{ fontSize: '0.55rem', color: 'rgba(56, 189, 248, 0.5)', fontWeight: 800 }}>({metrics.percentNoAcceptedTotal.toFixed(1)}% del total glosado)</span>
+                            </div>
+                            {/* Pendiente = NARANJA (Por responder) */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '0.75rem', color: '#fbbf24', fontWeight: 950 }}>${formatPesos((metrics as any).pendingValue)}</span>
+                                <span style={{ fontSize: '0.55rem', color: 'rgba(251, 191, 36, 0.5)', fontWeight: 800 }}>({(metrics as any).percentPendingTotal.toFixed(1)}% del total glosado)</span>
                             </div>
                         </div>
                     </div>
