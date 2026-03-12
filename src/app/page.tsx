@@ -411,7 +411,7 @@ function Home() {
         tipos,
         fecha: fechaActividad,
         timestamp: maxFechaTimestamp,
-        diferencia: sumGlosasValor - aceptado - noAceptado,
+        diferencia: sumGlosasValor - aceptado,
         tieneIngreso: factIngresos.length > 0
       };
     }).sort((a, b) => b.timestamp - a.timestamp);
