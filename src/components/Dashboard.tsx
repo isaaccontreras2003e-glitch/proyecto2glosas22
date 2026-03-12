@@ -283,9 +283,19 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>TOTAL DE FACTURAS (HOY)</p>
                         <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>
                             {new Set(glosas.filter(g => {
-                                const today = new Date();
-                                const todayStr = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
-                                return (g.fecha || '').includes(todayStr);
+                                if (!g.fecha) return false;
+                                try {
+                                    const today = new Date();
+                                    const [d, m, y] = g.fecha.split(',')[0].trim().split('/');
+                                    const glosaDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+                                    return glosaDate.getDate() === today.getDate() &&
+                                        glosaDate.getMonth() === today.getMonth() &&
+                                        glosaDate.getFullYear() === today.getFullYear();
+                                } catch (e) {
+                                    // Fallback to simple string match if parsing fails
+                                    const todayStr = new Date().toLocaleDateString('es-ES');
+                                    return (g.fecha || '').includes(todayStr);
+                                }
                             }).map(g => (g.factura || '').toUpperCase())).size}
                         </h2>
                     </div>

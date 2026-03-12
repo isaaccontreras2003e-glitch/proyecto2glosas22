@@ -230,7 +230,7 @@ function Home() {
   // Migración de datos desde localStorage a Supabase (SUPER ESCANEO V5.1 - Sensible a Contexto)
   const migrateData = useCallback(async (force = false) => {
     try {
-      const isMigrated = localStorage.getItem('migrated_to_supabase_v5_final_context');
+      const isMigrated = localStorage.getItem('migrated_to_supabase_v9_recovery_fix');
       if (isMigrated === 'true' && !force) return;
 
       console.log(`--- INICIANDO ${force ? 'RESCATE PROFUNDO' : 'SUPER ESCANEO'} V8.7 ---`);
@@ -286,7 +286,7 @@ function Home() {
         showToast('No se encontraron más registros para recuperar.', 'info');
       }
 
-      localStorage.setItem('migrated_to_supabase_v5_final_context', 'true');
+      localStorage.setItem('migrated_to_supabase_v9_recovery_fix', 'true');
     } catch (err: any) {
       console.error('Error durante la recuperación:', err);
     } finally {
@@ -1325,13 +1325,21 @@ function Home() {
                         <div style={{ width: '4px', height: '24px', background: 'var(--primary)', borderRadius: '2px' }}></div>
                         <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'white', margin: 0 }}>Pendientes de Ingreso Interno ({currentMainSection})</h3>
                       </div>
-
                       <GlosaTable
                         glosas={currentSectionGlosas.filter(g => {
-                          const today = new Date();
-                          const todayStr = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
-                          // v9.0: FLUJO DE DESCARGA - Solo mostrar si NO está registrada internamente
-                          return (g.fecha || '').includes(todayStr) && !g.registrada_internamente;
+                          if (!g.fecha) return false;
+                          try {
+                            const today = new Date();
+                            const [d, m, y] = g.fecha.split(',')[0].trim().split('/');
+                            const glosaDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+                            const isToday = glosaDate.getDate() === today.getDate() &&
+                              glosaDate.getMonth() === today.getMonth() &&
+                              glosaDate.getFullYear() === today.getFullYear();
+                            // v9.0: FLUJO DE DESCARGA - Solo mostrar si NO está registrada internamente
+                            return isToday && !g.registrada_internamente;
+                          } catch (e) {
+                            return false;
+                          }
                         })}
                         onUpdateStatus={handleUpdateStatus}
                         onUpdateGlosa={handleUpdateGlosa}
@@ -1364,10 +1372,27 @@ function Home() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
                       <div>
                         <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>Consolidado de {currentMainSection}</h2>
-                        <p style={{ color: 'var(--text-secondary)', maxWidth: '800px' }}>
-                          Resumen agrupado por factura para visualizar el balance final de <strong>{currentMainSection.toLowerCase()}</strong>.
-                          Permite comparar el monto total frente a lo aceptado y la diferencia pendiente.
-                        </p>
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.5rem' }}>
+                          <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: 0 }}>
+                            Resumen agrupado por factura para visualizar el balance final de <strong>{currentMainSection.toLowerCase()}</strong>.
+                          </p>
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            onClick={() => migrateData(true)}
+                            className="btn"
+                            style={{
+                              padding: '4px 12px',
+                              fontSize: '0.7rem',
+                              background: 'rgba(239, 68, 68, 0.1)',
+                              color: '#f87171',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              fontWeight: 800,
+                              borderRadius: '6px'
+                            }}
+                          >
+                            RESCATAR FACTURAS PERDIDAS
+                          </motion.button>
+                        </div>
                       </div>
                     </div>
 
@@ -1407,7 +1432,23 @@ function Home() {
 
                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: '2.5rem' }}>
                       <div style={{ marginBottom: '1.5rem' }}>
-                        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'white' }}>Listado Detallado</h3>
+                        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'white', margin: 0 }}>Listado Detallado</h3>
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          onClick={handleDeepRecovery}
+                          className="btn"
+                          style={{
+                            padding: '4px 12px',
+                            fontSize: '0.7rem',
+                            background: 'rgba(16, 185, 129, 0.1)',
+                            color: '#34d399',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            fontWeight: 800,
+                            borderRadius: '6px'
+                          }}
+                        >
+                          SINCRO. REGISTRO INTERNO (CHECK POINT)
+                        </motion.button>
                       </div>
                       <GlosaTable
                         glosas={filteredGlosas}
