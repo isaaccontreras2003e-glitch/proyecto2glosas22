@@ -160,26 +160,34 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
         };
     }, [filteredConsolidado, selectedService, selectedType, executiveStats]);
 
-    // 3. Category Bars
     const categories = useMemo(() => {
         const types = ['Tarifas', 'Soportes', 'RIPS', 'Autorización'];
-        const total = glosas.length || 1;
-        return types.map(t => {
-            const count = glosas.filter(g => g.tipo_glosa === t).length;
-            const p = Math.round((count / total) * 100);
-            return { label: t, p, count };
+        const counts: Record<string, number> = { 'Tarifas': 0, 'Soportes': 0, 'RIPS': 0, 'Autorización': 0 };
+
+        allConsolidado.forEach(c => {
+            const primaryType = c.tipos?.find((t: string) => types.includes(t)) || 'Tarifas';
+            counts[primaryType]++;
         });
-    }, [glosas]);
+
+        const total = allConsolidado.length || 1;
+        return types.map(t => ({
+            label: t,
+            p: Math.round((counts[t] / total) * 100),
+            count: counts[t]
+        }));
+    }, [allConsolidado]);
 
     // 4. Status Stats (Bottom legend)
     const statusStats = useMemo(() => {
         const total = metrics.totalValue || 1;
         const acceptedPerc = Math.round((metrics.acceptedValue / total) * 100);
-        const remainingPerc = 100 - acceptedPerc;
+        const noAcceptedPerc = Math.round((metrics.noAcceptedValue / total) * 100);
+        const pendingPerc = Math.max(0, 100 - acceptedPerc - noAcceptedPerc);
 
         return [
-            { label: 'ACEPTADO', p: acceptedPerc, color: '#ff4d4d' },
-            { label: 'GESTIÓN', p: remainingPerc, color: 'var(--primary)' }
+            { label: 'ACEPTADA', p: acceptedPerc, color: '#ff4d4d' },
+            { label: 'NO ACEPTADA', p: noAcceptedPerc, color: '#f59e0b' },
+            { label: 'PENDIENTE', p: pendingPerc, color: 'var(--primary)' }
         ];
     }, [metrics]);
 
@@ -298,30 +306,16 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <FileText size={16} color="var(--secondary)" />
                         </div>
-                        <span style={{ fontSize: '0.6rem', color: 'var(--secondary)', fontWeight: 800 }}>HOY</span>
+                        <span style={{ fontSize: '0.6rem', color: 'var(--secondary)', fontWeight: 800 }}>SISTEMA</span>
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>TOTAL DE FACTURAS (HOY)</p>
-                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>
-                            {new Set(glosas.filter(g => {
-                                if (!g.fecha) return false;
-                                try {
-                                    const today = new Date();
-                                    const [d, m, y] = g.fecha.split(',')[0].trim().split('/');
-                                    const glosaDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
-                                    return glosaDate.getDate() === today.getDate() &&
-                                        glosaDate.getMonth() === today.getMonth() &&
-                                        glosaDate.getFullYear() === today.getFullYear();
-                                } catch (e) {
-                                    // Fallback to simple string match if parsing fails
-                                    const todayStr = new Date().toLocaleDateString('es-ES');
-                                    return (g.fecha || '').includes(todayStr);
-                                }
-                            }).map(g => (g.factura || '').toUpperCase())).size}
+                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>CANTIDAD TOTAL DE FACTURAS</p>
+                        <h2 style={{ fontSize: '2rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>
+                            {metrics.totalCount}
                         </h2>
                     </div>
                     <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>ÚNICAS HOY</p>
+                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>FACTURAS ÚNICAS (TOTAL)</p>
                     </div>
                 </Card>
 
@@ -377,7 +371,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                 {/* Management Status (RIGHT) */}
                 <Card style={{ padding: '2rem', display: 'flex', flexDirection: 'column' }}>
                     <h3 style={{ fontSize: '0.85rem', fontWeight: 900, marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <PieChart size={16} color="var(--primary)" /> DISTRIBUCIÓN DE GLOSAS (ACEPTACIÓN)
+                        <PieChart size={16} color="var(--primary)" /> DISTRIBUCIÓN DE GLOSAS (TOTAL)
                     </h3>
                     <div style={{ position: 'relative', width: '200px', height: '200px', margin: '0 auto 2.5rem auto' }}>
                         <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
