@@ -69,7 +69,7 @@ export const GlosaTable = ({
         switch (status) {
             case 'Pendiente': return { background: 'rgba(139, 92, 246, 0.15)', color: '#a78bfa', borderColor: 'rgba(139, 92, 246, 0.3)' };
             case 'Respondida': return { background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', borderColor: 'rgba(16, 185, 129, 0.3)' };
-            case 'Aceptada': return { background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.3)' };
+            case 'Aceptada': return { background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', borderColor: 'rgba(59, 130, 246, 0.3)' };
             default: return {};
         }
     };
@@ -549,7 +549,7 @@ export const GlosaTable = ({
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 <DetailItem icon={<DollarSign size={16} />} label="Valor Glosado" value={`$${formatPesos(selectedGlosa.valor_glosa)}`} isHighlight />
-                                <DetailItem icon={<DollarSign size={16} />} label="Valor Aceptado" value={`$${formatPesos(selectedGlosa.valor_aceptado)}`} isHighlight color="#ef4444" />
+                                <DetailItem icon={<DollarSign size={16} />} label="Valor Aceptado" value={`$${formatPesos(selectedGlosa.valor_aceptado)}`} isHighlight color="#3b82f6" />
                                 <DetailItem icon={<Calendar size={16} />} label="Fecha de Registro" value={selectedGlosa.fecha} />
                                 {/* Build Sync: Timestamp V1.0 */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

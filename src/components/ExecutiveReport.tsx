@@ -9,6 +9,7 @@ interface ExecutiveReportProps {
     stats: {
         totalGlosado: number;
         totalAceptado: number;
+        totalNoAceptado: number;
         totalPendiente: number;
         totalRegistradoInterno: number;
         percentAceptado: number;
@@ -32,11 +33,11 @@ export const ExecutiveReport = ({ stats }: ExecutiveReportProps) => {
             description: 'Total acumulado de glosas registradas'
         },
         {
-            title: 'VALORES ACEPTADOS',
-            value: formatCurrency(stats.totalAceptado),
+            title: 'VALORES AUDITADOS',
+            value: formatCurrency(stats.totalAceptado + (stats.totalNoAceptado || 0)),
             icon: <CheckCircle size={24} />,
-            color: '#ef4444',
-            description: `${stats.percentAceptado}% de efectividad en respuesta`
+            color: '#3b82f6',
+            description: `${Math.round(((stats.totalAceptado + (stats.totalNoAceptado || 0)) / (stats.totalGlosado || 1)) * 100)}% de avance en auditoría`
         },
         {
             title: 'VALORES EN PENDIENTE',
@@ -46,11 +47,11 @@ export const ExecutiveReport = ({ stats }: ExecutiveReportProps) => {
             description: 'Saldo pendiente por gestionar/conciliar'
         },
         {
-            title: 'TOTAL FACTURAS ACEPTADAS',
+            title: 'CONCILIADO INTERNO',
             value: formatCurrency(stats.totalRegistradoInterno),
             icon: <FileText size={24} />,
-            color: '#3b82f6',
-            description: `${stats.percentRegistrado}% del valor total conciliado en sistema`
+            color: '#00f2fe',
+            description: `${stats.percentRegistrado}% registrado en sistema contable`
         }
     ];
 

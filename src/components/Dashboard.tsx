@@ -179,7 +179,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
         return [
             { label: 'PEND.', p: Math.round((pending / total) * 100), color: 'rgba(255,255,255,0.2)' },
             { label: 'RESP.', p: Math.round((responded / total) * 100), color: 'var(--primary)' },
-            { label: 'ACEPT.', p: Math.round((accepted / total) * 100), color: '#ff4d4d' }
+            { label: 'ACEPT.', p: Math.round((accepted / total) * 100), color: 'var(--secondary)' }
         ];
     }, [glosas]);
 
@@ -239,20 +239,20 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             <DollarSign size={16} color="var(--primary)" />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
-                            {/* Aceptado = ROJO (Pérdida para la IPS) */}
+                            {/* Aceptado = AZUL (Procesado) */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '0.75rem', color: '#ff4d4d', fontWeight: 950 }}>${formatPesos(metrics.acceptedValue)}</span>
-                                <span style={{ fontSize: '0.55rem', color: 'rgba(255, 77, 77, 0.5)', fontWeight: 800 }}>({metrics.percentAcceptedTotal.toFixed(1)}% del total glosado)</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--secondary)', fontWeight: 950 }}>${formatPesos(metrics.acceptedValue)}</span>
+                                <span style={{ fontSize: '0.55rem', color: 'rgba(79, 172, 254, 0.5)', fontWeight: 800 }}>({metrics.percentAcceptedTotal.toFixed(1)}% Aceptado)</span>
                             </div>
                             {/* No Aceptado = CYAN (Éxito/Recuperado) */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 950 }}>${formatPesos(metrics.noAcceptedValue)}</span>
-                                <span style={{ fontSize: '0.55rem', color: 'rgba(56, 189, 248, 0.5)', fontWeight: 800 }}>({metrics.percentNoAcceptedTotal.toFixed(1)}% del total glosado)</span>
+                                <span style={{ fontSize: '0.55rem', color: 'rgba(56, 189, 248, 0.5)', fontWeight: 800 }}>({metrics.percentNoAcceptedTotal.toFixed(1)}% No Aceptado)</span>
                             </div>
                             {/* Pendiente = NARANJA (Por responder) */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ fontSize: '0.75rem', color: '#fbbf24', fontWeight: 950 }}>${formatPesos((metrics as any).pendingValue)}</span>
-                                <span style={{ fontSize: '0.55rem', color: 'rgba(251, 191, 36, 0.5)', fontWeight: 800 }}>({(metrics as any).percentPendingTotal.toFixed(1)}% del total glosado)</span>
+                                <span style={{ fontSize: '0.55rem', color: 'rgba(251, 191, 36, 0.5)', fontWeight: 800 }}>({(metrics as any).percentPendingTotal.toFixed(1)}% Pendiente)</span>
                             </div>
                         </div>
                     </div>
@@ -265,7 +265,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${Math.min(100, metrics.percentResponded)}%` }}
-                                style={{ height: '100%', background: 'linear-gradient(90deg, #ff4d4d, var(--primary))', borderRadius: '100px', boxShadow: '0 0 10px var(--primary-glow)' }}
+                                style={{ height: '100%', background: 'linear-gradient(90deg, var(--secondary), var(--primary))', borderRadius: '100px', boxShadow: '0 0 10px var(--primary-glow)' }}
                             />
                         </div>
                         <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px', fontWeight: 700 }}>TOTAL VALORES RESPONDIDOS</p>
@@ -304,27 +304,27 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                     </div>
                 </Card>
 
-                <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid rgba(0, 242, 254, 0.2)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{ width: '32px', height: '32px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <AlertTriangle size={16} color="#ff4d4d" />
+                        <div style={{ width: '32px', height: '32px', background: 'rgba(0, 242, 254, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <CheckCircle size={16} color="var(--primary)" />
                         </div>
-                        <span style={{ fontSize: '0.65rem', color: '#ff4d4d', fontWeight: 900 }}>PÉRDIDA IPS</span>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 900 }}>METAS ALCANZADAS</span>
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>VALORES ACEPTADOS (PAGO)</p>
-                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: '#ff4d4d' }}>${formatPesos(metrics.acceptedValue)}</h2>
+                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>VALORES AUDITADOS (TOTAL)</p>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'var(--primary)' }}>${formatPesos(metrics.acceptedValue + metrics.noAcceptedValue)}</h2>
                     </div>
                     <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                            <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>IMPACTO EN FACTURACIÓN</span>
-                            <span style={{ fontSize: '0.55rem', color: '#ff4d4d', fontWeight: 950 }}>{metrics.totalValue > 0 ? ((metrics.acceptedValue / metrics.totalValue) * 100).toFixed(1) : 0}%</span>
+                            <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>COBERTURA DE AUDITORÍA</span>
+                            <span style={{ fontSize: '0.55rem', color: 'var(--primary)', fontWeight: 950 }}>{metrics.totalValue > 0 ? (((metrics.acceptedValue + metrics.noAcceptedValue) / metrics.totalValue) * 100).toFixed(1) : 0}%</span>
                         </div>
                         <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
                             <motion.div
                                 initial={{ width: 0 }}
-                                animate={{ width: `${Math.min(100, metrics.totalValue > 0 ? (metrics.acceptedValue / metrics.totalValue) * 100 : 0)}%` }}
-                                style={{ height: '100%', background: '#ff4d4d', borderRadius: '10px', boxShadow: '0 0 10px rgba(255, 77, 77, 0.3)' }}
+                                animate={{ width: `${Math.min(100, metrics.totalValue > 0 ? ((metrics.acceptedValue + metrics.noAcceptedValue) / metrics.totalValue) * 100 : 0)}%` }}
+                                style={{ height: '100%', background: 'var(--primary)', borderRadius: '10px', boxShadow: '0 0 10px var(--primary-glow)' }}
                             />
                         </div>
                     </div>

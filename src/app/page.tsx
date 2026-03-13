@@ -1754,7 +1754,7 @@ const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: 
               <input type="number" className="input" style={{ padding: '0.85rem 1rem', borderColor: 'rgba(16, 185, 129, 0.2)' }} placeholder="0.00" value={formData.valor_no_aceptado} onChange={(e) => setFormData({ ...formData, valor_no_aceptado: e.target.value })} disabled={!isAdmin} />
             </div>
             <div className="input-group">
-              <label className="label" style={{ color: '#ef4444' }}>Valor Aceptado (Pago)</label>
+              <label className="label" style={{ color: 'var(--primary)' }}>Valor Aceptado (Pago)</label>
               <input type="number" className="input" style={{ padding: '0.85rem 1rem', borderColor: 'rgba(239, 68, 68, 0.3)' }} placeholder="0.00" value={formData.valor_aceptado} onChange={(e) => setFormData({ ...formData, valor_aceptado: e.target.value })} disabled={!isAdmin} />
             </div>
           </div>
@@ -1797,7 +1797,7 @@ const IngresoList = ({
         </h3>
         <div style={{ textAlign: 'right' }}>
           <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Aceptado</p>
-          <p style={{ fontSize: '1.5rem', fontWeight: 950, color: '#ef4444' }}>${formatPesos(totalAceptado)}</p>
+          <p style={{ fontSize: '1.5rem', fontWeight: 950, color: 'var(--primary)' }}>${formatPesos(totalAceptado)}</p>
         </div>
       </div>
 
@@ -1869,7 +1869,7 @@ const IngresoList = ({
                     </div>
                     <div>
                       <p style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.2rem' }}>Aceptado</p>
-                      <p style={{ color: '#ef4444', fontWeight: 900, fontSize: '0.95rem' }}>${formatPesos(i.valor_aceptado)}</p>
+                      <p style={{ color: 'var(--primary)', fontWeight: 900, fontSize: '0.95rem' }}>${formatPesos(i.valor_aceptado)}</p>
                     </div>
                   </div>
                 </div>
@@ -1913,7 +1913,7 @@ const ConsolidadoTable = ({ data }: { data: any[] }) => {
                 <td style={{ padding: '1rem 0.75rem', fontWeight: 800, color: 'white' }}>{item.factura}</td>
                 <td style={{ padding: '1rem 0.75rem', color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{item.fecha}</td>
                 <td style={{ padding: '1rem 0.75rem', fontWeight: 700 }}>${formatPesos(item.glosado)}</td>
-                <td style={{ padding: '1rem 0.75rem', color: '#ef4444', fontWeight: 700 }}>${formatPesos(item.aceptado)}</td>
+                <td style={{ padding: '1rem 0.75rem', color: 'var(--primary)', fontWeight: 700 }}>${formatPesos(item.aceptado)}</td>
                 <td style={{ padding: '1rem 0.75rem', textAlign: 'right', color: item.diferencia > 0 ? '#10b981' : 'rgba(255,255,255,0.5)', fontWeight: 950, fontSize: '1rem' }}>
                   ${formatPesos(item.diferencia)}
                 </td>
