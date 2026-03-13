@@ -126,7 +126,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
     // 2. Metrics for the 4 Cards (UNIFIED ENGINE)
     const metrics = useMemo(() => {
         // If no filters are applied, we can use the executiveStats directly for absolute agreement
-        const isFiltered = selectedService !== 'Todos' || selectedType !== 'Todos';
+        const isFiltered = selectedService !== 'Todos' || selectedType !== 'Todos' || selectedStatus !== 'Todos';
 
         if (!isFiltered && executiveStats) {
             return {
