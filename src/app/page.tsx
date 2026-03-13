@@ -1731,7 +1731,7 @@ const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: 
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="card" style={{ padding: '2rem', border: '1px solid rgba(16, 185, 129, 0.3)', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08), transparent)', boxShadow: '0 10px 40px rgba(16, 185, 129, 0.1)' }}>
       <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '1.2rem', color: '#10b981', fontWeight: 900 }}>
         <TrendingUp size={22} />
-        GESTIÓN DE VALORES ACEPTADOS
+        GESTIÓN DE VALORES TOTALES (AUDITORÍA)
       </h3>
       <form onSubmit={handleSubmit}>
         <div style={{
@@ -1754,7 +1754,7 @@ const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: 
               <input type="number" className="input" style={{ padding: '0.85rem 1rem', borderColor: 'rgba(16, 185, 129, 0.2)' }} placeholder="0.00" value={formData.valor_no_aceptado} onChange={(e) => setFormData({ ...formData, valor_no_aceptado: e.target.value })} disabled={!isAdmin} />
             </div>
             <div className="input-group">
-              <label className="label" style={{ color: 'var(--primary)' }}>Valor Aceptado (Pago)</label>
+              <label className="label" style={{ color: 'var(--primary)' }}>Valor Gestión (Total Sumado)</label>
               <input type="number" className="input" style={{ padding: '0.85rem 1rem', borderColor: 'rgba(239, 68, 68, 0.3)' }} placeholder="0.00" value={formData.valor_aceptado} onChange={(e) => setFormData({ ...formData, valor_aceptado: e.target.value })} disabled={!isAdmin} />
             </div>
           </div>
@@ -1796,7 +1796,7 @@ const IngresoList = ({
           Historial ({ingresos.length})
         </h3>
         <div style={{ textAlign: 'right' }}>
-          <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Aceptado</p>
+          <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Gestión Glosas</p>
           <p style={{ fontSize: '1.5rem', fontWeight: 950, color: 'var(--primary)' }}>${formatPesos(totalAceptado)}</p>
         </div>
       </div>

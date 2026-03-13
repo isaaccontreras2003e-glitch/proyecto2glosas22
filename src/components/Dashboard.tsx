@@ -177,9 +177,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
         const accepted = glosas.filter(g => g.estado === 'Aceptada').length;
 
         return [
-            { label: 'PEND.', p: Math.round((pending / total) * 100), color: 'rgba(255,255,255,0.2)' },
-            { label: 'RESP.', p: Math.round((responded / total) * 100), color: 'var(--primary)' },
-            { label: 'ACEPT.', p: Math.round((accepted / total) * 100), color: 'var(--secondary)' }
+            { label: 'TOTAL', p: 100, color: 'var(--primary)' }
         ];
     }, [glosas]);
 
@@ -239,20 +237,10 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             <DollarSign size={16} color="var(--primary)" />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
-                            {/* Aceptado = AZUL (Procesado) */}
+                            {/* Unificación Total en Azul */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--secondary)', fontWeight: 950 }}>${formatPesos(metrics.acceptedValue)}</span>
-                                <span style={{ fontSize: '0.55rem', color: 'rgba(79, 172, 254, 0.5)', fontWeight: 800 }}>({metrics.percentAcceptedTotal.toFixed(1)}% Aceptado)</span>
-                            </div>
-                            {/* No Aceptado = CYAN (Éxito/Recuperado) */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 950 }}>${formatPesos(metrics.noAcceptedValue)}</span>
-                                <span style={{ fontSize: '0.55rem', color: 'rgba(56, 189, 248, 0.5)', fontWeight: 800 }}>({metrics.percentNoAcceptedTotal.toFixed(1)}% No Aceptado)</span>
-                            </div>
-                            {/* Pendiente = NARANJA (Por responder) */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '0.75rem', color: '#fbbf24', fontWeight: 950 }}>${formatPesos((metrics as any).pendingValue)}</span>
-                                <span style={{ fontSize: '0.55rem', color: 'rgba(251, 191, 36, 0.5)', fontWeight: 800 }}>({(metrics as any).percentPendingTotal.toFixed(1)}% Pendiente)</span>
+                                <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 950 }}>${formatPesos(metrics.acceptedValue + metrics.noAcceptedValue + (metrics as any).pendingValue)}</span>
+                                <span style={{ fontSize: '0.55rem', color: 'rgba(0, 242, 254, 0.5)', fontWeight: 800 }}>(100% Gestionado)</span>
                             </div>
                         </div>
                     </div>
@@ -264,8 +252,8 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         <div style={{ height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '100px', display: 'flex' }}>
                             <motion.div
                                 initial={{ width: 0 }}
-                                animate={{ width: `${Math.min(100, metrics.percentResponded)}%` }}
-                                style={{ height: '100%', background: 'linear-gradient(90deg, var(--secondary), var(--primary))', borderRadius: '100px', boxShadow: '0 0 10px var(--primary-glow)' }}
+                                animate={{ width: `100%` }}
+                                style={{ height: '100%', background: 'var(--primary)', borderRadius: '100px', boxShadow: '0 0 10px var(--primary-glow)' }}
                             />
                         </div>
                         <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px', fontWeight: 700 }}>TOTAL VALORES RESPONDIDOS</p>
