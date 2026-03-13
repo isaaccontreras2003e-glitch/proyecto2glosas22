@@ -171,15 +171,15 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
 
     // 4. Status Stats (Bottom legend)
     const statusStats = useMemo(() => {
-        const total = glosas.length || 1;
-        const pending = glosas.filter(g => g.estado === 'Pendiente').length;
-        const responded = glosas.filter(g => g.estado === 'Respondida').length;
-        const accepted = glosas.filter(g => g.estado === 'Aceptada').length;
+        const total = metrics.totalValue || 1;
+        const acceptedPerc = Math.round((metrics.acceptedValue / total) * 100);
+        const remainingPerc = 100 - acceptedPerc;
 
         return [
-            { label: 'TOTAL', p: 100, color: 'var(--primary)' }
+            { label: 'ACEPTADO', p: acceptedPerc, color: '#ff4d4d' },
+            { label: 'GESTIÓN', p: remainingPerc, color: 'var(--primary)' }
         ];
-    }, [glosas]);
+    }, [metrics]);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -188,8 +188,8 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <LayoutDashboard size={20} color="var(--primary)" />
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 950, color: 'white', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                        TABLERO DE MANDO - AUDITORÍA MÉDICA
-                        <span style={{ fontSize: '0.55rem', background: 'var(--primary)', color: '#000', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.75rem', verticalAlign: 'middle', fontWeight: 900 }}>COI V.UNIFICADA</span>
+                        TABLERO DE MANDO - GESTIÓN DE GLOSAS
+                        <span style={{ fontSize: '0.55rem', background: 'var(--primary)', color: '#000', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.75rem', verticalAlign: 'middle', fontWeight: 900 }}>COI V.RECONCILIADA</span>
                     </h2>
                 </div>
             </div>
@@ -261,7 +261,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                                 style={{ height: '100%', background: 'var(--primary)', borderRadius: '100px', boxShadow: '0 0 10px var(--primary-glow)' }}
                             />
                         </div>
-                        <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px', fontWeight: 700 }}>ESTADO DE REGISTRO INTERNO (100%)</p>
+                        <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px', fontWeight: 700 }}>ESTADO DE GESTIÓN (100%)</p>
                     </div>
                 </Card>
 
@@ -296,7 +296,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <FileText size={16} color="var(--secondary)" />
                         </div>
-                        <span style={{ fontSize: '0.6rem', color: 'var(--secondary)', fontWeight: 800 }}>AUDITORÍA DIARIA</span>
+                        <span style={{ fontSize: '0.6rem', color: 'var(--secondary)', fontWeight: 800 }}>HOY</span>
                     </div>
                     <div>
                         <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>TOTAL DE FACTURAS (HOY)</p>
@@ -323,48 +323,22 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                     </div>
                 </Card>
 
-                <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid rgba(0, 242, 254, 0.2)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{ width: '32px', height: '32px', background: 'rgba(0, 242, 254, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <CheckCircle size={16} color="var(--primary)" />
-                        </div>
-                        <span style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 900 }}>METAS ALCANZADAS</span>
-                    </div>
-                    <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>VALORES AUDITADOS (TOTAL)</p>
-                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'var(--primary)' }}>${formatPesos(metrics.acceptedValue + metrics.noAcceptedValue)}</h2>
-                    </div>
-                    <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                            <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>COBERTURA DE AUDITORÍA</span>
-                            <span style={{ fontSize: '0.55rem', color: 'var(--primary)', fontWeight: 950 }}>{metrics.totalValue > 0 ? (((metrics.acceptedValue + metrics.noAcceptedValue) / metrics.totalValue) * 100).toFixed(1) : 0}%</span>
-                        </div>
-                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${Math.min(100, metrics.totalValue > 0 ? ((metrics.acceptedValue + metrics.noAcceptedValue) / metrics.totalValue) * 100 : 0)}%` }}
-                                style={{ height: '100%', background: 'var(--primary)', borderRadius: '10px', boxShadow: '0 0 10px var(--primary-glow)' }}
-                            />
-                        </div>
-                    </div>
-                </Card>
-
                 <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{ width: '32px', height: '32px', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <TrendingUp size={16} color="#f59e0b" />
                         </div>
-                        <span style={{ fontSize: '0.6rem', color: '#f59e0b', fontWeight: 800 }}>% DE ACEPTACIÓN</span>
+                        <span style={{ fontSize: '0.6rem', color: '#f59e0b', fontWeight: 800 }}>EFECTIVIDAD DE GESTIÓN</span>
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>AUDITADAS (CON PAGO)</p>
-                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>{metrics.acceptedCount}</h2>
+                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>VALOR TOTAL CONTESTADO</p>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>${formatPesos(metrics.acceptedValue + metrics.noAcceptedValue)}</h2>
                     </div>
                     <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
                         <p style={{ fontSize: '0.65rem', color: 'white', fontWeight: 800, margin: 0 }}>
-                            {metrics.totalCount > 0 ? ((metrics.acceptedCount / metrics.totalCount) * 100).toFixed(1) : 0}% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>Frecuencia</span>
+                            {metrics.totalValue > 0 ? (((metrics.acceptedValue + metrics.noAcceptedValue) / metrics.totalValue) * 100).toFixed(1) : 0}% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>Avance</span>
                         </p>
-                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>INCIDENCIA DE ERROR</p>
+                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>SOBRE EL TOTAL REGISTRADO</p>
                     </div>
                 </Card>
             </div>
@@ -401,7 +375,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                 {/* Management Status (RIGHT) */}
                 <Card style={{ padding: '2rem', display: 'flex', flexDirection: 'column' }}>
                     <h3 style={{ fontSize: '0.85rem', fontWeight: 900, marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <PieChart size={16} color="var(--primary)" /> TOTAL DE FACTURAS
+                        <PieChart size={16} color="var(--primary)" /> DISTRIBUCIÓN DE GLOSAS (ACEPTACIÓN)
                     </h3>
                     <div style={{ position: 'relative', width: '200px', height: '200px', margin: '0 auto 2.5rem auto' }}>
                         <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
@@ -422,8 +396,8 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             })}
                         </svg>
                         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ fontSize: '0.6rem', opacity: 0.4, fontWeight: 800 }}>TOTAL FACTURAS</span>
-                            <span style={{ fontSize: '2rem', fontWeight: 950 }}>{metrics.totalCount}</span>
+                            <span style={{ fontSize: '0.6rem', opacity: 0.4, fontWeight: 800 }}>VALOR REGISTRADO</span>
+                            <span style={{ fontSize: '1.2rem', fontWeight: 950 }}>${formatPesos(metrics.totalValue)}</span>
                         </div>
                     </div>
 

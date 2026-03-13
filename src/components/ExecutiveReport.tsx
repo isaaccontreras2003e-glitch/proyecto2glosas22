@@ -27,18 +27,18 @@ const formatCurrency = (value: any) => {
 export const ExecutiveReport = ({ stats }: ExecutiveReportProps) => {
     const kpis = [
         {
-            title: 'VALOR TOTAL GLOSADO (REG.)',
+            title: 'VALOR TOTAL GLOSADO',
             value: formatCurrency(stats.totalGlosado),
             icon: <TrendingUp size={24} />,
             color: '#8b5cf6',
-            description: 'Total acumulado de glosas con registro interno completo'
+            description: 'Total acumulado de glosas con registro interno'
         },
         {
             title: 'VALOR ACEPTADO (SALMÓN)',
             value: formatCurrency(stats.totalAceptado),
             icon: <CheckCircle size={24} />,
             color: '#ff4d4d',
-            description: `${stats.percentAceptado}% de efectividad en recuperación (PAGO)`
+            description: `${stats.percentAceptado}% de recuperación (PAGO)`
         },
         {
             title: 'PENDIENTE DE REGISTRO',
