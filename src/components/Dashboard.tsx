@@ -89,6 +89,7 @@ const Sparkline = ({ data, color }: { data: number[], color: string }) => {
 export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stats: executiveStats }: DashboardProps) => {
     const [selectedService, setSelectedService] = useState('Todos');
     const [selectedType, setSelectedType] = useState('Todos');
+    const [selectedStatus, setSelectedStatus] = useState('Todos');
 
     // 0. Extract unique services dynamically from data
     const availableServices = useMemo(() => {
@@ -101,16 +102,26 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
         return allGlosas.filter(g => {
             const matchService = selectedService === 'Todos' || g.servicio === selectedService;
             const matchType = selectedType === 'Todos' || g.tipo_glosa === selectedType;
-            return matchService && matchType;
+            const matchStatus = selectedStatus === 'Todos' || g.estado === selectedStatus;
+            return matchService && matchType && matchStatus;
         });
-    }, [allGlosas, selectedService, selectedType]);
+    }, [allGlosas, selectedService, selectedType, selectedStatus]);
+
     const filteredConsolidado = useMemo(() => {
         return allConsolidado.filter(item => {
             const matchService = selectedService === 'Todos' || item.servicios?.includes(selectedService);
             const matchType = selectedType === 'Todos' || item.tipos?.includes(selectedType);
-            return matchService && matchType;
+
+            // Si el estado es "Todos", pasamos
+            if (selectedStatus === 'Todos') return matchService && matchType;
+
+            // Si se selecciona un estado específico, verificamos que la factura tenga al menos una glosa en ese estado
+            // Asegurarse de que el objeto consolidado tenga 'estados' que inyectamos en page.tsx
+            const matchStatus = item.estados?.includes(selectedStatus) || false;
+
+            return matchService && matchType && matchStatus;
         });
-    }, [allConsolidado, selectedService, selectedType]);
+    }, [allConsolidado, selectedService, selectedType, selectedStatus]);
 
     // 2. Metrics for the 4 Cards (UNIFIED ENGINE)
     const metrics = useMemo(() => {
@@ -226,7 +237,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         <select
                             value={selectedType}
                             onChange={(e) => setSelectedType(e.target.value)}
-                            style={{ background: 'rgba(20,20,30,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.4rem 2rem 0.4rem 0.75rem', color: 'white', fontSize: '0.75rem', fontWeight: 700, appearance: 'none', minWidth: '160px' }}
+                            style={{ background: 'rgba(20,20,30,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.4rem 2rem 0.4rem 0.75rem', color: 'white', fontSize: '0.75rem', fontWeight: 700, appearance: 'none', minWidth: '160px', outline: 'none', cursor: 'pointer' }}
                         >
                             <option>Todos</option>
                             <option>Tarifas</option>
@@ -234,109 +245,137 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             <option>RIPS</option>
                             <option>Autorización</option>
                         </select>
-                        <Clock size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} />
+                        <Clock size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3, pointerEvents: 'none' }} />
+                    </div>
+                </div>
+                <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>ESTADO</label>
+                    <div style={{ position: 'relative' }}>
+                        <select
+                            value={selectedStatus}
+                            onChange={(e) => setSelectedStatus(e.target.value)}
+                            style={{ background: 'rgba(20,20,30,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.4rem 2rem 0.4rem 0.75rem', color: 'white', fontSize: '0.75rem', fontWeight: 700, appearance: 'none', minWidth: '160px', outline: 'none', cursor: 'pointer' }}
+                        >
+                            <option value="Todos">Todos</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Radicada">Radicada</option>
+                            <option value="Respondida">Respondida</option>
+                            <option value="Conciliada">Conciliada</option>
+                            <option value="Aceptada">Aceptada</option>
+                        </select>
+                        <Activity size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3, pointerEvents: 'none' }} />
                     </div>
                 </div>
             </div>
 
             {/* 4 Cards Grid (FUNCTIONAL VERSION) */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
-                <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <DollarSign size={16} color="var(--primary)" />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
-                            {/* Aceptado = SALMÓN (Pago Real IPS) */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '0.75rem', color: '#ff4d4d', fontWeight: 950 }}>${formatPesos(metrics.acceptedValue)}</span>
-                                <span style={{ fontSize: '0.55rem', color: 'rgba(255, 77, 77, 0.5)', fontWeight: 800 }}>({metrics.percentAcceptedTotal.toFixed(1)}% Aceptado)</span>
+                <motion.div whileHover={{ y: -5, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+                    <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <DollarSign size={16} color="var(--primary)" />
                             </div>
-                            {/* Resto Registrado = AZUL (En Gestión Interna) */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 950 }}>${formatPesos(metrics.totalValue - metrics.acceptedValue)}</span>
-                                <span style={{ fontSize: '0.55rem', color: 'rgba(56, 189, 248, 0.5)', fontWeight: 800 }}>({(((metrics.totalValue - metrics.acceptedValue) / (metrics.totalValue || 1)) * 100).toFixed(1)}% No Aceptado / Pendiente)</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
+                                {/* Aceptado = SALMÓN (Pago Real IPS) */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '0.75rem', color: '#ff4d4d', fontWeight: 950 }}>${formatPesos(metrics.acceptedValue)}</span>
+                                    <span style={{ fontSize: '0.55rem', color: 'rgba(255, 77, 77, 0.5)', fontWeight: 800 }}>({metrics.percentAcceptedTotal.toFixed(1)}% Aceptado)</span>
+                                </div>
+                                {/* Resto Registrado = AZUL (En Gestión Interna) */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 950 }}>${formatPesos(metrics.totalValue - metrics.acceptedValue)}</span>
+                                    <span style={{ fontSize: '0.55rem', color: 'rgba(56, 189, 248, 0.5)', fontWeight: 800 }}>({(((metrics.totalValue - metrics.acceptedValue) / (metrics.totalValue || 1)) * 100).toFixed(1)}% No Aceptado / Pendiente)</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>IMPORTE TOTAL GLOSADO</p>
-                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>${formatPesos(metrics.totalValue)}</h2>
-                    </div>
-                    <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                        <div style={{ height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '100px', display: 'flex' }}>
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `100%` }}
-                                style={{ height: '100%', background: 'var(--primary)', borderRadius: '100px', boxShadow: '0 0 10px var(--primary-glow)' }}
-                            />
+                        <div>
+                            <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>IMPORTE TOTAL GLOSADO</p>
+                            <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>${formatPesos(metrics.totalValue)}</h2>
                         </div>
-                        <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px', fontWeight: 700 }}>ESTADO DE GESTIÓN (100%)</p>
-                    </div>
-                </Card>
+                        <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+                            <div style={{ height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '100px', display: 'flex' }}>
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `100%` }}
+                                    transition={{ type: "spring", bounce: 0, duration: 2 }}
+                                    style={{ height: '100%', background: 'var(--primary)', borderRadius: '100px', boxShadow: '0 0 10px var(--primary-glow)' }}
+                                />
+                            </div>
+                            <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px', fontWeight: 700 }}>ESTADO DE GESTIÓN (100%)</p>
+                        </div>
+                    </Card>
+                </motion.div>
 
-                <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{ width: '32px', height: '32px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <AlertTriangle size={16} color="#fbbf24" />
+                <motion.div whileHover={{ y: -5, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+                    <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid rgba(245, 158, 11, 0.2)', height: '100%' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div style={{ width: '32px', height: '32px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <AlertTriangle size={16} color="#fbbf24" />
+                            </div>
+                            <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 900 }}>POR REGISTRAR</span>
                         </div>
-                        <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 900 }}>POR REGISTRAR</span>
-                    </div>
-                    <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>VALORES PENDIENTES DE REGISTRO</p>
-                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: '#fbbf24' }}>${formatPesos((executiveStats as any).totalNoRegistrado || 0)}</h2>
-                    </div>
-                    <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                            <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>PENDIENTE DE INTEGRACIÓN</span>
-                            <span style={{ fontSize: '0.55rem', color: '#fbbf24', fontWeight: 950 }}>{((((executiveStats as any).totalNoRegistrado || 0) / ((executiveStats as any).totalPotential || 1)) * 100).toFixed(1)}%</span>
+                        <div>
+                            <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>VALORES PENDIENTES DE REGISTRO</p>
+                            <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: '#fbbf24' }}>${formatPesos((executiveStats as any).totalNoRegistrado || 0)}</h2>
                         </div>
-                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${Math.min(100, (((executiveStats as any).totalNoRegistrado || 0) / ((executiveStats as any).totalPotential || 1)) * 100)}%` }}
-                                style={{ height: '100%', background: '#fbbf24', borderRadius: '10px', boxShadow: '0 0 10px rgba(251, 191, 36, 0.3)' }}
-                            />
+                        <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>PENDIENTE DE INTEGRACIÓN</span>
+                                <span style={{ fontSize: '0.55rem', color: '#fbbf24', fontWeight: 950 }}>{((((executiveStats as any).totalNoRegistrado || 0) / ((executiveStats as any).totalPotential || 1)) * 100).toFixed(1)}%</span>
+                            </div>
+                            <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${Math.min(100, (((executiveStats as any).totalNoRegistrado || 0) / ((executiveStats as any).totalPotential || 1)) * 100)}%` }}
+                                    transition={{ type: "spring", bounce: 0, duration: 1.5 }}
+                                    style={{ height: '100%', background: '#fbbf24', borderRadius: '10px', boxShadow: '0 0 10px rgba(251, 191, 36, 0.3)' }}
+                                />
+                            </div>
                         </div>
-                    </div>
-                </Card>
+                    </Card>
+                </motion.div>
 
-                <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <FileText size={16} color="var(--secondary)" />
+                <motion.div whileHover={{ y: -5, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+                    <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <FileText size={16} color="var(--secondary)" />
+                            </div>
+                            <span style={{ fontSize: '0.6rem', color: 'var(--secondary)', fontWeight: 800 }}>SISTEMA</span>
                         </div>
-                        <span style={{ fontSize: '0.6rem', color: 'var(--secondary)', fontWeight: 800 }}>SISTEMA</span>
-                    </div>
-                    <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>CANTIDAD TOTAL DE FACTURAS</p>
-                        <h2 style={{ fontSize: '2rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>
-                            {metrics.totalCount}
-                        </h2>
-                    </div>
-                    <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>FACTURAS ÚNICAS (TOTAL)</p>
-                    </div>
-                </Card>
+                        <div>
+                            <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>CANTIDAD TOTAL DE FACTURAS</p>
+                            <h2 style={{ fontSize: '2rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>
+                                {metrics.totalCount}
+                            </h2>
+                        </div>
+                        <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+                            <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>FACTURAS ÚNICAS (TOTAL)</p>
+                        </div>
+                    </Card>
+                </motion.div>
 
-                <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <TrendingUp size={16} color="#f59e0b" />
+                <motion.div whileHover={{ y: -5, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+                    <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <TrendingUp size={16} color="#f59e0b" />
+                            </div>
+                            <span style={{ fontSize: '0.6rem', color: '#f59e0b', fontWeight: 800 }}>FACTURAS RESPONDIDAS</span>
                         </div>
-                        <span style={{ fontSize: '0.6rem', color: '#f59e0b', fontWeight: 800 }}>FACTURAS RESPONDIDAS</span>
-                    </div>
-                    <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>CANTIDAD TOTAL CONTESTADA</p>
-                        <h2 style={{ fontSize: '2rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>{(metrics as any).respondedInvoicesCount}</h2>
-                    </div>
-                    <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                        <p style={{ fontSize: '0.65rem', color: 'white', fontWeight: 800, margin: 0 }}>
-                            ${formatPesos(metrics.acceptedValue + metrics.noAcceptedValue)} <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>Valor</span>
-                        </p>
-                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>SOBRE EL IMPORTE REGISTRADO</p>
-                    </div>
-                </Card>
+                        <div>
+                            <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>CANTIDAD TOTAL CONTESTADA</p>
+                            <h2 style={{ fontSize: '2rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>{(metrics as any).respondedInvoicesCount}</h2>
+                        </div>
+                        <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+                            <p style={{ fontSize: '0.65rem', color: 'white', fontWeight: 800, margin: 0 }}>
+                                ${formatPesos(metrics.acceptedValue + metrics.noAcceptedValue)} <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>Valor</span>
+                            </p>
+                            <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>SOBRE EL IMPORTE REGISTRADO</p>
+                        </div>
+                    </Card>
+                </motion.div>
             </div>
 
             {/* Bottom Section: Categories and Status */}
@@ -347,12 +386,12 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         <Activity size={16} color="var(--primary)" /> DISTRIBUCIÓN POR CATEGORÍA
                     </h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-                        {categories.map(cat => (
+                        {categories.map((cat, i) => (
                             <div key={cat.label}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', fontWeight: 800, marginBottom: '0.6rem' }}>
                                     <span style={{ opacity: 0.4, textTransform: 'uppercase' }}>{cat.label}</span>
                                     <span>
-                                        <span style={{ marginRight: '1rem' }}>{cat.count}</span>
+                                        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 + (i * 0.1) }} style={{ marginRight: '1rem' }}>{cat.count}</motion.span>
                                         <span style={{ opacity: 0.4 }}>{cat.p}%</span>
                                     </span>
                                 </div>
@@ -360,6 +399,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                                     <motion.div
                                         initial={{ width: 0 }}
                                         animate={{ width: `${Math.min(100, cat.p)}%` }}
+                                        transition={{ type: "spring", stiffness: 60, damping: 15, delay: i * 0.15 }}
                                         style={{ height: '100%', background: 'linear-gradient(90deg, var(--primary), var(--secondary))', borderRadius: '10px', boxShadow: `0 0 10px var(--primary-glow)` }}
                                     />
                                 </div>
@@ -385,8 +425,9 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                                         cx="50" cy="50" r="44" fill="transparent"
                                         stroke={s.color} strokeWidth="12" strokeLinecap="round"
                                         strokeDasharray={`${(s.p / 100) * 276.32} 276.32`}
-                                        strokeDashoffset={-((offset / 100) * 276.32)}
-                                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                        initial={{ strokeDashoffset: 276.32, opacity: 0 }}
+                                        animate={{ strokeDashoffset: -((offset / 100) * 276.32), opacity: 1 }}
+                                        transition={{ type: "spring", stiffness: 45, damping: 15, delay: i * 0.2 }}
                                     />
                                 );
                             })}

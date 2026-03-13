@@ -396,6 +396,8 @@ function Home() {
       const servicios = Array.from(new Set(factGlosas.map(g => g.servicio).filter(Boolean)));
       const tipos = Array.from(new Set(factGlosas.map(g => g.tipo_glosa).filter(Boolean)));
 
+      const estados = Array.from(new Set(factGlosas.map(g => g.estado).filter(Boolean)));
+
       const fechasGlosas = factGlosas.map(g => parseDate(g.fecha));
       const fechasIngresos = factIngresos.map(i => parseDate(i.fecha));
       const todasLasFechas = [...fechasGlosas, ...fechasIngresos].filter(Boolean);
@@ -409,6 +411,7 @@ function Home() {
         noAceptado,
         servicios,
         tipos,
+        estados,
         fecha: fechaActividad,
         timestamp: maxFechaTimestamp,
         diferencia: sumGlosasValor - aceptado,
