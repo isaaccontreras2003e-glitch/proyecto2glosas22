@@ -419,10 +419,6 @@ function Home() {
 
   const stats = useMemo(() => {
     try {
-      const totalGlosadoValue = consolidado.reduce((acc, curr) => acc + curr.glosado, 0);
-      const totalAceptadoValue = consolidado.reduce((acc, curr) => acc + curr.aceptado, 0);
-      const totalNoAceptadoValue = consolidado.reduce((acc, curr) => acc + curr.noAceptado, 0);
-
       const currentUpper = currentMainSection.toUpperCase();
       const sectionGlosas = safeArray(glosas).filter(g => (((g as any).seccion || 'GLOSAS').toUpperCase()) === currentUpper);
 
@@ -430,19 +426,31 @@ function Home() {
         .filter(g => g.registrada_internamente)
         .reduce((acc, curr) => acc + safeNumber(curr.valor_glosa), 0);
 
-      const pendingValue = totalGlosadoValue - totalAceptadoValue - totalNoAceptadoValue;
+      const totalNoRegistradoValue = sectionGlosas
+        .filter(g => !g.registrada_internamente)
+        .reduce((acc, curr) => acc + safeNumber(curr.valor_glosa), 0);
+
+      const totalPotentialGlosado = consolidado.reduce((acc, curr) => acc + curr.glosado, 0);
+      const totalAceptadoValue = consolidado.reduce((acc, curr) => acc + curr.aceptado, 0);
+      const totalNoAceptadoValue = consolidado.reduce((acc, curr) => acc + curr.noAceptado, 0);
+
+      // El "Total Glosado" principal ahora será el Registrado por instrucción del usuario
+      const mainTotalGlosado = totalRegistradoInternoValue;
+      const pendingValue = mainTotalGlosado - totalAceptadoValue - (totalNoAceptadoValue);
 
       return {
         totalCount: sectionGlosas.length,
         totalFacturas: consolidado.length,
-        totalGlosado: totalGlosadoValue,
+        totalGlosado: mainTotalGlosado,
         totalAceptado: totalAceptadoValue,
         totalPendiente: Math.max(0, pendingValue),
         totalRegistradoInterno: totalRegistradoInternoValue,
+        totalNoRegistrado: totalNoRegistradoValue,
+        totalPotential: totalPotentialGlosado,
         totalNoAceptado: totalNoAceptadoValue,
-        percentAceptado: totalGlosadoValue > 0 ? Math.round((totalAceptadoValue / totalGlosadoValue) * 100) : 0,
-        percentRegistrado: totalGlosadoValue > 0 ? Math.round((totalRegistradoInternoValue / totalGlosadoValue) * 100) : 0,
-        totalValue: totalGlosadoValue,
+        percentAceptado: mainTotalGlosado > 0 ? Math.round((totalAceptadoValue / mainTotalGlosado) * 100) : 0,
+        percentRegistrado: totalPotentialGlosado > 0 ? Math.round((totalRegistradoInternoValue / totalPotentialGlosado) * 100) : 0,
+        totalValue: mainTotalGlosado,
         totalIngresos: totalAceptadoValue,
         pendingCount: sectionGlosas.filter(g => g.estado === 'Pendiente').length,
         respondedCount: sectionGlosas.filter(g => g.estado === 'Respondida').length,

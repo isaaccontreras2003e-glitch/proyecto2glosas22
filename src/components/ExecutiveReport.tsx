@@ -12,6 +12,7 @@ interface ExecutiveReportProps {
         totalNoAceptado: number;
         totalPendiente: number;
         totalRegistradoInterno: number;
+        totalNoRegistrado: number;
         percentAceptado: number;
         percentRegistrado: number;
     };
@@ -26,32 +27,32 @@ const formatCurrency = (value: any) => {
 export const ExecutiveReport = ({ stats }: ExecutiveReportProps) => {
     const kpis = [
         {
-            title: 'VALOR TOTAL GLOSADO',
+            title: 'VALOR TOTAL GLOSADO (REG.)',
             value: formatCurrency(stats.totalGlosado),
             icon: <TrendingUp size={24} />,
             color: '#8b5cf6',
-            description: 'Total acumulado de glosas registradas'
+            description: 'Total acumulado de glosas con registro interno completo'
         },
         {
-            title: 'VALORES AUDITADOS',
-            value: formatCurrency(stats.totalAceptado + (stats.totalNoAceptado || 0)),
+            title: 'VALOR ACEPTADO (SALMÓN)',
+            value: formatCurrency(stats.totalAceptado),
             icon: <CheckCircle size={24} />,
-            color: '#3b82f6',
-            description: `${Math.round(((stats.totalAceptado + (stats.totalNoAceptado || 0)) / (stats.totalGlosado || 1)) * 100)}% de avance en auditoría`
+            color: '#ff4d4d',
+            description: `${stats.percentAceptado}% de efectividad en recuperación (PAGO)`
         },
         {
-            title: 'VALORES EN PENDIENTE',
-            value: formatCurrency(stats.totalPendiente),
+            title: 'PENDIENTE DE REGISTRO',
+            value: formatCurrency(stats.totalNoRegistrado),
             icon: <Clock size={24} />,
             color: '#f59e0b',
-            description: 'Saldo pendiente por gestionar/conciliar'
+            description: 'Valores en el sistema sin confirmación de registro interno'
         },
         {
-            title: 'CONCILIADO INTERNO',
-            value: formatCurrency(stats.totalRegistradoInterno),
+            title: 'GESTIÓN TOTAL (POTENCIAL)',
+            value: formatCurrency(stats.totalGlosado + stats.totalNoRegistrado),
             icon: <FileText size={24} />,
             color: '#00f2fe',
-            description: `${stats.percentRegistrado}% registrado en sistema contable`
+            description: 'Suma de registros internos + pendientes de registro'
         }
     ];
 

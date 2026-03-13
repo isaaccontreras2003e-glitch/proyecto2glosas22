@@ -237,10 +237,15 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             <DollarSign size={16} color="var(--primary)" />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
-                            {/* Unificación Total en Azul */}
+                            {/* Aceptado = SALMÓN (Pago Real IPS) */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 950 }}>${formatPesos(metrics.acceptedValue + metrics.noAcceptedValue + (metrics as any).pendingValue)}</span>
-                                <span style={{ fontSize: '0.55rem', color: 'rgba(0, 242, 254, 0.5)', fontWeight: 800 }}>(100% Gestionado)</span>
+                                <span style={{ fontSize: '0.75rem', color: '#ff4d4d', fontWeight: 950 }}>${formatPesos(metrics.acceptedValue)}</span>
+                                <span style={{ fontSize: '0.55rem', color: 'rgba(255, 77, 77, 0.5)', fontWeight: 800 }}>({metrics.percentAcceptedTotal.toFixed(1)}% Aceptado)</span>
+                            </div>
+                            {/* Resto Registrado = AZUL (En Gestión Interna) */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 950 }}>${formatPesos(metrics.totalValue - metrics.acceptedValue)}</span>
+                                <span style={{ fontSize: '0.55rem', color: 'rgba(56, 189, 248, 0.5)', fontWeight: 800 }}>({(((metrics.totalValue - metrics.acceptedValue) / (metrics.totalValue || 1)) * 100).toFixed(1)}% No Aceptado / Pendiente)</span>
                             </div>
                         </div>
                     </div>
@@ -256,7 +261,33 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                                 style={{ height: '100%', background: 'var(--primary)', borderRadius: '100px', boxShadow: '0 0 10px var(--primary-glow)' }}
                             />
                         </div>
-                        <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px', fontWeight: 700 }}>TOTAL VALORES RESPONDIDOS</p>
+                        <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px', fontWeight: 700 }}>ESTADO DE REGISTRO INTERNO (100%)</p>
+                    </div>
+                </Card>
+
+                <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{ width: '32px', height: '32px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <AlertTriangle size={16} color="#fbbf24" />
+                        </div>
+                        <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 900 }}>POR REGISTRAR</span>
+                    </div>
+                    <div>
+                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>VALORES PENDIENTES DE REGISTRO</p>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: '#fbbf24' }}>${formatPesos((executiveStats as any).totalNoRegistrado || 0)}</h2>
+                    </div>
+                    <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                            <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>PENDIENTE DE INTEGRACIÓN</span>
+                            <span style={{ fontSize: '0.55rem', color: '#fbbf24', fontWeight: 950 }}>{((((executiveStats as any).totalNoRegistrado || 0) / ((executiveStats as any).totalPotential || 1)) * 100).toFixed(1)}%</span>
+                        </div>
+                        <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min(100, (((executiveStats as any).totalNoRegistrado || 0) / ((executiveStats as any).totalPotential || 1)) * 100)}%` }}
+                                style={{ height: '100%', background: '#fbbf24', borderRadius: '10px', boxShadow: '0 0 10px rgba(251, 191, 36, 0.3)' }}
+                            />
+                        </div>
                     </div>
                 </Card>
 
