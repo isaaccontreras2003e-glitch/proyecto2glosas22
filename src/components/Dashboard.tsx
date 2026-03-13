@@ -129,6 +129,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                 percentAcceptedTotal: executiveStats.percentAceptado,
                 percentNoAcceptedTotal: executiveStats.totalGlosado > 0 ? (executiveStats.totalNoAceptado / executiveStats.totalGlosado) * 100 : 0,
                 pendingValue: executiveStats.totalPendiente,
+                respondedInvoicesCount: allConsolidado.filter(item => item.aceptado > 0 || item.noAceptado > 0).length,
                 percentPendingTotal: executiveStats.totalGlosado > 0 ? (executiveStats.totalPendiente / executiveStats.totalGlosado) * 100 : 0,
                 waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
             };
@@ -153,6 +154,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
             percentAcceptedTotal: totalValue > 0 ? (acceptedValue / totalValue) * 100 : 0,
             percentNoAcceptedTotal: totalValue > 0 ? (noAcceptedValue / totalValue) * 100 : 0,
             pendingValue: totalValue - acceptedValue - noAcceptedValue,
+            respondedInvoicesCount: filteredConsolidado.filter(item => item.aceptado > 0 || item.noAceptado > 0).length,
             percentPendingTotal: totalValue > 0 ? ((totalValue - acceptedValue - noAcceptedValue) / totalValue) * 100 : 0,
             waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
         };
@@ -328,17 +330,17 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <TrendingUp size={16} color="#f59e0b" />
                         </div>
-                        <span style={{ fontSize: '0.6rem', color: '#f59e0b', fontWeight: 800 }}>EFECTIVIDAD DE GESTIÓN</span>
+                        <span style={{ fontSize: '0.6rem', color: '#f59e0b', fontWeight: 800 }}>FACTURAS RESPONDIDAS</span>
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>VALOR TOTAL CONTESTADO</p>
-                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>${formatPesos(metrics.acceptedValue + metrics.noAcceptedValue)}</h2>
+                        <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>CANTIDAD TOTAL CONTESTADA</p>
+                        <h2 style={{ fontSize: '2rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>{(metrics as any).respondedInvoicesCount}</h2>
                     </div>
                     <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
                         <p style={{ fontSize: '0.65rem', color: 'white', fontWeight: 800, margin: 0 }}>
-                            {metrics.totalValue > 0 ? (((metrics.acceptedValue + metrics.noAcceptedValue) / metrics.totalValue) * 100).toFixed(1) : 0}% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>Avance</span>
+                            ${formatPesos(metrics.acceptedValue + metrics.noAcceptedValue)} <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>Valor</span>
                         </p>
-                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>SOBRE EL TOTAL REGISTRADO</p>
+                        <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>SOBRE EL IMPORTE REGISTRADO</p>
                     </div>
                 </Card>
             </div>
