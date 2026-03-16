@@ -35,6 +35,7 @@ interface Glosa {
   registrada_internamente?: boolean;
   seccion?: string;
   sincronizado?: boolean;
+  soporte_pdf?: string;
 }
 
 interface Ingreso {
@@ -500,6 +501,44 @@ function Home() {
       const { error } = await supabase.from('glosas').update({ estado: newEstado }).eq('id', id);
       if (error) console.error('Error actualizando estado:', error);
     } catch (err) { console.error('Error crítico actualizando estado:', err); }
+  };
+
+  const handleUploadPdf = async (id: string, file: File) => {
+    try {
+      showToast('Subiendo PDF...', 'info');
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${id}_${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('soportes_glosas')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('soportes_glosas')
+        .getPublicUrl(fileName);
+
+      const publicUrl = data.publicUrl;
+
+      // Update DB
+      const { error: dbError } = await supabase.from('glosas').update({ soporte_pdf: publicUrl }).eq('id', id);
+      if (dbError) throw dbError;
+
+      // Update Local
+      setGlosas(prev => {
+        const updated = safeArray(prev).map(g => g.id === id ? { ...g, soporte_pdf: publicUrl } : g);
+        safeStorage.setJson('cached_glosas', updated);
+        return updated;
+      });
+
+      showToast('PDF anexado exitosamente', 'success');
+      return publicUrl;
+    } catch (error: any) {
+      console.error('Upload PDF error:', error);
+      showToast('Error subiendo PDF: ' + (error.message || 'Error desconocido'), 'error');
+      return null;
+    }
   };
 
   const handleUpdateGlosa = async (updatedGlosa: Glosa) => {
@@ -1353,6 +1392,7 @@ function Home() {
                           }
                         })}
                         onUpdateStatus={handleUpdateStatus}
+                        onUploadPdf={handleUploadPdf}
                         onUpdateGlosa={handleUpdateGlosa}
                         onDeleteGlosa={handleDeleteGlosa}
                         onDeleteDuplicates={handleDeleteDuplicates}
@@ -1464,6 +1504,7 @@ function Home() {
                       <GlosaTable
                         glosas={filteredGlosas}
                         onUpdateStatus={handleUpdateStatus}
+                        onUploadPdf={handleUploadPdf}
                         onUpdateGlosa={handleUpdateGlosa}
                         onDeleteGlosa={handleDeleteGlosa}
                         onDeleteDuplicates={handleDeleteDuplicates}

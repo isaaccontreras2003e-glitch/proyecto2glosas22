@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Save, Plus, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Save, Plus, AlertTriangle, CheckCircle2, UploadCloud, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './Card';
 import { useToast } from '@/lib/contexts/ToastContext';
 import { sanitizeGlosaForm } from '@/lib/sanitize';
+import { supabase } from '@/lib/supabase';
 
 interface Glosa {
     id: string;
@@ -20,6 +21,7 @@ interface Glosa {
     fecha: string;
     registrada_internamente?: boolean;
     seccion?: string;
+    soporte_pdf?: string;
 }
 
 interface GlosaFormProps {
@@ -44,6 +46,8 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
     const { showToast } = useToast();
     const [forceSubmit, setForceSubmit] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [pdfFile, setPdfFile] = useState<File | null>(null);
+    const [isUploadingPdf, setIsUploadingPdf] = useState(false);
 
     // PERSISTENCIA: Cargar datos guardados al montar
     useEffect(() => {
@@ -153,7 +157,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
         });
     }, [formData, existingGlosas]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         // VALIDACIÓN SENIOR: Protección de integridad de datos
@@ -186,8 +190,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
             ? (window.crypto as any).randomUUID()
             : Math.random().toString(36).substring(2) + Date.now().toString(36);
 
-        // Sanitize all fields before storing (XSS protection)
-        const sanitizedData = sanitizeGlosaForm({
+        const sanitizedData: Glosa = sanitizeGlosaForm({
             ...formData,
             factura,
             servicio,
@@ -197,7 +200,25 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
             fecha: nowTimestamp(),
             registrada_internamente: false,
             seccion: currentSeccion.toUpperCase()
-        });
+        }) as any;
+
+        if (pdfFile && formData.estado === 'Aceptada') {
+            setIsUploadingPdf(true);
+            try {
+                showToast('Subiendo PDF...', 'info');
+                const fileExt = pdfFile.name.split('.').pop();
+                const fileName = `${uniqueId}_${Date.now()}.${fileExt}`;
+                const { error: uploadError } = await supabase.storage.from('soportes_glosas').upload(fileName, pdfFile, { upsert: true });
+                if (uploadError) throw uploadError;
+                const { data: publicUrlData } = supabase.storage.from('soportes_glosas').getPublicUrl(fileName);
+                sanitizedData.soporte_pdf = publicUrlData.publicUrl;
+            } catch (err: any) {
+                console.error(err);
+                showToast('Error subiendo PDF: ' + err.message, 'error');
+            } finally {
+                setIsUploadingPdf(false);
+            }
+        }
 
         onAddGlosa(sanitizedData);
 
@@ -218,6 +239,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
         });
         localStorage.removeItem(`glosa_form_draft_${currentSeccion}`);
         setForceSubmit(false);
+        setPdfFile(null);
 
         console.log('✅ Registro enviado y formulario reseteado:', uniqueId);
     };
@@ -396,7 +418,40 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                             </select>
                         </div>
                     </div>
-                    <div className="input-group" style={{ marginTop: '1.5rem' }}>
+
+                    <AnimatePresence>
+                        {formData.estado === 'Aceptada' && isAdmin && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                style={{ overflow: 'hidden', marginTop: '1.5rem', gridColumn: '1 / -1' }}
+                            >
+                                <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px dashed rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '1.25rem', textAlign: 'center' }}>
+                                    <input
+                                        type="file"
+                                        id="pdf-upload"
+                                        accept=".pdf"
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => {
+                                            if (e.target.files && e.target.files[0]) {
+                                                setPdfFile(e.target.files[0]);
+                                            }
+                                        }}
+                                    />
+                                    <label htmlFor="pdf-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', color: pdfFile ? '#10b981' : 'rgba(255,255,255,0.6)' }}>
+                                        {pdfFile ? <FileText size={32} /> : <UploadCloud size={32} />}
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{pdfFile ? pdfFile.name : 'Anexar Nota Crédito PDF (Opcional)'}</span>
+                                    </label>
+                                    {pdfFile && (
+                                        <button type="button" onClick={() => setPdfFile(null)} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.7rem', marginTop: '0.5rem', cursor: 'pointer', textDecoration: 'underline' }}>Quitar archivo</button>
+                                    )}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <div className="input-group" style={{ marginTop: '1.5rem', gridColumn: '1 / -1' }}>
                         <label className="label">Descripción Adicional</label>
                         <textarea
                             className="input"
@@ -441,17 +496,18 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                         <button
                             type="submit"
                             className="btn btn-primary"
+                            disabled={isUploadingPdf}
                             style={{
                                 width: '100%',
                                 gap: '0.75rem',
                                 marginTop: '1rem',
-                                opacity: 1,
-                                cursor: 'pointer',
+                                opacity: isUploadingPdf ? 0.7 : 1,
+                                cursor: isUploadingPdf ? 'wait' : 'pointer',
                                 background: facturaExiste ? 'rgba(139, 92, 246, 0.8)' : undefined,
                             }}
                         >
-                            <Plus size={18} />
-                            {facturaExiste ? 'Añadir nuevo registro a Factura' : 'Guardar Ingreso Diario'}
+                            {facturaExiste ? <AlertTriangle size={18} /> : (isUploadingPdf ? <Save size={18} /> : <Plus size={18} />)}
+                            {facturaExiste ? 'Añadir nuevo registro a Factura' : (isUploadingPdf ? 'Subiendo PDF y Guardando...' : 'Guardar Ingreso Diario')}
                         </button>
                     )
                 )}

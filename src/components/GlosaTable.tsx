@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Card } from './Card';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, X, ClipboardList, Calendar, Info, Tag, Hash, Activity, Pencil, Save, DollarSign, Trash2, AlertTriangle, Copy, CheckCircle2 } from 'lucide-react';
+import { Eye, X, ClipboardList, Calendar, Info, Tag, Hash, Activity, Pencil, Save, DollarSign, Trash2, AlertTriangle, Copy, CheckCircle2, UploadCloud, FileText } from 'lucide-react';
 import { safeNumber } from '@/lib/safeUtils';
 
 const formatPesos = (value: any): string => {
@@ -23,6 +23,7 @@ interface Glosa {
     registrada_internamente?: boolean;
     seccion?: string;
     sincronizado?: boolean;
+    soporte_pdf?: string;
 }
 
 interface GlosaTableProps {
@@ -32,6 +33,7 @@ interface GlosaTableProps {
     onDeleteGlosa: (id: string) => void;
     onDeleteDuplicates: () => void;
     onToggleInternalRegistry: (id: string, currentStatus: boolean) => void;
+    onUploadPdf?: (id: string, file: File) => Promise<string | null>;
     searchTerm: string;
     setSearchTerm: (val: string) => void;
     filterTipo: string;
@@ -50,6 +52,7 @@ export const GlosaTable = ({
     onDeleteGlosa,
     onDeleteDuplicates,
     onToggleInternalRegistry,
+    onUploadPdf,
     searchTerm,
     setSearchTerm,
     filterTipo,
@@ -418,6 +421,56 @@ export const GlosaTable = ({
                                                     >
                                                         <Eye size={16} />
                                                     </button>
+                                                    {glosa.soporte_pdf && (
+                                                        <a
+                                                            href={glosa.soporte_pdf}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            title="Ver Nota Crédito/PDF"
+                                                            style={{
+                                                                background: 'rgba(59, 130, 246, 0.1)',
+                                                                border: '1px solid rgba(59, 130, 246, 0.2)',
+                                                                color: '#60a5fa',
+                                                                padding: '0.5rem',
+                                                                borderRadius: '0.75rem',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                transition: 'all 0.2s',
+                                                                textDecoration: 'none'
+                                                            }}
+                                                        >
+                                                            <FileText size={16} />
+                                                        </a>
+                                                    )}
+                                                    {glosa.estado === 'Aceptada' && !glosa.soporte_pdf && isAdmin && onUploadPdf && (
+                                                        <label
+                                                            title="Anexar Nota Crédito PDF"
+                                                            style={{
+                                                                background: 'rgba(16, 185, 129, 0.1)',
+                                                                border: '1px solid rgba(16, 185, 129, 0.2)',
+                                                                color: '#10b981',
+                                                                padding: '0.5rem',
+                                                                borderRadius: '0.75rem',
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                transition: 'all 0.2s',
+                                                                margin: 0
+                                                            }}
+                                                        >
+                                                            <UploadCloud size={16} />
+                                                            <input
+                                                                type="file"
+                                                                accept=".pdf"
+                                                                style={{ display: 'none' }}
+                                                                onChange={(e) => {
+                                                                    if (e.target.files && e.target.files[0]) {
+                                                                        onUploadPdf(glosa.id, e.target.files[0]);
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </label>
+                                                    )}
                                                     {isAdmin && (
                                                         <button
                                                             onClick={() => setEditingGlosa(glosa)}
