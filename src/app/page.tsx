@@ -46,6 +46,7 @@ interface Ingreso {
   fecha: string;
   seccion?: string;
   sincronizado?: boolean;
+  soporte_pdf?: string;
 }
 
 function Home() {
@@ -611,6 +612,44 @@ function Home() {
       const { error } = await supabase.from('ingresos').delete().eq('id', id);
       if (error) console.error('Error eliminando ingreso:', error);
     } catch (err) { console.error('Error crítico eliminando ingreso:', err); }
+  };
+
+  const handleUploadPdfIngreso = async (id: string, file: File) => {
+    try {
+      showToast('Subiendo PDF...', 'info');
+      const fileExt = file.name.split('.').pop();
+      const fileName = `ingreso_${id}_${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('soportes_glosas')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('soportes_glosas')
+        .getPublicUrl(fileName);
+
+      const publicUrl = data.publicUrl;
+
+      // Update DB
+      const { error: dbError } = await supabase.from('ingresos').update({ soporte_pdf: publicUrl }).eq('id', id);
+      if (dbError) throw dbError;
+
+      // Update Local
+      setIngresos(prev => {
+        const updated = safeArray(prev).map(i => i.id === id ? { ...i, soporte_pdf: publicUrl } : i);
+        safeStorage.setJson('cached_ingresos', updated);
+        return updated;
+      });
+
+      showToast('PDF anexado exitosamente', 'success');
+      return publicUrl;
+    } catch (error: any) {
+      console.error('Upload PDF error:', error);
+      showToast('Error subiendo PDF: ' + (error.message || 'Error desconocido'), 'error');
+      return null;
+    }
   };
 
   const filteredConsolidado = useMemo(() => {
@@ -1547,6 +1586,7 @@ function Home() {
                       <IngresoList
                         ingresos={filteredIngresos}
                         onDelete={handleDeleteIngreso}
+                        onUploadPdf={handleUploadPdfIngreso}
                         isAdmin={role === 'admin'}
                         searchTerm={searchTermIngresos}
                         setSearchTerm={setSearchTermIngresos}
@@ -1829,12 +1869,14 @@ const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: 
 const IngresoList = ({
   ingresos,
   onDelete,
+  onUploadPdf,
   isAdmin,
   searchTerm,
   setSearchTerm
 }: {
   ingresos: Ingreso[],
   onDelete: (id: string) => void,
+  onUploadPdf: (id: string, file: File) => Promise<string | null>,
   isAdmin: boolean,
   searchTerm: string,
   setSearchTerm: (val: string) => void
@@ -1921,15 +1963,46 @@ const IngresoList = ({
                     </div>
                     <div>
                       <p style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.2rem' }}>Aceptado</p>
-                      <p style={{ color: 'var(--primary)', fontWeight: 900, fontSize: '0.95rem' }}>${formatPesos(i.valor_aceptado)}</p>
+                      <p style={{ color: '#ef4444', fontWeight: 900, fontSize: '0.95rem' }}>${formatPesos(i.valor_aceptado)}</p>
                     </div>
                   </div>
                 </div>
-                {isAdmin && (
-                  <motion.button onClick={() => onDelete(i.id)} whileHover={{ scale: 1.1, background: 'rgba(239, 68, 68, 0.2)' }} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)', color: '#ef4444', padding: '0.75rem', borderRadius: '1rem', cursor: 'pointer', zIndex: 1 }}>
-                    <Trash2 size={16} />
-                  </motion.button>
-                )}
+                <div style={{ display: 'flex', gap: '0.5rem', zIndex: 1 }}>
+                  {i.soporte_pdf && (
+                    <a
+                      href={i.soporte_pdf}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Ver Nota Crédito/PDF"
+                      style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '0.75rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', transition: 'all 0.2s', textDecoration: 'none' }}
+                    >
+                      <FileText size={16} />
+                    </a>
+                  )}
+                  {!i.soporte_pdf && isAdmin && (
+                    <label
+                      title="Anexar Nota Crédito PDF"
+                      style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', color: '#10b981', padding: '0.75rem', borderRadius: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.2s', margin: 0 }}
+                    >
+                      <UploadCloud size={16} />
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            onUploadPdf(i.id, e.target.files[0]);
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
+                  {isAdmin && (
+                    <motion.button onClick={() => onDelete(i.id)} whileHover={{ scale: 1.1, background: 'rgba(239, 68, 68, 0.2)' }} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)', color: '#ef4444', padding: '0.75rem', borderRadius: '1rem', cursor: 'pointer' }}>
+                      <Trash2 size={16} />
+                    </motion.button>
+                  )}
+                </div>
               </motion.div>
             ))
           )}
