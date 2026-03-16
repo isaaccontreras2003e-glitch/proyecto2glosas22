@@ -34,6 +34,7 @@ interface GlosaTableProps {
     onDeleteDuplicates: () => void;
     onToggleInternalRegistry: (id: string, currentStatus: boolean) => void;
     onUploadPdf?: (id: string, file: File) => Promise<string | null>;
+    onDeletePdf?: (id: string) => Promise<void>;
     searchTerm: string;
     setSearchTerm: (val: string) => void;
     filterTipo: string;
@@ -53,6 +54,7 @@ export const GlosaTable = ({
     onDeleteDuplicates,
     onToggleInternalRegistry,
     onUploadPdf,
+    onDeletePdf,
     searchTerm,
     setSearchTerm,
     filterTipo,
@@ -422,25 +424,46 @@ export const GlosaTable = ({
                                                         <Eye size={16} />
                                                     </button>
                                                     {glosa.soporte_pdf && (
-                                                        <a
-                                                            href={glosa.soporte_pdf}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            title="Ver Nota Crédito/PDF"
-                                                            style={{
-                                                                background: 'rgba(59, 130, 246, 0.1)',
-                                                                border: '1px solid rgba(59, 130, 246, 0.2)',
-                                                                color: '#60a5fa',
-                                                                padding: '0.5rem',
-                                                                borderRadius: '0.75rem',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                transition: 'all 0.2s',
-                                                                textDecoration: 'none'
-                                                            }}
-                                                        >
-                                                            <FileText size={16} />
-                                                        </a>
+                                                        <div style={{ display: 'flex', gap: '0.25rem' }}>
+                                                            <a
+                                                                href={glosa.soporte_pdf}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                title="Ver Nota Crédito/PDF"
+                                                                style={{
+                                                                    background: 'rgba(59, 130, 246, 0.1)',
+                                                                    border: '1px solid rgba(59, 130, 246, 0.2)',
+                                                                    color: '#60a5fa',
+                                                                    padding: '0.5rem',
+                                                                    borderRadius: '0.75rem',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    transition: 'all 0.2s',
+                                                                    textDecoration: 'none'
+                                                                }}
+                                                            >
+                                                                <FileText size={16} />
+                                                            </a>
+                                                            {isAdmin && onDeletePdf && (
+                                                                <button
+                                                                    onClick={() => onDeletePdf(glosa.id)}
+                                                                    title="Eliminar PDF"
+                                                                    style={{
+                                                                        background: 'rgba(239, 68, 68, 0.1)',
+                                                                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                                                                        color: '#ef4444',
+                                                                        padding: '0.5rem',
+                                                                        borderRadius: '0.75rem',
+                                                                        cursor: 'pointer',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        transition: 'all 0.2s'
+                                                                    }}
+                                                                >
+                                                                    <Trash2 size={16} />
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     )}
                                                     {glosa.estado === 'Aceptada' && !glosa.soporte_pdf && isAdmin && onUploadPdf && (
                                                         <label

@@ -542,6 +542,28 @@ function Home() {
     }
   };
 
+  const handleDeletePdf = async (id: string) => {
+    try {
+      showToast('Eliminando PDF adjunto...', 'info');
+
+      // Update DB to remove reference
+      const { error: dbError } = await supabase.from('glosas').update({ soporte_pdf: null }).eq('id', id);
+      if (dbError) throw dbError;
+
+      // Update Local
+      setGlosas(prev => {
+        const updated = safeArray(prev).map(g => g.id === id ? { ...g, soporte_pdf: undefined } : g);
+        safeStorage.setJson('cached_glosas', updated);
+        return updated;
+      });
+
+      showToast('PDF eliminado exitosamente', 'success');
+    } catch (error: any) {
+      console.error('Delete PDF error:', error);
+      showToast('Error eliminando PDF: ' + (error.message || 'Error desconocido'), 'error');
+    }
+  };
+
   const handleUpdateGlosa = async (updatedGlosa: Glosa) => {
     setGlosas(prev => {
       const updated = safeArray(prev).map(g => g.id === updatedGlosa.id ? updatedGlosa : g);
@@ -649,6 +671,28 @@ function Home() {
       console.error('Upload PDF error:', error);
       showToast('Error subiendo PDF: ' + (error.message || 'Error desconocido'), 'error');
       return null;
+    }
+  };
+
+  const handleDeletePdfIngreso = async (id: string) => {
+    try {
+      showToast('Eliminando PDF adjunto...', 'info');
+
+      // Update DB
+      const { error: dbError } = await supabase.from('ingresos').update({ soporte_pdf: null }).eq('id', id);
+      if (dbError) throw dbError;
+
+      // Update Local
+      setIngresos(prev => {
+        const updated = safeArray(prev).map(i => i.id === id ? { ...i, soporte_pdf: undefined } : i);
+        safeStorage.setJson('cached_ingresos', updated);
+        return updated;
+      });
+
+      showToast('PDF eliminado exitosamente', 'success');
+    } catch (error: any) {
+      console.error('Delete PDF error:', error);
+      showToast('Error eliminando PDF: ' + (error.message || 'Error desconocido'), 'error');
     }
   };
 
@@ -1432,6 +1476,7 @@ function Home() {
                         })}
                         onUpdateStatus={handleUpdateStatus}
                         onUploadPdf={handleUploadPdf}
+                        onDeletePdf={handleDeletePdf}
                         onUpdateGlosa={handleUpdateGlosa}
                         onDeleteGlosa={handleDeleteGlosa}
                         onDeleteDuplicates={handleDeleteDuplicates}
@@ -1544,6 +1589,7 @@ function Home() {
                         glosas={filteredGlosas}
                         onUpdateStatus={handleUpdateStatus}
                         onUploadPdf={handleUploadPdf}
+                        onDeletePdf={handleDeletePdf}
                         onUpdateGlosa={handleUpdateGlosa}
                         onDeleteGlosa={handleDeleteGlosa}
                         onDeleteDuplicates={handleDeleteDuplicates}
@@ -1587,6 +1633,7 @@ function Home() {
                         ingresos={filteredIngresos}
                         onDelete={handleDeleteIngreso}
                         onUploadPdf={handleUploadPdfIngreso}
+                        onDeletePdf={handleDeletePdfIngreso}
                         isAdmin={role === 'admin'}
                         searchTerm={searchTermIngresos}
                         setSearchTerm={setSearchTermIngresos}
@@ -1870,6 +1917,7 @@ const IngresoList = ({
   ingresos,
   onDelete,
   onUploadPdf,
+  onDeletePdf,
   isAdmin,
   searchTerm,
   setSearchTerm
@@ -1877,6 +1925,7 @@ const IngresoList = ({
   ingresos: Ingreso[],
   onDelete: (id: string) => void,
   onUploadPdf: (id: string, file: File) => Promise<string | null>,
+  onDeletePdf: (id: string) => Promise<void>,
   isAdmin: boolean,
   searchTerm: string,
   setSearchTerm: (val: string) => void
@@ -1969,15 +2018,27 @@ const IngresoList = ({
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', zIndex: 1 }}>
                   {i.soporte_pdf && (
-                    <a
-                      href={i.soporte_pdf}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Ver Nota Crédito/PDF"
-                      style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '0.75rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', transition: 'all 0.2s', textDecoration: 'none' }}
-                    >
-                      <FileText size={16} />
-                    </a>
+                    <div style={{ display: 'flex', gap: '0.25rem' }}>
+                      <a
+                        href={i.soporte_pdf}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Ver Nota Crédito/PDF"
+                        style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '0.75rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', transition: 'all 0.2s', textDecoration: 'none' }}
+                      >
+                        <FileText size={16} />
+                      </a>
+                      {isAdmin && (
+                        <motion.button
+                          onClick={() => onDeletePdf(i.id)}
+                          whileHover={{ scale: 1.1, background: 'rgba(239, 68, 68, 0.2)' }}
+                          title="Eliminar PDF"
+                          style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '0.75rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', transition: 'all 0.2s', cursor: 'pointer' }}
+                        >
+                          <Trash2 size={16} />
+                        </motion.button>
+                      )}
+                    </div>
                   )}
                   {!i.soporte_pdf && isAdmin && (
                     <label
