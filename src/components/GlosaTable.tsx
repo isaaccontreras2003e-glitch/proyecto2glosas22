@@ -69,7 +69,7 @@ export const GlosaTable = ({
         switch (status) {
             case 'Pendiente': return { background: 'rgba(139, 92, 246, 0.15)', color: '#a78bfa', borderColor: 'rgba(139, 92, 246, 0.3)' };
             case 'Respondida': return { background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', borderColor: 'rgba(16, 185, 129, 0.3)' };
-            case 'Aceptada': return { background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', borderColor: 'rgba(59, 130, 246, 0.3)' };
+            case 'Aceptada': return { background: 'rgba(255, 77, 77, 0.15)', color: '#ff4d4d', borderColor: 'rgba(255, 77, 77, 0.3)' };
             default: return {};
         }
     };
