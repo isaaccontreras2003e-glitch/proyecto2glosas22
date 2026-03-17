@@ -1142,6 +1142,9 @@ function Home() {
         transition={{ duration: 0.8, ease: "circOut" }}
         className="app-sidebar custom-scrollbar"
       >
+        <div style={{ padding: '1rem' }}>
+          <InteractiveLogo />
+        </div>
         <div style={{ padding: '0 1rem', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
             <div style={{ padding: '8px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '10px' }}>
@@ -1438,7 +1441,6 @@ function Home() {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <InteractiveLogo />
                     <Dashboard
                       glosas={currentSectionGlosas}
                       consolidado={consolidado}
