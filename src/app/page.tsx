@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { InteractiveLogo } from '@/components/InteractiveLogo';
 import { ToastProvider, useToast } from '@/lib/contexts/ToastContext';
 
 const formatPesos = (value: any): string => {
@@ -1437,6 +1438,7 @@ function Home() {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3 }}
                   >
+                    <InteractiveLogo />
                     <Dashboard
                       glosas={currentSectionGlosas}
                       consolidado={consolidado}
