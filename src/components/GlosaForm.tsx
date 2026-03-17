@@ -73,10 +73,25 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
     }, [formData, currentSeccion]);
 
     // Cálculos de control diario con formato MANUAL y SEGURO (DD/MM/YYYY)
-    const todayStr = useMemo(() => {
+    // v10.1: RELOJ DINÁMICO - Se actualiza solo al cambiar el día
+    const [currentDateStr, setCurrentDateStr] = useState(() => {
         const d = new Date();
         return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
-    }, []);
+    });
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            const d = new Date();
+            const newDate = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+            if (newDate !== currentDateStr) {
+                console.log('🔄 Cambio de día detectado:', newDate);
+                setCurrentDateStr(newDate);
+            }
+        }, 60000); // Revisar cada minuto
+        return () => clearInterval(timer);
+    }, [currentDateStr]);
+
+    const todayStr = currentDateStr;
 
     const nowTimestamp = () => {
         const d = new Date();

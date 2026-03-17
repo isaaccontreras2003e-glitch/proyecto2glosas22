@@ -59,6 +59,20 @@ function Home() {
   const [forcedEntry, setForcedEntry] = useState(false);
   const [showForceButton, setShowForceButton] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [today, setToday] = useState(new Date());
+
+  // v10.1: RELOJ DE REINICIO DIARIO - Actualiza la fecha cada minuto
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      if (now.getDate() !== today.getDate() || now.getMonth() !== today.getMonth() || now.getFullYear() !== today.getFullYear()) {
+        console.log('📅 Cambio de fecha detectado en Dashboard Principal:', now.toLocaleDateString());
+        setToday(now);
+      }
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [today]);
+
   const [supabaseError, setSupabaseError] = useState<string | null>(null);
   const lastFetchedUserId = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1462,7 +1476,6 @@ function Home() {
                         glosas={currentSectionGlosas.filter(g => {
                           if (!g.fecha) return false;
                           try {
-                            const today = new Date();
                             const [d, m, y] = g.fecha.split(',')[0].trim().split('/');
                             const glosaDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
                             const isToday = glosaDate.getDate() === today.getDate() &&
