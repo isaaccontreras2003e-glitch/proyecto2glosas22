@@ -7,6 +7,7 @@
   --background: #00050a;
   --surface: #0f172a;
   --surface-hover: #1e293b;
+  --bg-card: var(--surface);
   --foreground: #f8fafc;
 
   --primary: #00f2fe;
@@ -179,15 +180,15 @@ p {
 }
 
 .btn-secondary {
-  background: #f1f5f9;
-  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
   border: 1px solid var(--border);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #e2e8f0;
-  color: var(--text-primary);
-  border-color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--primary);
+  border-color: var(--primary);
   transform: translateY(-1px);
 }
 
@@ -215,8 +216,8 @@ p {
   border-radius: var(--radius-sm);
   font-size: 0.9375rem;
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-  background: #ffffff;
-  color: var(--text-primary);
+  background: #1e293b !important;
+  color: #ffffff !important;
   font-family: inherit;
 }
 
@@ -227,8 +228,8 @@ p {
 .input:focus {
   outline: none;
   border-color: var(--primary);
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(0, 99, 65, 0.1);
+  background: #2d3748 !important;
+  box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .input::placeholder {
@@ -240,8 +241,8 @@ select.input {
 }
 
 select.input option {
-  background: #ffffff;
-  color: var(--text-primary);
+  background: var(--surface);
+  color: #ffffff;
 }
 
 textarea.input {
@@ -277,24 +278,23 @@ textarea.input {
 
 /* ── Scrollbars ─────────────────────────────────────── */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 8px;
+  height: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(255, 255, 255, 0.01);
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--secondary-hover);
-  opacity: 0.3;
+  background: var(--primary);
   border-radius: 10px;
-  transition: background 0.2s;
+  border: 2px solid var(--background);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
+  background: var(--primary-hover);
 }
 
 .custom-scrollbar-mini::-webkit-scrollbar {
