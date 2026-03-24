@@ -192,12 +192,12 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
         }
 
         if (facturaExiste && !forceSubmit) {
-            showToast('❌ FACTURA YA EXISTE: Esta factura ya está en el sistema.', 'error');
-            return;
+            showToast('⚠️ ATENCIÓN: Esta factura ya tiene registros previos. Revisa si es un nuevo servicio.', 'info');
+            // No bloqueamos completamente si no es dupe exacto, pero mostramos info
         }
 
         if (isDupeMatch && !forceSubmit) {
-            showToast('⚠ REGISTRO DUPLICADO: Esta factura ya tiene un registro idéntico hoy.', 'info');
+            showToast('❌ ERROR: REGISTRO DUPLICADO EXACTO. Ya existe este servicio con este valor para esta factura.', 'error');
             return;
         }
 
@@ -302,10 +302,10 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                         gap: '1rem',
                         padding: '1.5rem',
-                        background: 'rgba(255,255,255,0.03)',
+                        background: 'var(--bg-card)',
                         borderRadius: '20px',
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2)'
+                        border: '1px solid var(--border)',
+                        boxShadow: 'var(--shadow-sm)'
                     }}>
                         <div className="input-group">
                             <label className="label">Número de Factura</label>
@@ -382,10 +382,10 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                         gap: '1rem',
                         padding: '1.5rem',
-                        background: 'rgba(255,255,255,0.03)',
+                        background: 'var(--bg-card)',
                         borderRadius: '20px',
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2)'
+                        border: '1px solid var(--border)',
+                        boxShadow: 'var(--shadow-sm)'
                     }}>
                         <div className="input-group">
                             <label className="label">Valor Glosa</label>
@@ -454,7 +454,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                                             }
                                         }}
                                     />
-                                    <label htmlFor="pdf-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', color: pdfFile ? '#10b981' : 'rgba(255,255,255,0.6)' }}>
+                                    <label htmlFor="pdf-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', color: pdfFile ? 'var(--secondary)' : 'var(--text-muted)' }}>
                                         {pdfFile ? <FileText size={32} /> : <UploadCloud size={32} />}
                                         <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{pdfFile ? pdfFile.name : 'Anexar Nota Crédito PDF (Opcional)'}</span>
                                     </label>
@@ -480,7 +480,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                 </div>
 
                 {!isAdmin && (
-                    <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.1)', marginTop: '1rem' }}>
+                    <div style={{ padding: '1rem', background: 'var(--bg-card)', borderRadius: '10px', color: 'var(--text-muted)', fontSize: '0.8rem', textAlign: 'center', border: '1px dashed var(--border)', marginTop: '1rem' }}>
                         Cuenta en modo <strong>LECTURA</strong>. No puedes realizar registros.
                     </div>
                 )}
@@ -518,7 +518,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                                 marginTop: '1rem',
                                 opacity: isUploadingPdf ? 0.7 : 1,
                                 cursor: isUploadingPdf ? 'wait' : 'pointer',
-                                background: facturaExiste ? 'rgba(139, 92, 246, 0.8)' : undefined,
+                                background: facturaExiste ? 'var(--secondary)' : undefined,
                             }}
                         >
                             {facturaExiste ? <AlertTriangle size={18} /> : (isUploadingPdf ? <Save size={18} /> : <Plus size={18} />)}
@@ -531,28 +531,28 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                 <div style={{
                     marginTop: '2.5rem',
                     padding: '1.5rem',
-                    background: 'rgba(139, 92, 246, 0.05)',
+                    background: 'var(--bg-card)',
                     borderRadius: '1.75rem',
-                    border: '1px solid rgba(139, 92, 246, 0.2)',
+                    border: '1px solid var(--border)',
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr 1fr',
                     gap: '1.25rem',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+                    boxShadow: 'var(--shadow-md)'
                 }}>
-                    <div style={{ borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem' }}>
-                        <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>INGRESOS DIARIOS</p>
+                    <div style={{ borderRight: '1px solid var(--border)', paddingRight: '1rem' }}>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>INGRESOS DIARIOS</p>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{dailyStats.count}</span>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>({dailyStats.facturas} facturas hoy)</span>
+                            <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--text-primary)' }}>{dailyStats.count}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({dailyStats.facturas} facturas hoy)</span>
                         </div>
                     </div>
-                    <div style={{ borderRight: '1px solid rgba(255,255,255,0.05)', paddingRight: '1rem' }}>
-                        <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>VALOR TOTAL INGRESADO</p>
-                        <p style={{ fontSize: '1.4rem', fontWeight: 950, color: 'var(--primary)', textShadow: '0 0 20px rgba(139, 92, 246, 0.3)' }}>${new Intl.NumberFormat('es-CO').format(dailyStats.value)}</p>
+                    <div style={{ borderRight: '1px solid var(--border)', paddingRight: '1rem' }}>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>VALOR TOTAL INGRESADO</p>
+                        <p style={{ fontSize: '1.4rem', fontWeight: 950, color: 'var(--primary)', textShadow: '0 0 20px var(--primary-glow)' }}>${new Intl.NumberFormat('es-CO').format(dailyStats.value)}</p>
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>VALOR ACEPTADO</p>
-                        <p style={{ fontSize: '1.4rem', fontWeight: 950, color: '#ef4444', textShadow: '0 0 20px rgba(239,68,68,0.3)' }}>${new Intl.NumberFormat('es-CO').format(dailyStats.valorAceptado)}</p>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>VALOR ACEPTADO</p>
+                        <p style={{ fontSize: '1.4rem', fontWeight: 950, color: 'var(--danger)', textShadow: '0 0 20px var(--danger-glow)' }}>${new Intl.NumberFormat('es-CO').format(dailyStats.valorAceptado)}</p>
                     </div>
                 </div>
             </form>

@@ -72,9 +72,9 @@ export const GlosaTable = ({
 
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'Pendiente': return { background: 'rgba(139, 92, 246, 0.15)', color: '#a78bfa', borderColor: 'rgba(139, 92, 246, 0.3)' };
-            case 'Respondida': return { background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', borderColor: 'rgba(16, 185, 129, 0.3)' };
-            case 'Aceptada': return { background: 'rgba(255, 77, 77, 0.15)', color: '#ff4d4d', borderColor: 'rgba(255, 77, 77, 0.3)' };
+            case 'Pendiente': return { background: 'rgba(0, 177, 113, 0.1)', color: 'var(--secondary)', borderColor: 'rgba(0, 177, 113, 0.2)' };
+            case 'Respondida': return { background: 'rgba(0, 99, 65, 0.1)', color: 'var(--primary)', borderColor: 'rgba(0, 99, 65, 0.2)' };
+            case 'Aceptada': return { background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.2)' };
             default: return {};
         }
     };
@@ -88,26 +88,44 @@ export const GlosaTable = ({
     };
 
     // Detectar IDs duplicados (misma factura + servicio + valor)
-    const duplicateIds = useMemo(() => {
-        const seen = new Map<string, string>();
-        const dupes = new Set<string>();
-        // Guard: filtrar elementos nulos/undefined ANTES del loop
+    // v11.0: Diferenciación entre Duplicado Exacto y Factura Repetida
+    const duplicateData = useMemo(() => {
+        const seenExact = new Map<string, string>(); // key: fact|serv|valor
+        const seenFact = new Map<string, string>();  // key: factura
+
+        const exactDupes = new Set<string>();
+        const repeatedFacts = new Set<string>();
+
         const safeGlosas = (glosas || []).filter(g => g && g.id);
+
         safeGlosas.forEach(g => {
-            const fact = (g.factura || '').trim().toLowerCase();
+            const factKey = (g.factura || '').trim().toLowerCase();
             const serv = (g.servicio || '').trim().toLowerCase();
-            const key = `${fact}|${serv}|${safeNumber(g.valor_glosa)}`;
-            if (seen.has(key)) {
-                dupes.add(g.id);
-                dupes.add(seen.get(key)!);
+            const exactKey = `${factKey}|${serv}|${safeNumber(g.valor_glosa)}`;
+
+            // 1. Detección de duplicado exacto
+            if (seenExact.has(exactKey)) {
+                exactDupes.add(g.id);
+                exactDupes.add(seenExact.get(exactKey)!);
             } else {
-                seen.set(key, g.id);
+                seenExact.set(exactKey, g.id);
+            }
+
+            // 2. Detección de factura repetida (mismo número, diferente contenido)
+            if (seenFact.has(factKey)) {
+                repeatedFacts.add(g.id);
+                repeatedFacts.add(seenFact.get(factKey)!);
+            } else {
+                seenFact.set(factKey, g.id);
             }
         });
-        return dupes;
+
+        return { exactDupes, repeatedFacts };
     }, [glosas]);
 
-    const duplicateCount = duplicateIds.size;
+    const { exactDupes, repeatedFacts } = duplicateData;
+    const duplicateCount = exactDupes.size;
+    const repeatedCount = repeatedFacts.size;
 
     return (
         <>
@@ -125,9 +143,9 @@ export const GlosaTable = ({
                     alignItems: 'flex-end'
                 }}>
                     <div style={{ flex: '1 1 300px' }}>
-                        <label style={{ display: 'block', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Búsqueda Inteligente</label>
+                        <label style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Búsqueda Inteligente</label>
                         <div style={{ position: 'relative' }}>
-                            <ClipboardList size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+                            <ClipboardList size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                             <input
                                 type="text"
                                 placeholder="Buscar por factura o servicio..."
@@ -135,33 +153,33 @@ export const GlosaTable = ({
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 style={{
                                     width: '100%',
-                                    background: 'rgba(0,0,0,0.2)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    background: 'var(--bg-card)',
+                                    border: '1px solid var(--border)',
                                     borderRadius: '12px',
                                     padding: '0.75rem 1rem 0.75rem 2.8rem',
-                                    color: 'white',
+                                    color: 'var(--text-primary)',
                                     fontSize: '0.85rem',
                                     outline: 'none',
                                     transition: 'border-color 0.2s'
                                 }}
                                 onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-                                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                                onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
                             />
                         </div>
                     </div>
 
                     <div style={{ flex: '1 1 150px' }}>
-                        <label style={{ display: 'block', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Tipo de Glosa</label>
+                        <label style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Tipo de Glosa</label>
                         <select
                             value={filterTipo}
                             onChange={(e) => setFilterTipo(e.target.value)}
                             style={{
                                 width: '100%',
-                                background: 'rgba(0,0,0,0.2)',
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border)',
                                 borderRadius: '12px',
                                 padding: '0.75rem 1rem',
-                                color: 'white',
+                                color: 'var(--text-primary)',
                                 fontSize: '0.85rem',
                                 outline: 'none',
                                 cursor: 'pointer'
@@ -176,17 +194,17 @@ export const GlosaTable = ({
                     </div>
 
                     <div style={{ flex: '1 1 150px' }}>
-                        <label style={{ display: 'block', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Estado</label>
+                        <label style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Estado</label>
                         <select
                             value={filterEstado}
                             onChange={(e) => setFilterEstado(e.target.value)}
                             style={{
                                 width: '100%',
-                                background: 'rgba(0,0,0,0.2)',
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border)',
                                 borderRadius: '12px',
                                 padding: '0.75rem 1rem',
-                                color: 'white',
+                                color: 'var(--text-primary)',
                                 fontSize: '0.85rem',
                                 outline: 'none',
                                 cursor: 'pointer'
@@ -200,17 +218,17 @@ export const GlosaTable = ({
                     </div>
 
                     <div style={{ flex: '1 1 150px' }}>
-                        <label style={{ display: 'block', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Registro Interno</label>
+                        <label style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Registro Interno</label>
                         <select
                             value={filterInterno}
                             onChange={(e) => setFilterInterno(e.target.value)}
                             style={{
                                 width: '100%',
-                                background: 'rgba(0,0,0,0.2)',
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border)',
                                 borderRadius: '12px',
                                 padding: '0.75rem 1rem',
-                                color: 'white',
+                                color: 'var(--text-primary)',
                                 fontSize: '0.85rem',
                                 outline: 'none',
                                 cursor: 'pointer'
@@ -226,10 +244,10 @@ export const GlosaTable = ({
                         onClick={() => { setSearchTerm(''); setFilterTipo('Todos'); setFilterEstado('Todos'); setFilterInterno('Todos'); }}
                         style={{
                             padding: '0.75rem 1.25rem',
-                            background: 'rgba(255,255,255,0.05)',
-                            border: '1px solid rgba(255,255,255,0.1)',
+                            background: 'var(--bg-card)',
+                            border: '1px solid var(--border)',
                             borderRadius: '12px',
-                            color: 'rgba(255,255,255,0.6)',
+                            color: 'var(--text-muted)',
                             fontSize: '0.75rem',
                             fontWeight: 700,
                             cursor: 'pointer',
@@ -256,9 +274,19 @@ export const GlosaTable = ({
                         justifyContent: 'space-between',
                         gap: '1rem'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: '#f87171', fontSize: '0.8rem', fontWeight: 700 }}>
-                            <Copy size={16} />
-                            {duplicateCount} registro(s) duplicado(s) detectado(s) — marcados en rojo
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                            {duplicateCount > 0 && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171', fontSize: '0.8rem', fontWeight: 700 }}>
+                                    <Copy size={16} />
+                                    {duplicateCount} Duplicados Exactos (Rojo)
+                                </div>
+                            )}
+                            {repeatedCount > 0 && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fbbf24', fontSize: '0.8rem', fontWeight: 700 }}>
+                                    <AlertTriangle size={16} />
+                                    {repeatedCount} Facturas Repetidas (Naranja)
+                                </div>
+                            )}
                         </div>
                         {confirmDeleteAll ? (
                             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -289,7 +317,7 @@ export const GlosaTable = ({
                                     gap: '0.4rem'
                                 }}
                             >
-                                <Trash2 size={14} /> Eliminar todos los duplicados
+                                <Trash2 size={14} /> Eliminar todos los duplicados EXACTOS
                             </button>
                         )}
                     </div>
@@ -317,17 +345,20 @@ export const GlosaTable = ({
                                 </tr>
                             ) : (
                                 (glosas || []).filter(g => g && g.id).map((glosa, index) => {
-                                    const isDupe = duplicateIds.has(glosa.id);
+                                    const isExactDupe = exactDupes.has(glosa.id);
+                                    const isRepeated = repeatedFacts.has(glosa.id);
+                                    const isOnlyRepeated = isRepeated && !isExactDupe;
+
                                     return (
                                         <tr
                                             key={glosa.id}
                                             style={{
-                                                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                                                borderBottom: '1px solid var(--border)',
                                                 transition: 'background 0.2s',
                                                 background: glosa.registrada_internamente
-                                                    ? 'rgba(16,185,129,0.08)'
-                                                    : (isDupe ? 'rgba(239,68,68,0.1)' : (index % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent')),
-                                                borderLeft: glosa.registrada_internamente ? '4px solid #10b981' : (isDupe ? '4px solid rgba(239,68,68,0.7)' : '1px solid rgba(255,255,255,0.1)')
+                                                    ? 'rgba(0, 177, 113, 0.05)'
+                                                    : (isExactDupe ? 'rgba(239,68,68,0.05)' : (isOnlyRepeated ? 'rgba(245,158,11,0.03)' : (index % 2 === 0 ? 'rgba(0,0,0,0.01)' : 'transparent'))),
+                                                borderLeft: glosa.registrada_internamente ? '4px solid var(--secondary)' : (isExactDupe ? '4px solid var(--danger)' : (isOnlyRepeated ? '4px solid #f59e0b' : '1px solid var(--border)'))
                                             }}
                                         >
                                             <td style={{ padding: '1.25rem 1rem', textAlign: 'center' }}>
@@ -340,21 +371,22 @@ export const GlosaTable = ({
                                                         background: 'none',
                                                         border: 'none',
                                                         cursor: glosa.registrada_internamente ? 'default' : 'pointer',
-                                                        color: glosa.registrada_internamente ? '#10b981' : 'rgba(255,255,255,0.1)',
+                                                        color: glosa.registrada_internamente ? 'var(--secondary)' : 'var(--text-muted)',
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
                                                         width: '100%',
-                                                        opacity: glosa.registrada_internamente ? 1 : 0.6
+                                                        opacity: glosa.registrada_internamente ? 1 : 0.4
                                                     }}
                                                     title={glosa.registrada_internamente ? "Registro permanente en sistema interno" : "Marcar como registrado en sistema interno"}
                                                 >
-                                                    <CheckCircle2 size={20} fill={glosa.registrada_internamente ? "rgba(16,185,129,0.1)" : "none"} />
+                                                    <CheckCircle2 size={20} fill={glosa.registrada_internamente ? "rgba(0,177,113,0.1)" : "none"} />
                                                 </motion.button>
                                             </td>
-                                            <td style={{ padding: '1.25rem 1rem', fontWeight: 600, color: glosa.registrada_internamente ? '#10b981' : (isDupe ? '#f87171' : 'white') }}>
+                                            <td style={{ padding: '1.25rem 1rem', fontWeight: 600, color: glosa.registrada_internamente ? 'var(--secondary)' : (isExactDupe ? 'var(--danger)' : (isOnlyRepeated ? '#f59e0b' : 'var(--text-primary)')) }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                                    {isDupe && <Copy size={13} style={{ flexShrink: 0 }} />}
+                                                    {isExactDupe && <Copy size={13} style={{ flexShrink: 0 }} />}
+                                                    {isOnlyRepeated && <AlertTriangle size={13} style={{ flexShrink: 0 }} />}
                                                     <span>{glosa.factura}</span>
                                                     {glosa.sincronizado ? (
                                                         <div title="Sincronizado en la nube" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 5px #10b981' }}></div>
@@ -410,9 +442,9 @@ export const GlosaTable = ({
                                                         onClick={() => setSelectedGlosa(glosa)}
                                                         title="Ver detalles"
                                                         style={{
-                                                            background: 'rgba(139, 92, 246, 0.1)',
-                                                            border: '1px solid rgba(139, 92, 246, 0.2)',
-                                                            color: '#a78bfa',
+                                                            background: 'rgba(0, 99, 65, 0.05)',
+                                                            border: '1px solid rgba(0, 99, 65, 0.1)',
+                                                            color: 'var(--primary)',
                                                             padding: '0.5rem',
                                                             borderRadius: '0.75rem',
                                                             cursor: 'pointer',
@@ -558,8 +590,8 @@ export const GlosaTable = ({
                                                                 onClick={() => setConfirmDeleteId(glosa.id)}
                                                                 title="Eliminar registro"
                                                                 style={{
-                                                                    background: isDupe ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.07)',
-                                                                    border: `1px solid rgba(239,68,68,${isDupe ? '0.35' : '0.2'})`,
+                                                                    background: isExactDupe ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.07)',
+                                                                    border: `1px solid rgba(239,68,68,${isExactDupe ? '0.35' : '0.2'})`,
                                                                     color: '#f87171',
                                                                     padding: '0.5rem',
                                                                     borderRadius: '0.75rem',
@@ -593,26 +625,26 @@ export const GlosaTable = ({
                     zIndex: 1000, padding: '20px'
                 }} onClick={() => setSelectedGlosa(null)}>
                     <div style={{
-                        background: '#0a0812', width: '100%', maxWidth: '650px',
-                        borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)',
-                        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+                        background: 'var(--background)', width: '100%', maxWidth: '650px',
+                        borderRadius: '24px', border: '1px solid var(--border)',
+                        boxShadow: 'var(--shadow-lg)',
                         position: 'relative', overflow: 'hidden'
                     }} onClick={(e) => e.stopPropagation()}>
                         <div style={{
                             padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)',
                             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            background: 'rgba(139, 92, 246, 0.03)'
+                            background: 'rgba(0, 99, 65, 0.02)'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <div style={{ padding: '10px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '12px' }}>
-                                    <ClipboardList size={20} color="#a78bfa" />
+                                <div style={{ padding: '10px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '12px' }}>
+                                    <ClipboardList size={20} color="var(--primary)" />
                                 </div>
                                 <div>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'white', margin: 0 }}>Detalles de la Glosa</h3>
-                                    <p style={{ fontSize: '0.75rem', color: '#a78bfa', margin: '0.25rem 0 0 0' }}>Expediente de Auditoría</p>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Detalles de la Glosa</h3>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--primary)', margin: '0.25rem 0 0 0' }}>Expediente de Auditoría</p>
                                 </div>
                             </div>
-                            <button onClick={() => setSelectedGlosa(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '8px' }}>
+                            <button onClick={() => setSelectedGlosa(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '8px' }}>
                                 <X size={24} />
                             </button>
                         </div>
@@ -625,7 +657,7 @@ export const GlosaTable = ({
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 <DetailItem icon={<DollarSign size={16} />} label="Valor Glosado" value={`$${formatPesos(selectedGlosa.valor_glosa)}`} isHighlight />
-                                <DetailItem icon={<DollarSign size={16} />} label="Valor Aceptado" value={`$${formatPesos(selectedGlosa.valor_aceptado)}`} isHighlight color="#3b82f6" />
+                                <DetailItem icon={<DollarSign size={16} />} label="Valor Aceptado" value={`$${formatPesos(selectedGlosa.valor_aceptado)}`} isHighlight color="var(--secondary)" />
                                 <DetailItem icon={<Calendar size={16} />} label="Fecha de Registro" value={selectedGlosa.fecha} />
                                 {/* Build Sync: Timestamp V1.0 */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -643,7 +675,7 @@ export const GlosaTable = ({
                                 </p>
                             </div>
                         </div>
-                        <div style={{ padding: '1.5rem 2rem', background: 'rgba(255,255,255,0.02)', textAlign: 'right' }}>
+                        <div style={{ padding: '1.5rem 2rem', background: 'var(--bg-card)', textAlign: 'right' }}>
                             <button onClick={() => setSelectedGlosa(null)} style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '0.75rem 2rem', borderRadius: '12px', fontWeight: 700, cursor: 'pointer' }}>
                                 Entendido
                             </button>
@@ -661,24 +693,24 @@ export const GlosaTable = ({
                     zIndex: 1000, padding: '20px'
                 }} onClick={() => setEditingGlosa(null)}>
                     <div style={{
-                        background: '#0a0812', width: '100%', maxWidth: '700px',
-                        borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)',
-                        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+                        background: 'var(--background)', width: '100%', maxWidth: '700px',
+                        borderRadius: '24px', border: '1px solid var(--border)',
+                        boxShadow: 'var(--shadow-lg)',
                         position: 'relative', overflow: 'hidden'
                     }} onClick={(e) => e.stopPropagation()}>
                         <form onSubmit={handleSaveEdit}>
                             <div style={{
                                 padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)',
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                background: 'rgba(255, 255, 255, 0.02)'
+                                background: 'rgba(0, 99, 65, 0.02)'
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ padding: '10px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px' }}>
-                                        <Pencil size={20} color="white" />
+                                    <div style={{ padding: '10px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '12px' }}>
+                                        <Pencil size={20} color="var(--primary)" />
                                     </div>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'white', margin: 0 }}>Modificar Registro</h3>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Modificar Registro</h3>
                                 </div>
-                                <button type="button" onClick={() => setEditingGlosa(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>
+                                <button type="button" onClick={() => setEditingGlosa(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
                                     <X size={24} />
                                 </button>
                             </div>
@@ -717,8 +749,8 @@ export const GlosaTable = ({
                                     <textarea className="input" style={{ minHeight: '120px', resize: 'vertical' }} value={editingGlosa.descripcion} onChange={(e) => setEditingGlosa({ ...editingGlosa, descripcion: e.target.value })} />
                                 </div>
                             </div>
-                            <div style={{ padding: '1.5rem 2rem', background: 'rgba(255,255,255,0.02)', borderTop: '1px solid var(--border)', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                                <button type="button" onClick={() => setEditingGlosa(null)} style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', padding: '0.75rem 1.5rem', borderRadius: '12px', fontWeight: 600, cursor: 'pointer' }}>Cancelar</button>
+                            <div style={{ padding: '1.5rem 2rem', background: 'var(--bg-card)', borderTop: '1px solid var(--border)', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                <button type="button" onClick={() => setEditingGlosa(null)} style={{ background: 'var(--background)', color: 'var(--text-primary)', border: '1px solid var(--border)', padding: '0.75rem 1.5rem', borderRadius: '12px', fontWeight: 600, cursor: 'pointer' }}>Cancelar</button>
                                 <button type="submit" style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '0.75rem 2rem', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <Save size={18} /> Guardar Cambios
                                 </button>
@@ -734,13 +766,13 @@ export const GlosaTable = ({
 const DetailItem = ({ icon, label, value, isBold = false, isHighlight = false, color }: any) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ color: 'rgba(255,255,255,0.3)' }}>{icon}</span>
-            <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
+            <span style={{ color: 'var(--text-muted)' }}>{icon}</span>
+            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
         </div>
         <span style={{
             fontSize: isHighlight ? '1.25rem' : '1rem',
             fontWeight: (isBold || isHighlight) ? 800 : 500,
-            color: color || (isHighlight ? 'var(--primary)' : 'white')
+            color: color || (isHighlight ? 'var(--primary)' : 'var(--text-primary)')
         }}>{value}</span>
     </div>
 );

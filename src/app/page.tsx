@@ -1147,10 +1147,10 @@ function Home() {
         </div>
         <div style={{ padding: '0 1rem', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-            <div style={{ padding: '8px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '10px' }}>
+            <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>NAVEGACIÓN V2</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '0.05em' }}>NAVEGACIÓN V4</h2>
           </div>
 
 
@@ -1161,9 +1161,9 @@ function Home() {
               flexDirection: 'column',
               gap: '0.5rem',
               padding: '1rem',
-              background: 'rgba(255,255,255,0.03)',
+              background: 'rgba(0,0,0,0.02)',
               borderRadius: '16px',
-              border: '1px solid rgba(255,255,255,0.05)'
+              border: '1px solid var(--border)'
             }}>
               <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>SECCIÓN ACTIVA</p>
               <select
@@ -1174,11 +1174,11 @@ function Home() {
                 }}
                 style={{
                   width: '100%',
-                  background: 'rgba(6, 4, 13, 0.5)',
-                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
                   borderRadius: '10px',
                   padding: '0.6rem',
-                  color: 'white',
+                  color: 'var(--text-primary)',
                   fontSize: '0.75rem',
                   fontWeight: 700,
                   outline: 'none',
@@ -1192,12 +1192,12 @@ function Home() {
           ) : (
             <div style={{
               padding: '1rem',
-              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), transparent)',
+              background: 'linear-gradient(135deg, rgba(0, 99, 65, 0.05), transparent)',
               borderRadius: '16px',
-              border: '1px solid rgba(139, 92, 246, 0.2)'
+              border: '1px solid var(--border)'
             }}>
               <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.1em' }}>MODALIDAD</p>
-              <p style={{ fontSize: '0.85rem', fontWeight: 900, color: 'white', marginTop: '0.2rem' }}>{currentMainSection}</p>
+              <p style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '0.2rem' }}>{currentMainSection}</p>
             </div>
           )}
         </div>
@@ -1214,7 +1214,7 @@ function Home() {
             return (
               <motion.button
                 key={item.id}
-                whileHover={{ background: 'rgba(255,255,255,0.03)' }}
+                whileHover={{ background: 'rgba(0,0,0,0.02)' }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setActiveSection(item.id as any)}
                 style={{
@@ -1224,8 +1224,8 @@ function Home() {
                   padding: '0.85rem 1rem',
                   borderRadius: '12px',
                   border: 'none',
-                  background: isActive ? 'rgba(0, 242, 254, 0.1)' : 'transparent',
-                  color: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.4)',
+                  background: isActive ? 'rgba(0, 177, 113, 0.1)' : 'transparent',
+                  color: isActive ? 'var(--primary)' : 'var(--text-muted)',
                   cursor: 'pointer',
                   textAlign: 'left',
                   transition: 'all 0.2s ease',
@@ -1256,12 +1256,12 @@ function Home() {
         {/* User Profile / Logout bottom section */}
         <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'white', fontSize: '0.75rem' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff', fontSize: '0.75rem' }}>
               {user?.email?.charAt(0).toUpperCase()}
             </div>
             <div style={{ flex: 1, overflow: 'hidden' }}>
-              <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'white', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</p>
-              <p style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', margin: 0, textTransform: 'uppercase' }}>{role}</p>
+              <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</p>
+              <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, textTransform: 'uppercase' }}>{role}</p>
             </div>
           </div>
         </div>
@@ -1290,14 +1290,14 @@ function Home() {
             }}>
               <Activity size={18} />
             </div>
-            <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'white', letterSpacing: '-0.01em' }}>
-              Análisis de Datos <span style={{ fontSize: '0.6rem', background: 'var(--primary)', color: '#000', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.5rem', verticalAlign: 'middle', fontWeight: 900 }}>V4.0 PREMIUM</span>
+            <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+              Gestión de Glosas <span style={{ fontSize: '0.6rem', background: 'var(--primary)', color: '#fff', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.5rem', verticalAlign: 'middle', fontWeight: 900 }}>V4.0 PREMIUM</span>
             </h1>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
             {/* Search and Notification icons like in the screenshot */}
-            <div style={{ display: 'flex', gap: '1rem', color: 'rgba(255,255,255,0.4)' }}>
+            <div style={{ display: 'flex', gap: '1rem', color: 'var(--text-muted)' }}>
               <button style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}><LayoutDashboard size={18} /></button>
               <button style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}><Activity size={18} /></button>
             </div>
@@ -1314,9 +1314,9 @@ function Home() {
                 gap: '0.5rem',
                 padding: '0.5rem 1rem',
                 borderRadius: '8px',
-                background: 'rgba(239, 68, 68, 0.1)',
-                color: '#f15bb5',
-                border: '1px solid rgba(239, 68, 68, 0.2)',
+                background: 'rgba(239, 68, 68, 0.05)',
+                color: 'var(--danger)',
+                border: '1px solid rgba(239, 68, 68, 0.1)',
                 fontSize: '0.75rem',
                 fontWeight: 700,
                 cursor: 'pointer'
@@ -1332,7 +1332,7 @@ function Home() {
         <div style={{ marginBottom: '2rem', marginTop: '-0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
           <p style={{
             fontSize: '0.7rem',
-            color: 'rgba(255,255,255,0.3)',
+            color: 'var(--text-muted)',
             fontWeight: 600,
             letterSpacing: '0.05em',
             display: 'flex',
@@ -1340,19 +1340,19 @@ function Home() {
             gap: '0.4rem'
           }}>
             <ClipboardList size={12} />
-            SISTEMA DE AUDITORÍA MÉDICA V2.1
+            SISTEMA DE AUDITORÍA MÉDICA V4.0
           </p>
           {/* Fecha de creación del software */}
           <p style={{
             fontSize: '0.65rem',
-            color: 'rgba(0,242,254,0.45)',
+            color: 'var(--secondary)',
             fontWeight: 700,
             letterSpacing: '0.06em',
             display: 'flex',
             alignItems: 'center',
             gap: '0.35rem',
-            background: 'rgba(0,242,254,0.04)',
-            border: '1px solid rgba(0,242,254,0.1)',
+            background: 'rgba(0,177,113,0.05)',
+            border: '1px solid rgba(0,177,113,0.1)',
             borderRadius: '6px',
             padding: '2px 10px'
           }}>
@@ -1360,11 +1360,11 @@ function Home() {
           </p>
           <p style={{
             fontSize: '0.7rem',
-            color: 'rgba(255,255,255,0.3)',
+            color: 'var(--text-muted)',
             fontWeight: 600,
             letterSpacing: '0.02em',
           }}>
-            Diseño y Desarrollo por Isaac Contreras
+            Powered by Isaac Contreras
           </p>
         </div>
 
@@ -1377,38 +1377,35 @@ function Home() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 marginBottom: '2rem',
-                padding: '1rem 1.5rem',
-                background: currentMainSection === 'GLOSAS'
-                  ? 'rgba(139, 92, 246, 0.05)'
-                  : 'rgba(16, 185, 129, 0.05)',
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
-                margin: '-2rem -2rem 2rem -2rem',
+                padding: '1rem 2rem',
+                background: 'var(--bg-card)',
+                borderBottom: '1px solid var(--border)',
+                margin: '-2rem -2.5rem 2rem -2.5rem',
                 position: 'sticky',
                 top: 0,
                 zIndex: 10,
-                backdropFilter: 'blur(20px)'
+                backdropFilter: 'blur(20px)',
+                boxShadow: 'var(--shadow-sm)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <div style={{
-                    width: '10px',
-                    height: '100%',
-                    position: 'absolute',
-                    left: 0,
-                    top: 0,
-                    background: currentMainSection === 'GLOSAS' ? '#8b5cf6' : '#10b981',
-                    boxShadow: `0 0 15px ${currentMainSection === 'GLOSAS' ? '#8b5cf6' : '#10b981'}`
+                    width: '6px',
+                    height: '24px',
+                    borderRadius: '3px',
+                    background: 'var(--primary)',
+                    boxShadow: '0 0 10px var(--primary-glow)'
                   }} />
                   <span style={{
                     fontSize: '0.65rem',
                     fontWeight: 900,
-                    color: currentMainSection === 'GLOSAS' ? '#a78bfa' : '#34d399',
+                    color: currentMainSection === 'GLOSAS' ? 'var(--primary)' : 'var(--secondary)',
                     letterSpacing: '0.2em',
                     textTransform: 'uppercase'
                   }}>Sección Activa</span>
                   <h2 style={{
                     fontSize: '1.2rem',
                     fontWeight: 950,
-                    color: 'white',
+                    color: 'var(--text-primary)',
                     margin: 0,
                     display: 'flex',
                     alignItems: 'center',
@@ -1664,7 +1661,7 @@ function Home() {
                 <div style={{ maxWidth: '900px', margin: '0 auto' }}>
                   <h3 style={{
                     fontSize: '0.8rem',
-                    color: 'rgba(255,255,255,0.3)',
+                    color: 'var(--text-muted)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.2em',
                     marginBottom: '2.5rem',
@@ -1675,14 +1672,14 @@ function Home() {
 
                   <div style={{ display: 'flex', justifyContent: 'center', gap: '1.25rem', flexWrap: 'wrap', marginBottom: '4rem' }}>
                     {/* Grupo: Gestión de Archivos */}
-                    <div style={{ display: 'flex', gap: '0.75rem', background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '1.25rem', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', gap: '0.75rem', background: 'var(--bg-card)', padding: '0.75rem', borderRadius: '1.25rem', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
                       {role === 'admin' && (
                         <>
                           <motion.button
                             whileHover={{ scale: 1.05 }}
                             onClick={() => fileInputRef.current?.click()}
                             className="btn btn-secondary"
-                            style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#10b981', borderColor: 'rgba(16,185,129,0.2)' }}
+                            style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--secondary)', borderColor: 'rgba(0,177,113,0.2)' }}
                           >
                             <ListChecks size={16} />
                             IMPORTAR EXCEL
@@ -1695,7 +1692,7 @@ function Home() {
                         whileHover={{ scale: 1.05 }}
                         onClick={exportGlosasToExcel}
                         className="btn btn-secondary"
-                        style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#8b5cf6', borderColor: 'rgba(139,92,246,0.2)' }}
+                        style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--primary)', borderColor: 'rgba(0,99,65,0.2)' }}
                       >
                         <Download size={16} />
                         EXPORTAR DATOS
@@ -1714,7 +1711,7 @@ function Home() {
 
                     {/* Grupo: Mantenimiento (Discreto) */}
                     {role === 'admin' && (
-                      <div style={{ display: 'flex', gap: '0.75rem', opacity: 0.5, flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '0.75rem', opacity: 0.6, flexWrap: 'wrap' }}>
                         <motion.button
                           whileHover={{ scale: 1.05, opacity: 1 }}
                           onClick={async () => {
@@ -1723,7 +1720,7 @@ function Home() {
                             window.location.reload();
                           }}
                           className="btn btn-secondary"
-                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10b981' }}
+                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--secondary)', borderColor: 'rgba(0,177,113,0.1)' }}
                         >
                           <RefreshCw size={12} />
                           FORZAR NUEVO ESCANEO
@@ -1733,7 +1730,7 @@ function Home() {
                           whileHover={{ scale: 1.05, opacity: 1 }}
                           onClick={handleReconcilePayments}
                           className="btn btn-secondary"
-                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#8b5cf6', borderColor: 'rgba(139,92,246,0.3)' }}
+                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', borderColor: 'rgba(0,99,65,0.1)' }}
                         >
                           <TrendingUp size={12} />
                           SINCRONIZAR PAGOS
@@ -1780,7 +1777,7 @@ function Home() {
                             }
                           }}
                           className="btn btn-secondary"
-                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.4)' }}
+                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.1)' }}
                         >
                           <RefreshCw size={12} />
                           SINCRO UNIVERSAL
@@ -1820,15 +1817,15 @@ function Home() {
                     )}
                   </div>
 
-                  <div style={{ opacity: 0.4 }}>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
+                  <div style={{ opacity: 0.6 }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>
                       &copy; {new Date().getFullYear()} Sisfact Auditoría. Desarrollado por Isaac Contreras.
                     </p>
-                    <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.65rem', marginTop: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.65rem', marginTop: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.5 }}>
                       Gestión de Alto Rendimiento para Clínicas Internacionales
                     </p>
                   </div>
-                  <div style={{ marginTop: '2rem', padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.65rem', color: 'rgba(255,255,255,0.15)', fontFamily: 'monospace' }}>
+                  <div style={{ marginTop: '2rem', padding: '1rem', borderTop: '1px solid var(--border)', fontSize: '0.65rem', color: 'var(--text-muted)', opacity: 0.3, fontFamily: 'monospace' }}>
                     DEBUG: ID={user?.id} | ROL={role} | EMAIL={user?.email}
                   </div>
                 </div>
@@ -1884,8 +1881,8 @@ const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: 
   };
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="card" style={{ padding: '2rem', border: '1px solid rgba(16, 185, 129, 0.3)', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08), transparent)', boxShadow: '0 10px 40px rgba(16, 185, 129, 0.1)' }}>
-      <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '1.2rem', color: '#10b981', fontWeight: 900 }}>
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="card" style={{ padding: '2rem', border: '1px solid var(--border)', background: 'var(--bg-card)', boxShadow: 'var(--shadow-md)' }}>
+      <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '1.2rem', color: 'var(--primary)', fontWeight: 900 }}>
         <TrendingUp size={22} />
         GESTIÓN DE VALORES TOTALES (AUDITORÍA)
       </h3>
@@ -1895,9 +1892,9 @@ const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: 
           flexDirection: 'column',
           gap: '1.5rem',
           padding: '1.5rem',
-          background: 'rgba(0,0,0,0.2)',
+          background: 'var(--background)',
           borderRadius: '20px',
-          border: '1px solid rgba(16, 185, 129, 0.2)',
+          border: '1px solid var(--border)',
           marginBottom: '1rem'
         }}>
           <div className="input-group">
@@ -1906,12 +1903,12 @@ const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: 
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="input-group">
-              <label className="label" style={{ color: '#10b981' }}>Valor No Aceptado (Glosa)</label>
-              <input type="number" className="input" style={{ padding: '0.85rem 1rem', borderColor: 'rgba(16, 185, 129, 0.2)' }} placeholder="0.00" value={formData.valor_no_aceptado} onChange={(e) => setFormData({ ...formData, valor_no_aceptado: e.target.value })} disabled={!isAdmin} />
+              <label className="label" style={{ color: 'var(--primary)' }}>Valor No Aceptado (Glosa)</label>
+              <input type="number" className="input" style={{ padding: '0.85rem 1rem', borderColor: 'var(--border)' }} placeholder="0.00" value={formData.valor_no_aceptado} onChange={(e) => setFormData({ ...formData, valor_no_aceptado: e.target.value })} disabled={!isAdmin} />
             </div>
             <div className="input-group">
-              <label className="label" style={{ color: '#ef4444' }}>Valor Gestión (Total Sumado)</label>
-              <input type="number" className="input" style={{ padding: '0.85rem 1rem', borderColor: 'rgba(239, 68, 68, 0.3)' }} placeholder="0.00" value={formData.valor_aceptado} onChange={(e) => setFormData({ ...formData, valor_aceptado: e.target.value })} disabled={!isAdmin} />
+              <label className="label" style={{ color: 'var(--danger)' }}>Valor Gestión (Total Sumado)</label>
+              <input type="number" className="input" style={{ padding: '0.85rem 1rem', borderColor: 'var(--border)' }} placeholder="0.00" value={formData.valor_aceptado} onChange={(e) => setFormData({ ...formData, valor_aceptado: e.target.value })} disabled={!isAdmin} />
             </div>
           </div>
         </div>
@@ -1962,7 +1959,7 @@ const IngresoList = ({
       </div>
 
       <div style={{ position: 'relative' }}>
-        <ClipboardList size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
+        <ClipboardList size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
         <input
           type="text"
           placeholder="Buscar factura en pagos..."
@@ -1970,17 +1967,17 @@ const IngresoList = ({
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
             width: '100%',
-            background: 'rgba(0,0,0,0.2)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'var(--background)',
+            border: '1px solid var(--border)',
             borderRadius: '12px',
             padding: '0.75rem 1rem 0.75rem 2.8rem',
-            color: 'white',
+            color: 'var(--text-primary)',
             fontSize: '0.85rem',
             outline: 'none',
             transition: 'border-color 0.2s'
           }}
           onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-          onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+          onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
         />
       </div>
 
@@ -1993,23 +1990,23 @@ const IngresoList = ({
           ) : (
             ingresos.map((i, idx) => (
               <motion.div key={i.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ delay: idx * 0.05 }} style={{
-                background: idx % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.01)',
+                background: idx % 2 === 0 ? 'var(--background)' : 'transparent',
                 borderRadius: '1.25rem',
                 padding: '1.5rem',
                 marginBottom: '1rem',
-                border: '1px solid rgba(255,255,255,0.12)',
+                border: '1px solid var(--border)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 position: 'relative',
                 overflow: 'hidden',
-                boxShadow: idx % 2 === 0 ? '0 4px 20px rgba(0,0,0,0.1)' : 'none'
+                boxShadow: idx % 2 === 0 ? 'var(--shadow-sm)' : 'none'
               }}>
                 <div style={{ opacity: 0.8, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.03))', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}></div>
                 <div style={{ position: 'relative', zIndex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
-                    <h4 style={{ color: 'white', fontWeight: 900, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>{i.factura}</h4>
-                    <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <h4 style={{ color: 'var(--text-primary)', fontWeight: 900, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>{i.factura}</h4>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                       <Activity size={10} /> {i.fecha}
                       {i.sincronizado === false ? (
                         <span style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.2rem', marginLeft: '0.5rem' }}>
@@ -2024,12 +2021,12 @@ const IngresoList = ({
                   </div>
                   <div style={{ display: 'flex', gap: '1.5rem' }}>
                     <div>
-                      <p style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.2rem' }}>No Aceptado</p>
-                      <p style={{ color: '#10b981', fontWeight: 900, fontSize: '0.95rem' }}>${formatPesos(i.valor_no_aceptado)}</p>
+                      <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.2rem' }}>No Aceptado</p>
+                      <p style={{ color: 'var(--secondary)', fontWeight: 900, fontSize: '0.95rem' }}>${formatPesos(i.valor_no_aceptado)}</p>
                     </div>
                     <div>
-                      <p style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.2rem' }}>Aceptado</p>
-                      <p style={{ color: '#ef4444', fontWeight: 900, fontSize: '0.95rem' }}>${formatPesos(i.valor_aceptado)}</p>
+                      <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.2rem' }}>Aceptado</p>
+                      <p style={{ color: 'var(--danger)', fontWeight: 900, fontSize: '0.95rem' }}>${formatPesos(i.valor_aceptado)}</p>
                     </div>
                   </div>
                 </div>
@@ -2091,8 +2088,8 @@ const IngresoList = ({
 };
 const ConsolidadoTable = ({ data }: { data: any[] }) => {
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="card" style={{ padding: '2rem', border: '1px solid rgba(139, 92, 246, 0.3)', boxShadow: '0 10px 40px rgba(139, 92, 246, 0.1)' }}>
-      <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '1.2rem', color: '#8b5cf6', fontWeight: 900 }}>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="card" style={{ padding: '2rem', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)' }}>
+      <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '1.2rem', color: 'var(--primary)', fontWeight: 900 }}>
         <ListChecks size={22} />
         CONSOLIDADO POR FACTURA ({data.length})
       </h3>
@@ -2110,14 +2107,14 @@ const ConsolidadoTable = ({ data }: { data: any[] }) => {
           <tbody>
             {data.map((item, idx) => (
               <tr key={idx} style={{
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                background: idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'
+                borderBottom: '1px solid var(--border)',
+                background: idx % 2 === 0 ? 'var(--background)' : 'transparent'
               }}>
-                <td style={{ padding: '1rem 0.75rem', fontWeight: 800, color: 'white' }}>{item.factura}</td>
-                <td style={{ padding: '1rem 0.75rem', color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{item.fecha}</td>
-                <td style={{ padding: '1rem 0.75rem', fontWeight: 700 }}>${formatPesos(item.glosado)}</td>
-                <td style={{ padding: '1rem 0.75rem', color: '#ef4444', fontWeight: 700 }}>${formatPesos(item.aceptado)}</td>
-                <td style={{ padding: '1rem 0.75rem', textAlign: 'right', color: item.diferencia > 0 ? '#10b981' : 'rgba(255,255,255,0.5)', fontWeight: 950, fontSize: '1rem' }}>
+                <td style={{ padding: '1rem 0.75rem', fontWeight: 800, color: 'var(--text-primary)' }}>{item.factura}</td>
+                <td style={{ padding: '1rem 0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{item.fecha}</td>
+                <td style={{ padding: '1rem 0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>${formatPesos(item.glosado)}</td>
+                <td style={{ padding: '1rem 0.75rem', color: 'var(--danger)', fontWeight: 700 }}>${formatPesos(item.aceptado)}</td>
+                <td style={{ padding: '1rem 0.75rem', textAlign: 'right', color: item.diferencia > 0 ? 'var(--secondary)' : 'var(--text-muted)', fontWeight: 950, fontSize: '1rem' }}>
                   ${formatPesos(item.diferencia)}
                 </td>
               </tr>

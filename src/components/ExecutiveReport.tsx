@@ -30,14 +30,14 @@ export const ExecutiveReport = ({ stats }: ExecutiveReportProps) => {
             title: 'VALOR TOTAL GLOSADO',
             value: formatCurrency(stats.totalGlosado),
             icon: <TrendingUp size={24} />,
-            color: '#8b5cf6',
+            color: 'var(--primary)',
             description: 'Total acumulado de glosas con registro interno'
         },
         {
-            title: 'VALOR ACEPTADO (SALMÓN)',
+            title: 'VALOR ACEPTADO',
             value: formatCurrency(stats.totalAceptado),
             icon: <CheckCircle size={24} />,
-            color: '#ff4d4d',
+            color: 'var(--danger)',
             description: `${stats.percentAceptado}% de recuperación (PAGO)`
         },
         {
@@ -51,7 +51,7 @@ export const ExecutiveReport = ({ stats }: ExecutiveReportProps) => {
             title: 'GESTIÓN TOTAL (POTENCIAL)',
             value: formatCurrency(stats.totalGlosado + stats.totalNoRegistrado),
             icon: <FileText size={24} />,
-            color: '#00f2fe',
+            color: 'var(--secondary)',
             description: 'Suma de registros internos + pendientes de registro'
         }
     ];
@@ -71,13 +71,14 @@ export const ExecutiveReport = ({ stats }: ExecutiveReportProps) => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1 }}
                         style={{
-                            background: 'rgba(255,255,255,0.03)',
-                            border: `1px solid rgba(255,255,255,0.05)`,
+                            background: 'var(--bg-card)',
+                            border: `1px solid var(--border)`,
                             borderLeft: `4px solid ${kpi.color}`,
                             padding: '1.5rem',
                             borderRadius: '1.5rem',
                             position: 'relative',
-                            overflow: 'hidden'
+                            overflow: 'hidden',
+                            boxShadow: 'var(--shadow-sm)'
                         }}
                     >
                         {/* Background Decoration */}
@@ -95,25 +96,25 @@ export const ExecutiveReport = ({ stats }: ExecutiveReportProps) => {
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                             <div style={{
-                                background: `rgba(${kpi.color === '#8b5cf6' ? '139, 92, 246' :
-                                    kpi.color === '#10b981' ? '16, 185, 129' :
-                                        kpi.color === '#f59e0b' ? '245, 158, 11' : '59, 130, 246'}, 0.1)`,
+                                background: kpi.color === 'var(--primary)' ? 'rgba(0, 99, 65, 0.1)' :
+                                    kpi.color === 'var(--secondary)' ? 'rgba(0, 177, 113, 0.1)' :
+                                        kpi.color === 'var(--danger)' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)',
                                 color: kpi.color,
                                 padding: '0.75rem',
                                 borderRadius: '12px'
                             }}>
                                 {kpi.icon}
                             </div>
-                            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em' }}>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>
                                 {kpi.title}
                             </span>
                         </div>
 
-                        <div style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white', marginBottom: '0.5rem' }}>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                             {kpi.value}
                         </div>
 
-                        <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                             {kpi.description}
                         </p>
                     </motion.div>
@@ -124,24 +125,24 @@ export const ExecutiveReport = ({ stats }: ExecutiveReportProps) => {
             <div style={{
                 marginTop: '1.5rem',
                 padding: '1rem 1.5rem',
-                background: 'rgba(255,255,255,0.02)',
+                background: 'var(--bg-card)',
                 borderRadius: '1rem',
-                border: '1px solid rgba(255,255,255,0.05)',
+                border: '1px solid var(--border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
-                        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>Efectividad</span>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--secondary)' }} />
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Efectividad</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6' }} />
-                        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>Conciliación</span>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }} />
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Conciliación</span>
                     </div>
                 </div>
-                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
                     * Datos actualizados en tiempo real según registros en base de datos.
                 </div>
             </div>

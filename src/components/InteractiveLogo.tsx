@@ -13,19 +13,19 @@ export const InteractiveLogo = () => {
                 flexDirection: 'column',
                 alignItems: 'center',
                 padding: '1.25rem',
-                background: 'linear-gradient(135deg, rgba(0, 242, 254, 0.05), rgba(255, 0, 255, 0.05))',
+                background: 'linear-gradient(135deg, rgba(0, 177, 113, 0.05), rgba(0, 99, 65, 0.05))',
                 backdropFilter: 'blur(10px)',
                 borderRadius: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                border: '1px solid var(--border)',
                 width: '100%',
                 marginBottom: '1.5rem',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                boxShadow: 'var(--shadow-md)',
                 cursor: 'default',
                 overflow: 'hidden',
                 position: 'relative'
             }}
         >
-            {/* Dashed Animated Rings - EXTREME VIBRANCY */}
+            {/* Dashed Animated Rings - EMERALD VIBRANCY */}
             <div style={{ position: 'relative', width: '70px', height: '70px', marginBottom: '0.75rem' }}>
                 <motion.div
                     animate={{ rotate: 360 }}
@@ -34,8 +34,8 @@ export const InteractiveLogo = () => {
                         position: 'absolute',
                         inset: 0,
                         borderRadius: '50%',
-                        border: '2px dashed #00f2fe',
-                        filter: 'drop-shadow(0 0 10px #00f2fe)',
+                        border: '2px dashed var(--secondary)',
+                        filter: 'drop-shadow(0 0 8px var(--secondary-glow))',
                     }}
                 />
                 <motion.div
@@ -45,8 +45,8 @@ export const InteractiveLogo = () => {
                         position: 'absolute',
                         inset: '6px',
                         borderRadius: '50%',
-                        border: '1.5px dashed #ff00ff',
-                        filter: 'drop-shadow(0 0 10px #ff00ff)',
+                        border: '1.5px dashed var(--primary)',
+                        filter: 'drop-shadow(0 0 8px var(--primary-glow))',
                     }}
                 />
 
@@ -60,28 +60,28 @@ export const InteractiveLogo = () => {
                         transform: 'translate(-50%, -50%)',
                         width: '40px',
                         height: '40px',
-                        background: 'rgba(255, 255, 255, 0.15)',
+                        background: 'var(--bg-card)',
                         borderRadius: '12px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        border: '1px solid rgba(255, 255, 255, 0.3)',
-                        boxShadow: 'inset 0 0 10px rgba(255,255,255,0.2)',
+                        border: '1px solid var(--border)',
+                        boxShadow: 'var(--shadow-sm)',
                         cursor: 'pointer'
                     }}
                 >
-                    <Search size={20} color="#00f2fe" strokeWidth={3} style={{ filter: 'drop-shadow(0 0 5px #00f2fe)' }} />
+                    <Search size={20} color="var(--secondary)" strokeWidth={3} style={{ filter: 'drop-shadow(0 0 3px var(--secondary-glow))' }} />
                     <motion.div
-                        animate={{ scale: [1, 1.3, 1], filter: ['brightness(1)', 'brightness(1.5)', 'brightness(1)'] }}
+                        animate={{ scale: [1, 1.3, 1], filter: ['brightness(1)', 'brightness(1.2)', 'brightness(1)'] }}
                         transition={{ duration: 1.5, repeat: Infinity }}
                         style={{
                             position: 'absolute',
                             top: '-3px',
                             right: '-3px',
-                            background: '#ff00ff',
+                            background: 'var(--primary)',
                             borderRadius: '4px',
                             padding: '1px',
-                            boxShadow: '0 0 12px #ff00ff',
+                            boxShadow: '0 0 8px var(--primary-glow)',
                             zIndex: 2
                         }}
                     >
@@ -90,12 +90,12 @@ export const InteractiveLogo = () => {
                 </motion.div>
             </div>
 
-            {/* Brand Text - COMPACT & NEON */}
+            {/* Brand Text - COMPACT & EMERALD */}
             <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
                 <h2 style={{
                     fontSize: '0.75rem',
                     fontWeight: 950,
-                    color: 'white',
+                    color: 'var(--text-primary)',
                     margin: 0,
                     letterSpacing: '0.05em',
                     textTransform: 'uppercase',
@@ -107,8 +107,8 @@ export const InteractiveLogo = () => {
                     animate={{ opacity: [1, 0.8, 1], scale: [1, 1.02, 1] }}
                     transition={{ duration: 2, repeat: Infinity }}
                     style={{
-                        color: '#00f2fe',
-                        textShadow: '0 0 15px #00f2fe',
+                        color: 'var(--primary)',
+                        textShadow: '0 0 10px var(--primary-glow)',
                         fontSize: '0.9rem',
                         fontWeight: 1000,
                         display: 'block',
@@ -120,7 +120,7 @@ export const InteractiveLogo = () => {
                 <p style={{
                     fontSize: '0.35rem',
                     fontWeight: 800,
-                    color: 'rgba(255, 0, 255, 0.7)',
+                    color: 'var(--secondary)',
                     marginTop: '0.25rem',
                     letterSpacing: '0.15rem',
                     textTransform: 'uppercase'
@@ -137,7 +137,7 @@ export const InteractiveLogo = () => {
                 transform: 'translate(-50%, -50%)',
                 width: '100px',
                 height: '100px',
-                background: 'radial-gradient(circle, rgba(0, 242, 254, 0.1), transparent 70%)',
+                background: 'radial-gradient(circle, rgba(0, 177, 113, 0.1), transparent 70%)',
                 pointerEvents: 'none'
             }}></div>
         </motion.div>

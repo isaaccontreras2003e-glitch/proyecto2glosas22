@@ -205,39 +205,39 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {/* Header Section from Screenshot */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <LayoutDashboard size={20} color="var(--primary)" />
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 950, color: 'white', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 950, color: 'var(--text-primary)', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                         TABLERO DE MANDO - GESTIÓN DE GLOSAS
-                        <span style={{ fontSize: '0.55rem', background: 'var(--primary)', color: '#000', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.75rem', verticalAlign: 'middle', fontWeight: 900 }}>COI V.RECONCILIADA</span>
+                        <span style={{ fontSize: '0.55rem', background: 'var(--primary)', color: '#fff', padding: '3px 8px', borderRadius: '4px', marginLeft: '0.75rem', verticalAlign: 'middle', fontWeight: 900 }}>COI V.RECONCILIADA</span>
                     </h2>
                 </div>
             </div>
 
             <div style={{ display: 'flex', gap: '1rem' }}>
                 <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>SERVICIO</label>
+                    <label style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>SERVICIO</label>
                     <div style={{ position: 'relative' }}>
                         <select
                             value={selectedService}
                             onChange={(e) => setSelectedService(e.target.value)}
-                            style={{ background: 'rgba(20,20,30,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.4rem 2rem 0.4rem 0.75rem', color: 'white', fontSize: '0.75rem', fontWeight: 700, appearance: 'none', minWidth: '160px' }}
+                            style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.4rem 2rem 0.4rem 0.75rem', color: 'var(--text-primary)', fontSize: '0.75rem', fontWeight: 700, appearance: 'none', minWidth: '160px' }}
                         >
                             {availableServices.map(s => (
                                 <option key={s} value={s}>{s}</option>
                             ))}
                         </select>
-                        <ChevronDown size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} />
+                        <ChevronDown size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, color: 'var(--text-primary)' }} />
                     </div>
                 </div>
                 <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>TIPO GLOSA</label>
+                    <label style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>TIPO GLOSA</label>
                     <div style={{ position: 'relative' }}>
                         <select
                             value={selectedType}
                             onChange={(e) => setSelectedType(e.target.value)}
-                            style={{ background: 'rgba(20,20,30,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.4rem 2rem 0.4rem 0.75rem', color: 'white', fontSize: '0.75rem', fontWeight: 700, appearance: 'none', minWidth: '160px', outline: 'none', cursor: 'pointer' }}
+                            style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.4rem 2rem 0.4rem 0.75rem', color: 'var(--text-primary)', fontSize: '0.75rem', fontWeight: 700, appearance: 'none', minWidth: '160px', outline: 'none', cursor: 'pointer' }}
                         >
                             <option>Todos</option>
                             <option>Tarifas</option>
@@ -245,16 +245,16 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             <option>RIPS</option>
                             <option>Autorización</option>
                         </select>
-                        <Clock size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3, pointerEvents: 'none' }} />
+                        <Clock size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, color: 'var(--text-primary)', pointerEvents: 'none' }} />
                     </div>
                 </div>
                 <div className="filter-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>ESTADO</label>
+                    <label style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>ESTADO</label>
                     <div style={{ position: 'relative' }}>
                         <select
                             value={selectedStatus}
                             onChange={(e) => setSelectedStatus(e.target.value)}
-                            style={{ background: 'rgba(20,20,30,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.4rem 2rem 0.4rem 0.75rem', color: 'white', fontSize: '0.75rem', fontWeight: 700, appearance: 'none', minWidth: '160px', outline: 'none', cursor: 'pointer' }}
+                            style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.4rem 2rem 0.4rem 0.75rem', color: 'var(--text-primary)', fontSize: '0.75rem', fontWeight: 700, appearance: 'none', minWidth: '160px', outline: 'none', cursor: 'pointer' }}
                         >
                             <option value="Todos">Todos</option>
                             <option value="Pendiente">Pendiente</option>
@@ -263,7 +263,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             <option value="Conciliada">Conciliada</option>
                             <option value="Aceptada">Aceptada</option>
                         </select>
-                        <Activity size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3, pointerEvents: 'none' }} />
+                        <Activity size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, color: 'var(--text-primary)', pointerEvents: 'none' }} />
                     </div>
                 </div>
             </div>
@@ -273,7 +273,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                 <motion.div whileHover={{ y: -5, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
                     <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ width: '32px', height: '32px', background: 'var(--primary-glow)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <DollarSign size={16} color="var(--primary)" />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
@@ -290,11 +290,11 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             </div>
                         </div>
                         <div>
-                            <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>IMPORTE TOTAL GLOSADO</p>
-                            <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>${formatPesos(metrics.totalValue)}</h2>
+                            <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>IMPORTE TOTAL GLOSADO</p>
+                            <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'var(--text-primary)' }}>${formatPesos(metrics.totalValue)}</h2>
                         </div>
                         <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                            <div style={{ height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '100px', display: 'flex' }}>
+                            <div style={{ height: '3px', background: 'rgba(0,0,0,0.02)', borderRadius: '100px', display: 'flex' }}>
                                 <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `100%` }}
@@ -302,7 +302,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                                     style={{ height: '100%', background: 'var(--primary)', borderRadius: '100px', boxShadow: '0 0 10px var(--primary-glow)' }}
                                 />
                             </div>
-                            <p style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', marginTop: '6px', fontWeight: 700 }}>ESTADO DE GESTIÓN (100%)</p>
+                            <p style={{ fontSize: '0.55rem', color: 'var(--text-muted)', marginTop: '6px', fontWeight: 700 }}>ESTADO DE GESTIÓN (100%)</p>
                         </div>
                     </Card>
                 </motion.div>
@@ -316,15 +316,15 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 900 }}>POR REGISTRAR</span>
                         </div>
                         <div>
-                            <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>VALORES PENDIENTES DE REGISTRO</p>
-                            <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: '#fbbf24' }}>${formatPesos((executiveStats as any).totalNoRegistrado || 0)}</h2>
+                            <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>VALORES PENDIENTES DE REGISTRO</p>
+                            <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: '#f59e0b' }}>${formatPesos((executiveStats as any).totalNoRegistrado || 0)}</h2>
                         </div>
                         <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>PENDIENTE DE INTEGRACIÓN</span>
-                                <span style={{ fontSize: '0.55rem', color: '#fbbf24', fontWeight: 950 }}>{((((executiveStats as any).totalNoRegistrado || 0) / ((executiveStats as any).totalPotential || 1)) * 100).toFixed(1)}%</span>
+                                <span style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: 700 }}>PENDIENTE DE INTEGRACIÓN</span>
+                                <span style={{ fontSize: '0.55rem', color: '#f59e0b', fontWeight: 950 }}>{((((executiveStats as any).totalNoRegistrado || 0) / ((executiveStats as any).totalPotential || 1)) * 100).toFixed(1)}%</span>
                             </div>
-                            <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
+                            <div style={{ height: '4px', background: 'rgba(0,0,0,0.03)', borderRadius: '10px' }}>
                                 <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `${Math.min(100, (((executiveStats as any).totalNoRegistrado || 0) / ((executiveStats as any).totalPotential || 1)) * 100)}%` }}
@@ -339,19 +339,19 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                 <motion.div whileHover={{ y: -5, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
                     <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ width: '32px', height: '32px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <FileText size={16} color="var(--secondary)" />
                             </div>
                             <span style={{ fontSize: '0.6rem', color: 'var(--secondary)', fontWeight: 800 }}>SISTEMA</span>
                         </div>
                         <div>
-                            <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>CANTIDAD TOTAL DE FACTURAS</p>
-                            <h2 style={{ fontSize: '2rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>
+                            <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>CANTIDAD TOTAL DE FACTURAS</p>
+                            <h2 style={{ fontSize: '2rem', fontWeight: 950, margin: '4px 0', color: 'var(--text-primary)' }}>
                                 {metrics.totalCount}
                             </h2>
                         </div>
                         <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                            <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>FACTURAS ÚNICAS (TOTAL)</p>
+                            <p style={{ fontSize: '0.5rem', color: 'var(--text-muted)', marginTop: '2px', fontWeight: 700 }}>FACTURAS ÚNICAS (TOTAL)</p>
                         </div>
                     </Card>
                 </motion.div>
@@ -359,20 +359,20 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                 <motion.div whileHover={{ y: -5, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
                     <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ width: '32px', height: '32px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <TrendingUp size={16} color="#f59e0b" />
                             </div>
                             <span style={{ fontSize: '0.6rem', color: '#f59e0b', fontWeight: 800 }}>FACTURAS RESPONDIDAS</span>
                         </div>
                         <div>
-                            <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>CANTIDAD TOTAL CONTESTADA</p>
-                            <h2 style={{ fontSize: '2rem', fontWeight: 950, margin: '4px 0', color: 'white' }}>{(metrics as any).respondedInvoicesCount}</h2>
+                            <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>CANTIDAD TOTAL CONTESTADA</p>
+                            <h2 style={{ fontSize: '2rem', fontWeight: 950, margin: '4px 0', color: 'var(--text-primary)' }}>{(metrics as any).respondedInvoicesCount}</h2>
                         </div>
                         <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                            <p style={{ fontSize: '0.65rem', color: 'white', fontWeight: 800, margin: 0 }}>
-                                ${formatPesos(metrics.acceptedValue + metrics.noAcceptedValue)} <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>Valor</span>
+                            <p style={{ fontSize: '0.65rem', color: 'var(--text-primary)', fontWeight: 800, margin: 0 }}>
+                                ${formatPesos(metrics.acceptedValue + metrics.noAcceptedValue)} <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Valor</span>
                             </p>
-                            <p style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '2px', fontWeight: 700 }}>SOBRE EL IMPORTE REGISTRADO</p>
+                            <p style={{ fontSize: '0.5rem', color: 'var(--text-muted)', marginTop: '2px', fontWeight: 700 }}>SOBRE EL IMPORTE REGISTRADO</p>
                         </div>
                     </Card>
                 </motion.div>
@@ -395,7 +395,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                                         <span style={{ opacity: 0.4 }}>{cat.p}%</span>
                                     </span>
                                 </div>
-                                <div style={{ height: '4px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
+                                <div style={{ height: '4px', background: 'rgba(0,0,0,0.02)', borderRadius: '10px' }}>
                                     <motion.div
                                         initial={{ width: 0 }}
                                         animate={{ width: `${Math.min(100, cat.p)}%` }}
@@ -415,7 +415,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                     </h3>
                     <div style={{ position: 'relative', width: '200px', height: '200px', margin: '0 auto 2.5rem auto' }}>
                         <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
-                            <circle cx="50" cy="50" r="44" fill="transparent" stroke="rgba(255,255,255,0.03)" strokeWidth="12" />
+                            <circle cx="50" cy="50" r="44" fill="transparent" stroke="rgba(0,0,0,0.02)" strokeWidth="12" />
                             {statusStats.map((s, i) => {
                                 let offset = 0;
                                 for (let j = 0; j < i; j++) offset += statusStats[j].p;
@@ -433,16 +433,16 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             })}
                         </svg>
                         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ fontSize: '0.6rem', opacity: 0.4, fontWeight: 800 }}>VALOR REGISTRADO</span>
-                            <span style={{ fontSize: '1.2rem', fontWeight: 950 }}>${formatPesos(metrics.totalValue)}</span>
+                            <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800 }}>VALOR REGISTRADO</span>
+                            <span style={{ fontSize: '1.2rem', fontWeight: 950, color: 'var(--text-primary)' }}>${formatPesos(metrics.totalValue)}</span>
                         </div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
                         {statusStats.map(s => (
-                            <div key={s.label} style={{ background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.03)', textAlign: 'center' }}>
-                                <p style={{ fontSize: '0.5rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', margin: '0 0 4px 0' }}>{s.label}</p>
-                                <p style={{ fontSize: '1rem', fontWeight: 950, margin: 0, color: s.color === 'rgba(255,255,255,0.2)' ? 'white' : s.color }}>{s.p}%</p>
+                            <div key={s.label} style={{ background: 'var(--surface-hover)', padding: '0.75rem', borderRadius: '10px', border: '1px solid var(--border)', textAlign: 'center' }}>
+                                <p style={{ fontSize: '0.5rem', fontWeight: 800, color: 'var(--text-muted)', margin: '0 0 4px 0' }}>{s.label}</p>
+                                <p style={{ fontSize: '1rem', fontWeight: 950, margin: 0, color: s.color }}>{s.p}%</p>
                             </div>
                         ))}
                     </div>
