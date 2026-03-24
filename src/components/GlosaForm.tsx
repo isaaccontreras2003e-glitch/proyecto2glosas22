@@ -302,10 +302,10 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                         gap: '1rem',
                         padding: '1.5rem',
-                        background: 'var(--bg-card)',
+                        background: 'var(--surface)',
                         borderRadius: '20px',
                         border: '1px solid var(--border)',
-                        boxShadow: 'var(--shadow-sm)'
+                        boxShadow: 'var(--shadow-premium)'
                     }}>
                         <div className="input-group">
                             <label className="label">Número de Factura</label>
@@ -382,10 +382,10 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                         gap: '1rem',
                         padding: '1.5rem',
-                        background: 'var(--bg-card)',
+                        background: 'var(--surface)',
                         borderRadius: '20px',
                         border: '1px solid var(--border)',
-                        boxShadow: 'var(--shadow-sm)'
+                        boxShadow: 'var(--shadow-premium)'
                     }}>
                         <div className="input-group">
                             <label className="label">Valor Glosa</label>
@@ -442,7 +442,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                                 exit={{ opacity: 0, height: 0 }}
                                 style={{ overflow: 'hidden', marginTop: '1.5rem', gridColumn: '1 / -1' }}
                             >
-                                <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px dashed rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '1.25rem', textAlign: 'center' }}>
+                                <div style={{ background: 'rgba(0, 242, 254, 0.05)', border: '1px dashed rgba(0, 242, 254, 0.3)', borderRadius: '12px', padding: '1.25rem', textAlign: 'center' }}>
                                     <input
                                         type="file"
                                         id="pdf-upload"
@@ -480,7 +480,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                 </div>
 
                 {!isAdmin && (
-                    <div style={{ padding: '1rem', background: 'var(--bg-card)', borderRadius: '10px', color: 'var(--text-muted)', fontSize: '0.8rem', textAlign: 'center', border: '1px dashed var(--border)', marginTop: '1rem' }}>
+                    <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', color: 'var(--text-muted)', fontSize: '0.8rem', textAlign: 'center', border: '1px dashed var(--border)', marginTop: '1rem' }}>
                         Cuenta en modo <strong>LECTURA</strong>. No puedes realizar registros.
                     </div>
                 )}
@@ -531,18 +531,18 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                 <div style={{
                     marginTop: '2.5rem',
                     padding: '1.5rem',
-                    background: 'var(--bg-card)',
+                    background: 'var(--surface)',
                     borderRadius: '1.75rem',
                     border: '1px solid var(--border)',
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr 1fr',
                     gap: '1.25rem',
-                    boxShadow: 'var(--shadow-md)'
+                    boxShadow: 'var(--shadow-premium)'
                 }}>
                     <div style={{ borderRight: '1px solid var(--border)', paddingRight: '1rem' }}>
                         <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>INGRESOS DIARIOS</p>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--text-primary)' }}>{dailyStats.count}</span>
+                            <span style={{ fontSize: '1.8rem', fontWeight: 950, color: '#fff' }}>{dailyStats.count}</span>
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({dailyStats.facturas} facturas hoy)</span>
                         </div>
                     </div>

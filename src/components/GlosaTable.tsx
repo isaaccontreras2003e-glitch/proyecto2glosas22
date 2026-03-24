@@ -72,8 +72,8 @@ export const GlosaTable = ({
 
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'Pendiente': return { background: 'rgba(0, 177, 113, 0.1)', color: 'var(--secondary)', borderColor: 'rgba(0, 177, 113, 0.2)' };
-            case 'Respondida': return { background: 'rgba(0, 99, 65, 0.1)', color: 'var(--primary)', borderColor: 'rgba(0, 99, 65, 0.2)' };
+            case 'Pendiente': return { background: 'rgba(0, 242, 254, 0.1)', color: 'var(--primary)', borderColor: 'rgba(0, 242, 254, 0.2)' };
+            case 'Respondida': return { background: 'rgba(56, 189, 248, 0.12)', color: 'var(--secondary)', borderColor: 'rgba(56, 189, 248, 0.25)' };
             case 'Aceptada': return { background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.2)' };
             default: return {};
         }
@@ -137,7 +137,7 @@ export const GlosaTable = ({
                     gap: '1rem',
                     marginBottom: '1.5rem',
                     padding: '1.25rem',
-                    background: 'rgba(255,255,255,0.02)',
+                    background: 'rgba(255,255,255,0.015)',
                     borderRadius: '16px',
                     border: '1px solid var(--border)',
                     alignItems: 'flex-end'
@@ -153,11 +153,11 @@ export const GlosaTable = ({
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 style={{
                                     width: '100%',
-                                    background: 'var(--bg-card)',
+                                    background: 'rgba(255,255,255,0.03)',
                                     border: '1px solid var(--border)',
                                     borderRadius: '12px',
                                     padding: '0.75rem 1rem 0.75rem 2.8rem',
-                                    color: 'var(--text-primary)',
+                                    color: 'white',
                                     fontSize: '0.85rem',
                                     outline: 'none',
                                     transition: 'border-color 0.2s'
@@ -224,11 +224,11 @@ export const GlosaTable = ({
                             onChange={(e) => setFilterInterno(e.target.value)}
                             style={{
                                 width: '100%',
-                                background: 'var(--bg-card)',
+                                background: 'rgba(255,255,255,0.03)',
                                 border: '1px solid var(--border)',
                                 borderRadius: '12px',
                                 padding: '0.75rem 1rem',
-                                color: 'var(--text-primary)',
+                                color: 'white',
                                 fontSize: '0.85rem',
                                 outline: 'none',
                                 cursor: 'pointer'
@@ -356,9 +356,9 @@ export const GlosaTable = ({
                                                 borderBottom: '1px solid var(--border)',
                                                 transition: 'background 0.2s',
                                                 background: glosa.registrada_internamente
-                                                    ? 'rgba(0, 177, 113, 0.05)'
-                                                    : (isExactDupe ? 'rgba(239,68,68,0.05)' : (isOnlyRepeated ? 'rgba(245,158,11,0.03)' : (index % 2 === 0 ? 'rgba(0,0,0,0.01)' : 'transparent'))),
-                                                borderLeft: glosa.registrada_internamente ? '4px solid var(--secondary)' : (isExactDupe ? '4px solid var(--danger)' : (isOnlyRepeated ? '4px solid #f59e0b' : '1px solid var(--border)'))
+                                                    ? 'rgba(0, 242, 254, 0.04)'
+                                                    : (isExactDupe ? 'rgba(239,68,68,0.05)' : (isOnlyRepeated ? 'rgba(245,158,11,0.03)' : (index % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent'))),
+                                                borderLeft: glosa.registrada_internamente ? '4px solid var(--primary)' : (isExactDupe ? '4px solid var(--danger)' : (isOnlyRepeated ? '4px solid #f59e0b' : '1px solid var(--border)'))
                                             }}
                                         >
                                             <td style={{ padding: '1.25rem 1rem', textAlign: 'center' }}>
@@ -636,7 +636,7 @@ export const GlosaTable = ({
                             background: 'rgba(0, 99, 65, 0.02)'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <div style={{ padding: '10px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '12px' }}>
+                                <div style={{ padding: '10px', background: 'rgba(0, 242, 254, 0.05)', borderRadius: '12px' }}>
                                     <ClipboardList size={20} color="var(--primary)" />
                                 </div>
                                 <div>
@@ -702,7 +702,7 @@ export const GlosaTable = ({
                             <div style={{
                                 padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)',
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                background: 'rgba(0, 99, 65, 0.02)'
+                                background: 'rgba(0, 242, 254, 0.02)'
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                     <div style={{ padding: '10px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '12px' }}>

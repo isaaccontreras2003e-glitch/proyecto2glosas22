@@ -94,8 +94,8 @@ export default function LoginPage() {
             justifyContent: 'center',
             minHeight: '100vh',
             width: '100vw',
-            background: 'var(--background)',
-            backgroundImage: 'linear-gradient(rgba(248, 249, 250, 0.85), rgba(248, 249, 250, 0.85)), url("/medical-bg.png")',
+            background: '#00050a',
+            backgroundImage: 'linear-gradient(rgba(0, 5, 10, 0.94), rgba(0, 5, 10, 0.94)), url("/medical-bg.png")',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundAttachment: 'fixed',
@@ -112,12 +112,12 @@ export default function LoginPage() {
                     maxWidth: '440px',
                     width: '100%',
                     padding: '3.5rem 2.5rem',
-                    background: 'rgba(255, 255, 255, 0.8)',
+                    background: 'rgba(15, 23, 42, 0.85)',
                     backdropFilter: 'blur(30px)',
                     WebkitBackdropFilter: 'blur(30px)',
-                    border: '1px solid rgba(0, 99, 65, 0.1)',
+                    border: '1px solid rgba(0, 242, 254, 0.1)',
                     borderRadius: '24px',
-                    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.05), 0 0 30px rgba(0, 99, 65, 0.05)',
+                    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 242, 254, 0.1)',
                     position: 'relative',
                     textAlign: 'center'
                 }}
@@ -133,16 +133,16 @@ export default function LoginPage() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         margin: '0 auto 1.5rem',
-                        boxShadow: '0 8px 20px rgba(0, 99, 65, 0.2)',
-                        color: 'white'
+                        boxShadow: '0 8px 25px rgba(0, 242, 254, 0.3)',
+                        color: 'black'
                     }}>
                         <Activity size={32} />
                     </div>
-                    <h1 style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
-                        SisFact <span style={{ color: 'var(--primary)', fontSize: '0.7rem', verticalAlign: 'middle', background: 'rgba(0, 99, 65, 0.06)', padding: '4px 10px', borderRadius: '8px', fontWeight: 800 }}>PRO V4.0</span>
+                    <h1 style={{ fontSize: '2.1rem', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
+                        SisFact <span style={{ color: 'var(--primary)', fontSize: '0.75rem', verticalAlign: 'middle', background: 'rgba(0, 242, 254, 0.12)', padding: '4px 10px', borderRadius: '8px', fontWeight: 900 }}>PRO V4.0</span>
                     </h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem', fontWeight: 500 }}>
-                        Servicios Oftalmológicos de Auditoría
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.6rem', fontWeight: 500, letterSpacing: '0.02em' }}>
+                        THE DIGITAL AUDITOR
                     </p>
                 </div>
 
@@ -163,12 +163,12 @@ export default function LoginPage() {
                                     onClick={handleClearBlock}
                                     style={{
                                         padding: '0.75rem',
-                                        background: 'rgba(0, 99, 65, 0.05)',
+                                        background: 'rgba(0, 242, 254, 0.08)',
                                         border: '1px solid var(--primary)',
                                         borderRadius: '12px',
                                         color: 'var(--primary)',
                                         fontSize: '0.75rem',
-                                        fontWeight: 700,
+                                        fontWeight: 800,
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
@@ -176,11 +176,11 @@ export default function LoginPage() {
                                         cursor: 'pointer'
                                     }}
                                 >
-                                    <RefreshCcw size={14} /> DESBLOQUEAR INTENTOS
+                                    <RefreshCcw size={14} /> DESBLOQUEAR SISTEMA
                                 </button>
                             )}
 
-                            <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                                 <label style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <Mail size={12} /> Correo Electrónico
                                 </label>
@@ -190,12 +190,19 @@ export default function LoginPage() {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
-                                    className="input"
-                                    style={{ width: '100%' }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '1rem',
+                                        background: 'rgba(255,255,255,0.03)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '14px',
+                                        color: 'white',
+                                        outline: 'none'
+                                    }}
                                 />
                             </div>
 
-                            <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <label style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <Lock size={12} /> Contraseña
@@ -214,13 +221,20 @@ export default function LoginPage() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
-                                    className="input"
-                                    style={{ width: '100%' }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '1rem',
+                                        background: 'rgba(255,255,255,0.03)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '14px',
+                                        color: 'white',
+                                        outline: 'none'
+                                    }}
                                 />
                             </div>
 
                             {error && (
-                                <div style={{ color: 'var(--danger)', fontSize: '0.8rem', fontWeight: 700, padding: '0.75rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <div style={{ color: '#ff4d4d', fontSize: '0.8rem', fontWeight: 800, padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <AlertTriangle size={14} /> {error}
                                 </div>
                             )}
@@ -228,10 +242,24 @@ export default function LoginPage() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="btn btn-primary"
-                                style={{ height: '54px', borderRadius: '14px', fontSize: '0.9rem', width: '100%' }}
+                                style={{
+                                    height: '56px',
+                                    borderRadius: '16px',
+                                    fontSize: '0.95rem',
+                                    width: '100%',
+                                    background: 'var(--primary)',
+                                    color: '#000',
+                                    fontWeight: 900,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.75rem',
+                                    boxShadow: '0 8px 16px rgba(0, 242, 254, 0.2)'
+                                }}
                             >
-                                {loading ? 'CONECTANDO...' : 'ACCEDER AL PANEL'} <LogIn size={18} style={{ marginLeft: '8px' }} />
+                                {loading ? 'AUTENTICANDO...' : 'INICIAR SESIÓN'} <LogIn size={20} />
                             </button>
                         </motion.form>
                     ) : (
@@ -249,7 +277,7 @@ export default function LoginPage() {
                                 </p>
                             </div>
 
-                            <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                                 <label style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <Mail size={12} /> Correo Electrónico
                                 </label>
@@ -259,19 +287,26 @@ export default function LoginPage() {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
-                                    className="input"
-                                    style={{ width: '100%' }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '1rem',
+                                        background: 'rgba(255,255,255,0.03)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '14px',
+                                        color: 'white',
+                                        outline: 'none'
+                                    }}
                                 />
                             </div>
 
                             {success && (
-                                <div style={{ color: 'var(--secondary)', fontSize: '0.8rem', fontWeight: 700, padding: '0.75rem', background: 'rgba(0, 177, 113, 0.05)', borderRadius: '12px', border: '1px solid rgba(0, 177, 113, 0.1)' }}>
+                                <div style={{ color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 800, padding: '0.75rem', background: 'rgba(0, 242, 254, 0.1)', borderRadius: '12px', border: '1px solid rgba(0, 242, 254, 0.2)' }}>
                                     {success}
                                 </div>
                             )}
 
                             {error && (
-                                <div style={{ color: 'var(--danger)', fontSize: '0.8rem', fontWeight: 700, padding: '0.75rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <div style={{ color: '#ff4d4d', fontSize: '0.8rem', fontWeight: 800, padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <AlertTriangle size={14} /> {error}
                                 </div>
                             )}
@@ -280,15 +315,25 @@ export default function LoginPage() {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="btn btn-primary"
-                                    style={{ height: '54px', borderRadius: '14px', fontSize: '0.9rem', width: '100%' }}
+                                    style={{
+                                        height: '56px',
+                                        borderRadius: '16px',
+                                        fontSize: '0.95rem',
+                                        width: '100%',
+                                        background: 'var(--primary)',
+                                        color: '#000',
+                                        fontWeight: 900,
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 8px 16px rgba(0, 242, 254, 0.2)'
+                                    }}
                                 >
                                     {loading ? 'ENVIANDO...' : 'ENVIAR ENLACE'} <Send size={18} style={{ marginLeft: '8px' }} />
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setView('login')}
-                                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                                 >
                                     <ArrowLeft size={14} /> Volver al inicio
                                 </button>
@@ -297,9 +342,9 @@ export default function LoginPage() {
                     )}
                 </AnimatePresence>
 
-                <div style={{ marginTop: '3rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(0, 99, 65, 0.06)' }}>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 700 }}>
-                        Powered by Antigravity · Ophthalmology Edition
+                <div style={{ marginTop: '3rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>
+                        POWERED BY ANTIGRAVITY · DIGITAL AUDITOR EDITION
                     </p>
                 </div>
             </motion.div>

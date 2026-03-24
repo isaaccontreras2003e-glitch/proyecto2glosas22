@@ -1150,7 +1150,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '0.05em' }}>NAVEGACIÓN V4</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>AUDITORÍA DIGITAL V4.0</h2>
           </div>
 
 
@@ -1161,9 +1161,9 @@ function Home() {
               flexDirection: 'column',
               gap: '0.5rem',
               padding: '1rem',
-              background: 'rgba(0,0,0,0.02)',
+              background: 'rgba(255,255,255,0.02)',
               borderRadius: '16px',
-              border: '1px solid var(--border)'
+              border: '1px solid rgba(255,255,255,0.05)'
             }}>
               <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>SECCIÓN ACTIVA</p>
               <select
@@ -1174,11 +1174,11 @@ function Home() {
                 }}
                 style={{
                   width: '100%',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
+                  background: 'rgba(15, 23, 42, 0.5)',
+                  border: '1px solid rgba(0, 242, 254, 0.3)',
                   borderRadius: '10px',
                   padding: '0.6rem',
-                  color: 'var(--text-primary)',
+                  color: 'white',
                   fontSize: '0.75rem',
                   fontWeight: 700,
                   outline: 'none',
@@ -1214,7 +1214,7 @@ function Home() {
             return (
               <motion.button
                 key={item.id}
-                whileHover={{ background: 'rgba(0,0,0,0.02)' }}
+                whileHover={{ background: 'rgba(255,255,255,0.03)' }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setActiveSection(item.id as any)}
                 style={{
@@ -1256,7 +1256,7 @@ function Home() {
         {/* User Profile / Logout bottom section */}
         <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff', fontSize: '0.75rem' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#000', fontSize: '0.75rem' }}>
               {user?.email?.charAt(0).toUpperCase()}
             </div>
             <div style={{ flex: 1, overflow: 'hidden' }}>

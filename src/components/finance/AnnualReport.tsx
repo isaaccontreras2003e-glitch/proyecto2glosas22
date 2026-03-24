@@ -27,30 +27,30 @@ export const AnnualReport: React.FC = () => {
     return (
         <div className="space-y-8 mt-12">
             <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Reporte Anual {currentYear}</h2>
-                <div className="h-[1px] flex-1" style={{ backgroundColor: 'var(--border)' }}></div>
+                <h2 className="text-2xl font-bold" style={{ color: '#fff' }}>Reporte Anual {currentYear}</h2>
+                <div className="h-[1px] flex-1" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}></div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Gráfico Comparativo */}
                 <div className="card lg:col-span-2 min-h-[400px]">
-                    <h3 className="text-lg mb-6 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                    <h3 className="text-lg mb-6 flex items-center gap-2" style={{ color: '#fff' }}>
                         <BarChart3 className="text-primary" size={20} /> Comportamiento Mensual
                     </h3>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={data}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                                 <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} />
                                 <YAxis stroke="var(--text-muted)" fontSize={12} />
                                 <Tooltip
-                                    contentStyle={{ background: '#ffffff', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: 'var(--shadow-md)' }}
-                                    itemStyle={{ fontSize: '12px' }}
+                                    contentStyle={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
+                                    itemStyle={{ fontSize: '12px', color: '#fff' }}
                                 />
                                 <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-                                <Bar dataKey="ingresos" name="Ingresos" fill="#00b171" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="ingresos" name="Ingresos" fill="var(--primary)" radius={[4, 4, 0, 0]} />
                                 <Bar dataKey="gastos" name="Gastos" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="costos" name="Costos" fill="#006341" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="costos" name="Costos" fill="var(--secondary)" radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -58,7 +58,7 @@ export const AnnualReport: React.FC = () => {
 
                 {/* Resumen Anual */}
                 <div className="card space-y-6">
-                    <h3 className="text-lg flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                    <h3 className="text-lg flex items-center gap-2" style={{ color: '#fff' }}>
                         <PieChart className="text-primary" size={20} /> Resumen de Totales
                     </h3>
 
@@ -109,17 +109,18 @@ export const AnnualReport: React.FC = () => {
                                     <stop offset="95%" stopColor="#006341" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                             <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} />
                             <YAxis stroke="var(--text-muted)" fontSize={12} />
                             <Tooltip
-                                contentStyle={{ background: '#ffffff', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: 'var(--shadow-md)' }}
+                                contentStyle={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                                itemStyle={{ color: '#fff' }}
                             />
                             <Area
                                 type="monotone"
                                 dataKey="balance"
                                 name="Balance"
-                                stroke="#006341"
+                                stroke="var(--primary)"
                                 fillOpacity={1}
                                 fill="url(#colorBalance)"
                                 strokeWidth={3}

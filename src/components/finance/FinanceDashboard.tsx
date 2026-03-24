@@ -22,24 +22,24 @@ export const FinanceDashboard: React.FC = () => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {/* Ingresos */}
-            <div className="card" style={{ borderLeft: '4px solid var(--secondary)', background: 'var(--bg-card)', boxShadow: 'var(--shadow-sm)' }}>
+            <div className="card" style={{ borderLeft: '4px solid var(--secondary)', background: 'var(--surface)' }}>
                 <div className="flex justify-between items-start">
                     <div>
                         <p className="label" style={{ color: 'var(--text-muted)' }}>Ingresos Mensuales</p>
-                        <h2 className="text-2xl mt-1" style={{ color: 'var(--text-primary)', fontWeight: 800 }}>${income.toLocaleString()}</h2>
+                        <h2 className="text-2xl mt-1" style={{ color: '#fff', fontWeight: 800 }}>${income.toLocaleString()}</h2>
                     </div>
-                    <div style={{ padding: '0.5rem', borderRadius: '0.5rem', background: 'rgba(0, 177, 113, 0.1)', color: 'var(--secondary)' }}>
+                    <div style={{ padding: '0.5rem', borderRadius: '0.5rem', background: 'rgba(0, 242, 254, 0.1)', color: 'var(--primary)' }}>
                         <TrendingUp size={20} />
                     </div>
                 </div>
             </div>
 
             {/* Gastos */}
-            <div className="card" style={{ borderLeft: '4px solid var(--danger)', background: 'var(--bg-card)', boxShadow: 'var(--shadow-sm)' }}>
+            <div className="card" style={{ borderLeft: '4px solid var(--danger)', background: 'var(--surface)' }}>
                 <div className="flex justify-between items-start">
                     <div>
                         <p className="label" style={{ color: 'var(--text-muted)' }}>Gastos Mensuales</p>
-                        <h2 className="text-2xl mt-1" style={{ color: 'var(--text-primary)', fontWeight: 800 }}>${expenses.toLocaleString()}</h2>
+                        <h2 className="text-2xl mt-1" style={{ color: '#fff', fontWeight: 800 }}>${expenses.toLocaleString()}</h2>
                     </div>
                     <div style={{ padding: '0.5rem', borderRadius: '0.5rem', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }}>
                         <TrendingDown size={20} />
@@ -48,13 +48,13 @@ export const FinanceDashboard: React.FC = () => {
             </div>
 
             {/* Costos */}
-            <div className="card" style={{ borderLeft: '4px solid var(--primary)', background: 'var(--bg-card)', boxShadow: 'var(--shadow-sm)' }}>
+            <div className="card" style={{ borderLeft: '4px solid var(--primary)', background: 'var(--surface)' }}>
                 <div className="flex justify-between items-start">
                     <div>
                         <p className="label" style={{ color: 'var(--text-muted)' }}>Costos Mensuales</p>
-                        <h2 className="text-2xl mt-1" style={{ color: 'var(--text-primary)', fontWeight: 800 }}>${costs.toLocaleString()}</h2>
+                        <h2 className="text-2xl mt-1" style={{ color: '#fff', fontWeight: 800 }}>${costs.toLocaleString()}</h2>
                     </div>
-                    <div style={{ padding: '0.5rem', borderRadius: '0.5rem', background: 'rgba(0, 99, 65, 0.1)', color: 'var(--primary)' }}>
+                    <div style={{ padding: '0.5rem', borderRadius: '0.5rem', background: 'rgba(0, 242, 254, 0.1)', color: 'var(--primary)' }}>
                         <Wallet size={20} />
                     </div>
                 </div>
@@ -63,8 +63,7 @@ export const FinanceDashboard: React.FC = () => {
             {/* Balance Neto */}
             <div className="card" style={{
                 borderLeft: `4px solid ${isSurplus ? 'var(--secondary)' : 'var(--danger)'}`,
-                background: 'var(--bg-card)',
-                boxShadow: 'var(--shadow-sm)'
+                background: 'var(--surface)'
             }}>
                 <div className="flex justify-between items-start">
                     <div>
@@ -76,7 +75,7 @@ export const FinanceDashboard: React.FC = () => {
                     <div style={{
                         padding: '0.5rem',
                         borderRadius: '0.5rem',
-                        background: isSurplus ? 'rgba(0, 177, 113, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        background: isSurplus ? 'rgba(0, 242, 254, 0.1)' : 'rgba(239, 68, 68, 0.1)',
                         color: isSurplus ? 'var(--secondary)' : 'var(--danger)'
                     }}>
                         <DollarSign size={20} />

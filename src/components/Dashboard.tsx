@@ -208,9 +208,9 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <LayoutDashboard size={20} color="var(--primary)" />
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 950, color: 'var(--text-primary)', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 950, color: 'white', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                         TABLERO DE MANDO - GESTIÓN DE GLOSAS
-                        <span style={{ fontSize: '0.55rem', background: 'var(--primary)', color: '#fff', padding: '3px 8px', borderRadius: '4px', marginLeft: '0.75rem', verticalAlign: 'middle', fontWeight: 900 }}>COI V.RECONCILIADA</span>
+                        <span style={{ fontSize: '0.55rem', background: 'var(--primary)', color: '#000', padding: '3px 8px', borderRadius: '4px', marginLeft: '0.75rem', verticalAlign: 'middle', fontWeight: 900 }}>COI V.RECONCILIADA</span>
                     </h2>
                 </div>
             </div>
@@ -294,7 +294,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'var(--text-primary)' }}>${formatPesos(metrics.totalValue)}</h2>
                         </div>
                         <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-                            <div style={{ height: '3px', background: 'rgba(0,0,0,0.02)', borderRadius: '100px', display: 'flex' }}>
+                            <div style={{ height: '3px', background: 'rgba(255,255,255,0.03)', borderRadius: '100px', display: 'flex' }}>
                                 <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `100%` }}
@@ -339,10 +339,10 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                 <motion.div whileHover={{ y: -5, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
                     <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ width: '32px', height: '32px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <FileText size={16} color="var(--secondary)" />
+                            <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <FileText size={16} color="var(--primary)" />
                             </div>
-                            <span style={{ fontSize: '0.6rem', color: 'var(--secondary)', fontWeight: 800 }}>SISTEMA</span>
+                            <span style={{ fontSize: '0.6rem', color: 'var(--primary)', fontWeight: 800 }}>SISTEMA</span>
                         </div>
                         <div>
                             <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>CANTIDAD TOTAL DE FACTURAS</p>
@@ -359,10 +359,10 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                 <motion.div whileHover={{ y: -5, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
                     <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ width: '32px', height: '32px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <TrendingUp size={16} color="#f59e0b" />
+                            <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <TrendingUp size={16} color="var(--secondary)" />
                             </div>
-                            <span style={{ fontSize: '0.6rem', color: '#f59e0b', fontWeight: 800 }}>FACTURAS RESPONDIDAS</span>
+                            <span style={{ fontSize: '0.6rem', color: 'var(--secondary)', fontWeight: 800 }}>FACTURAS RESPONDIDAS</span>
                         </div>
                         <div>
                             <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>CANTIDAD TOTAL CONTESTADA</p>
@@ -395,7 +395,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                                         <span style={{ opacity: 0.4 }}>{cat.p}%</span>
                                     </span>
                                 </div>
-                                <div style={{ height: '4px', background: 'rgba(0,0,0,0.02)', borderRadius: '10px' }}>
+                                <div style={{ height: '4px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
                                     <motion.div
                                         initial={{ width: 0 }}
                                         animate={{ width: `${Math.min(100, cat.p)}%` }}
@@ -415,7 +415,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                     </h3>
                     <div style={{ position: 'relative', width: '200px', height: '200px', margin: '0 auto 2.5rem auto' }}>
                         <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
-                            <circle cx="50" cy="50" r="44" fill="transparent" stroke="rgba(0,0,0,0.02)" strokeWidth="12" />
+                            <circle cx="50" cy="50" r="44" fill="transparent" stroke="rgba(255,255,255,0.03)" strokeWidth="12" />
                             {statusStats.map((s, i) => {
                                 let offset = 0;
                                 for (let j = 0; j < i; j++) offset += statusStats[j].p;
