@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Mail, LogIn, Activity, AlertTriangle, RefreshCcw } from 'lucide-react';
+import { Lock, Mail, LogIn, Activity, AlertTriangle, RefreshCcw, ArrowLeft, Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
@@ -11,11 +11,12 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const [showClearButton, setShowClearButton] = useState(false);
+    const [view, setView] = useState<'login' | 'forgot'>('login');
     const router = useRouter();
 
     useEffect(() => {
-        // Check if there's an old lockout in storage and offer to clear it
         if (typeof window !== 'undefined' && localStorage.getItem('sisfact_login_rl')) {
             setShowClearButton(true);
         }
@@ -34,40 +35,53 @@ export default function LoginPage() {
         e.preventDefault();
         setLoading(true);
         setError(null);
-
-        // Basic trim to avoid whitespace errors
-        const cleanEmail = email.trim();
-        const cleanPassword = password;
-
-        // DEBUG: Log the used URL (visible in browser F12)
-        console.log("Conectando a Supabase URL:", (supabase as any).supabaseUrl);
+        setSuccess(null);
 
         try {
             const { data, error: authError } = await supabase.auth.signInWithPassword({
-                email: cleanEmail,
-                password: cleanPassword,
+                email: email.trim(),
+                password: password,
             });
 
             if (authError) {
                 if (authError.message === 'Invalid login credentials') {
                     setError('Correo o contraseña incorrectos.');
                 } else if (authError.message.includes('rate limit')) {
-                    setError('Supabase ha bloqueado temporalmente esta IP. Espera unos minutos.');
-                } else if (authError.message === 'Failed to fetch') {
-                    setError('Error de conexión (DNS/Typo). Verifica las variables de entorno en Vercel.');
+                    setError('Acceso bloqueado temporalmente por seguridad. Espera unos minutos.');
                 } else {
                     setError(authError.message);
                 }
                 return;
             }
 
-            // Login success -> Force wait a moment for session to propagate
-            // Then redirect
             if (data.session) {
                 router.push('/');
             }
         } catch (err: any) {
-            setError('Error de conexión con el servidor. Verifica tu internet.');
+            setError('Error de conexión. Verifica tu internet.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleForgotPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
+        setSuccess(null);
+
+        try {
+            const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+                redirectTo: `${window.location.origin}/login/reset`,
+            });
+
+            if (resetError) {
+                setError(resetError.message);
+            } else {
+                setSuccess('Se ha enviado un enlace de recuperación a tu correo.');
+            }
+        } catch (err: any) {
+            setError('Error al procesar la solicitud.');
         } finally {
             setLoading(false);
         }
@@ -78,177 +92,214 @@ export default function LoginPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '1.5rem',
+            minHeight: '100vh',
+            width: '100vw',
             background: 'var(--background)',
-            backgroundImage: 'radial-gradient(circle at 50% 50%, var(--primary-glow) 0%, transparent 70%)',
+            backgroundImage: 'linear-gradient(rgba(248, 249, 250, 0.85), rgba(248, 249, 250, 0.85)), url("/medical-bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'fixed',
             position: 'fixed',
             inset: 0,
-            width: '100vw',
-            height: '100vh',
             zIndex: 9999,
-            overflow: 'auto'
+            overflow: 'auto',
+            padding: '1.5rem'
         }}>
             <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
                 style={{
-                    maxWidth: '430px',
+                    maxWidth: '440px',
                     width: '100%',
-                    padding: '4rem 3rem',
-                    background: 'var(--surface)',
-                    backdropFilter: 'blur(40px)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-lg)',
-                    boxShadow: 'var(--shadow-premium), 0 0 40px var(--primary-glow)',
+                    padding: '3.5rem 2.5rem',
+                    background: 'rgba(255, 255, 255, 0.8)',
+                    backdropFilter: 'blur(30px)',
+                    WebkitBackdropFilter: 'blur(30px)',
+                    border: '1px solid rgba(0, 99, 65, 0.1)',
+                    borderRadius: '24px',
+                    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.05), 0 0 30px rgba(0, 99, 65, 0.05)',
                     position: 'relative',
-                    overflow: 'hidden'
+                    textAlign: 'center'
                 }}
             >
-                {/* Decorative glow */}
-                <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '150px', height: '150px', background: 'var(--primary-glow)', filter: 'blur(50px)', borderRadius: '50%' }} />
-
-                <div style={{ textAlign: 'center', marginBottom: '3.5rem', position: 'relative' }}>
+                {/* Branding Section */}
+                <div style={{ marginBottom: '3rem' }}>
                     <div style={{
-                        width: '70px',
-                        height: '70px',
+                        width: '64px',
+                        height: '64px',
                         background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
-                        borderRadius: '20px',
+                        borderRadius: '18px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        margin: '0 auto 2rem',
-                        boxShadow: '0 0 25px var(--primary-glow)'
+                        margin: '0 auto 1.5rem',
+                        boxShadow: '0 8px 20px rgba(0, 99, 65, 0.2)',
+                        color: 'white'
                     }}>
-                        <Activity size={36} color="white" />
+                        <Activity size={32} />
                     </div>
-                    <h1 style={{ fontSize: '2.5rem', fontWeight: 950, color: 'white', marginBottom: '0.75rem', letterSpacing: '-0.03em' }}>
-                        SisFact <span style={{ color: 'var(--primary)', fontSize: '0.8rem', verticalAlign: 'middle', background: 'rgba(0, 242, 254, 0.1)', padding: '4px 8px', borderRadius: '6px' }}>PRO</span>
+                    <h1 style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
+                        SisFact <span style={{ color: 'var(--primary)', fontSize: '0.7rem', verticalAlign: 'middle', background: 'rgba(0, 99, 65, 0.06)', padding: '4px 10px', borderRadius: '8px', fontWeight: 800 }}>PRO V4.0</span>
                     </h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 500 }}>Control de Auditoría Médica</p>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem', fontWeight: 500 }}>
+                        Servicios Oftalmológicos de Auditoría
+                    </p>
                 </div>
 
-                <AnimatePresence>
-                    {showClearButton && (
-                        <motion.button
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            onClick={handleClearBlock}
-                            style={{
-                                width: '100%',
-                                marginBottom: '1.5rem',
-                                padding: '0.8rem',
-                                background: 'rgba(0, 242, 254, 0.1)',
-                                border: '1px solid var(--primary)',
-                                borderRadius: '12px',
-                                color: 'var(--primary)',
-                                fontSize: '0.8rem',
-                                fontWeight: 700,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '0.5rem',
-                                cursor: 'pointer'
-                            }}
+                <AnimatePresence mode="wait">
+                    {view === 'login' ? (
+                        <motion.form
+                            key="login-view"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            onSubmit={handleLogin}
+                            style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
                         >
-                            <RefreshCcw size={14} /> DESBLOQUEAR SISTEMA (Limpiar intentos)
-                        </motion.button>
+                            {/* Clear Block Button */}
+                            {showClearButton && (
+                                <button
+                                    type="button"
+                                    onClick={handleClearBlock}
+                                    style={{
+                                        padding: '0.75rem',
+                                        background: 'rgba(0, 99, 65, 0.05)',
+                                        border: '1px solid var(--primary)',
+                                        borderRadius: '12px',
+                                        color: 'var(--primary)',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.5rem',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <RefreshCcw size={14} /> DESBLOQUEAR INTENTOS
+                                </button>
+                            )}
+
+                            <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Mail size={12} /> Correo Electrónico
+                                </label>
+                                <input
+                                    type="email"
+                                    placeholder="usuario@oftalmologia.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                    className="input"
+                                    style={{ width: '100%' }}
+                                />
+                            </div>
+
+                            <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <label style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <Lock size={12} /> Contraseña
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setView('forgot')}
+                                        style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                                    >
+                                        ¿Olvidaste tu contraseña?
+                                    </button>
+                                </div>
+                                <input
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    className="input"
+                                    style={{ width: '100%' }}
+                                />
+                            </div>
+
+                            {error && (
+                                <div style={{ color: 'var(--danger)', fontSize: '0.8rem', fontWeight: 700, padding: '0.75rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <AlertTriangle size={14} /> {error}
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="btn btn-primary"
+                                style={{ height: '54px', borderRadius: '14px', fontSize: '0.9rem', width: '100%' }}
+                            >
+                                {loading ? 'CONECTANDO...' : 'ACCEDER AL PANEL'} <LogIn size={18} style={{ marginLeft: '8px' }} />
+                            </button>
+                        </motion.form>
+                    ) : (
+                        <motion.form
+                            key="forgot-view"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            onSubmit={handleForgotPassword}
+                            style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+                        >
+                            <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                                    Ingresa tu correo para recibir un enlace de recuperación.
+                                </p>
+                            </div>
+
+                            <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Mail size={12} /> Correo Electrónico
+                                </label>
+                                <input
+                                    type="email"
+                                    placeholder="usuario@oftalmologia.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                    className="input"
+                                    style={{ width: '100%' }}
+                                />
+                            </div>
+
+                            {success && (
+                                <div style={{ color: 'var(--secondary)', fontSize: '0.8rem', fontWeight: 700, padding: '0.75rem', background: 'rgba(0, 177, 113, 0.05)', borderRadius: '12px', border: '1px solid rgba(0, 177, 113, 0.1)' }}>
+                                    {success}
+                                </div>
+                            )}
+
+                            {error && (
+                                <div style={{ color: 'var(--danger)', fontSize: '0.8rem', fontWeight: 700, padding: '0.75rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <AlertTriangle size={14} /> {error}
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="btn btn-primary"
+                                    style={{ height: '54px', borderRadius: '14px', fontSize: '0.9rem', width: '100%' }}
+                                >
+                                    {loading ? 'ENVIANDO...' : 'ENVIAR ENLACE'} <Send size={18} style={{ marginLeft: '8px' }} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setView('login')}
+                                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                >
+                                    <ArrowLeft size={14} /> Volver al inicio
+                                </button>
+                            </div>
+                        </motion.form>
                     )}
                 </AnimatePresence>
 
-                <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', position: 'relative' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                        <label style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Mail size={12} /> Correo Electrónico
-                        </label>
-                        <input
-                            type="email"
-                            placeholder="usuario@coi.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            style={{
-                                padding: '1rem 1.25rem',
-                                background: 'rgba(255,255,255,0.03)',
-                                border: '1px solid var(--border)',
-                                borderRadius: '14px',
-                                color: 'white',
-                                outline: 'none',
-                                fontSize: '0.9rem',
-                                transition: 'all 0.3s ease'
-                            }}
-                        />
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                        <label style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Lock size={12} /> Contraseña
-                        </label>
-                        <input
-                            type="password"
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            style={{
-                                padding: '1rem 1.25rem',
-                                background: 'rgba(255,255,255,0.03)',
-                                border: '1px solid var(--border)',
-                                borderRadius: '14px',
-                                color: 'white',
-                                outline: 'none',
-                                fontSize: '0.9rem',
-                                transition: 'all 0.3s ease'
-                            }}
-                        />
-                    </div>
-
-                    {error && (
-                        <motion.p
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            style={{ color: 'var(--danger)', fontSize: '0.8rem', textAlign: 'center', fontWeight: 700, background: 'rgba(241, 91, 181, 0.1)', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(241, 91, 181, 0.2)' }}
-                        >
-                            <AlertTriangle size={14} style={{ display: 'inline', marginRight: '5px', verticalAlign: 'middle' }} />
-                            {error}
-                        </motion.p>
-                    )}
-
-                    <motion.button
-                        whileHover={{ scale: 1.02, boxShadow: '0 0 20px var(--primary-glow)' }}
-                        whileTap={{ scale: 0.98 }}
-                        type="submit"
-                        disabled={loading}
-                        style={{
-                            height: '60px',
-                            background: 'var(--primary)',
-                            color: '#000',
-                            border: 'none',
-                            borderRadius: '16px',
-                            fontSize: '1rem',
-                            fontWeight: 900,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.75rem',
-                            cursor: 'pointer',
-                            marginTop: '0.5rem',
-                            boxShadow: '0 10px 20px rgba(0, 242, 254, 0.2)'
-                        }}
-                    >
-                        {loading ? (
-                            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} style={{ width: '22px', height: '22px', border: '3px solid rgba(0,0,0,0.1)', borderTop: '3px solid #000', borderRadius: '50%' }} />
-                        ) : (
-                            <>
-                                INICIAR SISTEMA <LogIn size={20} />
-                            </>
-                        )}
-                    </motion.button>
-                </form>
-
-                <div style={{ marginTop: '3.5rem', textAlign: 'center', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>
-                        Powered by Antigravity v4.0
+                <div style={{ marginTop: '3rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(0, 99, 65, 0.06)' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 700 }}>
+                        Powered by Antigravity · Ophthalmology Edition
                     </p>
                 </div>
             </motion.div>
