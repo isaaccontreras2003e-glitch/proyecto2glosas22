@@ -127,27 +127,23 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
             return matchesDate && itemSection === currentUpper;
         });
 
-        const uniqueFacturas = new Set([
-            ...todayGlosas.map(g => g.factura),
-            ...todayIngresos.map(i => i.factura)
-        ]).size;
+        const uniqueFacturas = new Set(todayGlosas.map(g => g.factura)).size;
 
-        // Valor total ingresado = valor_glosa de glosas + valor_aceptado de ingresos
+        // Valor total ingresado = SOLO valor_glosa de glosas de hoy
         const totalValue =
-            todayGlosas.reduce((acc, g) => acc + (parseFloat(g.valor_glosa as any) || 0), 0) +
-            todayIngresos.reduce((acc, i) => acc + (parseFloat(i.valor_aceptado as any) || 0), 0);
+            todayGlosas.reduce((acc, g) => acc + (parseFloat(g.valor_glosa as any) || 0), 0);
 
         // Valor aceptado = SOLO glosas de hoy con estado 'Aceptada'
         const valorAceptado =
             todayGlosas.filter(g => g.estado === 'Aceptada').reduce((acc, g) => acc + (parseFloat(g.valor_aceptado as any) || 0), 0);
 
         return {
-            count: todayGlosas.length + todayIngresos.length,
+            count: todayGlosas.length,
             facturas: uniqueFacturas,
             value: totalValue,
             valorAceptado
         };
-    }, [existingGlosas, existingIngresos, todayStr, currentSeccion]);
+    }, [existingGlosas, todayStr, currentSeccion]);
 
     // Detectar si la factura ya existe
     const facturaMatch = useMemo(() => {
