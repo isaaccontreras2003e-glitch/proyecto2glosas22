@@ -230,12 +230,12 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
                         <h3 style={{ fontSize: '0.9rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>EVOLUCIÓN HISTÓRICA</h3>
                         <div style={{ display: 'flex', gap: '1.5rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: 'var(--primary)' }} />
-                                <span style={{ fontSize: '0.6rem', fontWeight: 800, opacity: 0.8 }}>CANTIDAD GLOSAS</span>
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }} />
+                                <span style={{ fontSize: '0.6rem', fontWeight: 800, opacity: 0.5 }}>TOTAL GLOSAS</span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#fff', boxShadow: '0 0 5px rgba(255,255,255,0.8)' }} />
-                                <span style={{ fontSize: '0.6rem', fontWeight: 800, opacity: 0.8 }}>VALOR ACUMULADO</span>
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--secondary)' }} />
+                                <span style={{ fontSize: '0.6rem', fontWeight: 800, opacity: 0.5 }}>VALOR ACUMULADO</span>
                             </div>
                         </div>
                     </div>
@@ -254,30 +254,17 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
                             </defs>
                         </svg>
                         <ResponsiveContainer width="100%" height="100%">
-                            <ComposedChart data={monthlyData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                            <AreaChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.02)" vertical={false} />
                                 <XAxis 
                                     dataKey="month" 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 700 }}
+                                    tick={{ fill: 'var(--text-muted)', fontSize: 9, fontWeight: 700 }}
                                     dy={10}
-                                    tickFormatter={(v) => (v.split(' ')[0].substring(0,3) + ' ' + v.split(' ')[1]).toUpperCase()}
                                 />
-                                <YAxis 
-                                    yAxisId="left" 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tick={{ fill: 'var(--primary)', fontSize: 10, fontWeight: 800 }} 
-                                />
-                                <YAxis 
-                                    yAxisId="right" 
-                                    orientation="right" 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tickFormatter={(v) => `$${(v/1000000).toFixed(0)}M`} 
-                                    tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 800 }} 
-                                />
+                                <YAxis yAxisId="left" axisLine={false} tickLine={false} hide />
+                                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} hide />
                                 <Tooltip 
                                     contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: 'var(--shadow-lg)' }}
                                     itemStyle={{ fontSize: '0.75rem', fontWeight: 700 }}
@@ -286,26 +273,27 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
                                         return [value, 'Cantidad Glosas'];
                                     }}
                                 />
-                                <Bar 
+                                <Area 
                                     yAxisId="left"
+                                    type="monotone" 
                                     dataKey="count" 
-                                    fill="var(--primary)" 
-                                    barSize={32} 
-                                    radius={[4, 4, 0, 0]} 
-                                    name="count"
+                                    stroke="var(--primary)" 
+                                    fill="url(#areaGrad)" 
+                                    strokeWidth={3}
+                                    style={{ filter: 'url(#glow-line)' }}
+                                    animationDuration={2000}
                                 />
-                                <Line 
+                                <Area 
                                     yAxisId="right"
                                     type="monotone" 
                                     dataKey="totalVal" 
-                                    stroke="#fff" 
-                                    strokeWidth={3} 
-                                    dot={{ r: 4, fill: '#fff', strokeWidth: 2, stroke: 'var(--bg-card)' }}
-                                    activeDot={{ r: 6, fill: '#fff', stroke: 'var(--primary)', strokeWidth: 2 }}
-                                    name="totalVal"
-                                    style={{ filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.5))' }}
+                                    stroke="var(--secondary)" 
+                                    fill="transparent"
+                                    strokeWidth={2}
+                                    opacity={0.4}
+                                    animationDuration={2500}
                                 />
-                            </ComposedChart>
+                            </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </Card>
