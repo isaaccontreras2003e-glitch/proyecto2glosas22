@@ -7,13 +7,14 @@ import { GlosaForm } from '@/components/GlosaForm';
 import { GlosaTable } from '@/components/GlosaTable';
 import { supabase } from '@/lib/supabase';
 import { safeNumber, safeArray, safeStorage } from '@/lib/safeUtils';
-import { LayoutDashboard, TrendingUp, Wallet, Activity, Trash2, Download, ListChecks, PieChart, ChevronUp, RefreshCw, ClipboardList, LogOut, FileText, CheckCircle, Clock, Cloud, CloudOff, UploadCloud } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Wallet, Activity, Trash2, Download, ListChecks, PieChart, ChevronUp, RefreshCw, ClipboardList, LogOut, FileText, CheckCircle, Clock, Cloud, CloudOff, UploadCloud, Plus, AlertTriangle, Copy, BarChart3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { InteractiveLogo } from '@/components/InteractiveLogo';
 import { ToastProvider, useToast } from '@/lib/contexts/ToastContext';
+import { MonthlyReport } from '@/components/MonthlyReport';
 
 const formatPesos = (value: any): string => {
   const num = typeof value === 'number' ? value : parseFloat(value);
@@ -51,7 +52,7 @@ interface Ingreso {
 }
 
 function Home() {
-  const [activeSection, setActiveSection] = useState<'dashboard' | 'ingreso' | 'consolidado' | 'valores'>('dashboard');
+  const [activeSection, setActiveSection] = useState<'dashboard' | 'ingreso' | 'consolidado' | 'valores' | 'reporte_mensual'>('dashboard');
   const [currentMainSection, setCurrentMainSection] = useState<'GLOSAS' | 'MEDICAMENTOS'>('GLOSAS');
   const [glosas, setGlosas] = useState<Glosa[]>([]);
   const [ingresos, setIngresos] = useState<Ingreso[]>([]);
@@ -1208,6 +1209,7 @@ function Home() {
             { id: 'ingreso', label: 'Registro', icon: PieChart },
             { id: 'consolidado', label: 'Auditoría', icon: ListChecks },
             { id: 'valores', label: 'Pagos', icon: Wallet },
+            { id: 'reporte_mensual', label: 'Máster Mensual', icon: BarChart3 },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = activeSection === item.id;
@@ -1640,6 +1642,7 @@ function Home() {
                         onAddIngreso={handleAddIngreso}
                         isAdmin={role === 'admin'}
                         currentSeccion={currentMainSection}
+                        existingIngresos={ingresos}
                       />
                     </div>
                     <div>
@@ -1653,6 +1656,18 @@ function Home() {
                         setSearchTerm={setSearchTermIngresos}
                       />
                     </div>
+                  </motion.div>
+                )}
+
+                {activeSection === 'reporte_mensual' && (
+                  <motion.div
+                    key="reporte_mensual"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <MonthlyReport glosas={currentSectionGlosas} />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1838,8 +1853,9 @@ function Home() {
   );
 }
 
-const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: (ingreso: Ingreso) => void, isAdmin: boolean, currentSeccion: string }) => {
+const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion, existingIngresos = [] }: { onAddIngreso: (ingreso: Ingreso) => void, isAdmin: boolean, currentSeccion: string, existingIngresos?: Ingreso[] }) => {
   const [formData, setFormData] = useState({ factura: '', valor_aceptado: '', valor_no_aceptado: '' });
+  const [forceSubmit, setForceSubmit] = useState(false);
   const key = `ingreso_form_draft_${currentSeccion}`;
 
   // PERSISTENCIA: Cargar datos guardados
@@ -1865,9 +1881,41 @@ const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: 
     }
   }, [formData, key]);
 
+  // Detectar si la factura ya existe en ingresos
+  const facturaMatch = useMemo(() => {
+    if (!formData.factura.trim()) return null;
+    return (existingIngresos || []).filter(
+      i => i.factura.trim().toLowerCase() === formData.factura.trim().toLowerCase() &&
+        (i as any).seccion?.toUpperCase() === currentSeccion.toUpperCase()
+    );
+  }, [formData.factura, existingIngresos, currentSeccion]);
+
+  const facturaExiste = facturaMatch && facturaMatch.length > 0;
+
+  // Detectar duplicado exacto
+  const isDupeMatch = useMemo(() => {
+    if (!formData.factura.trim()) return false;
+    const fFact = formData.factura.trim().toLowerCase();
+    const fAceptado = parseFloat(formData.valor_aceptado) || 0;
+    const fNoAceptado = parseFloat(formData.valor_no_aceptado) || 0;
+
+    return (existingIngresos || []).some(i =>
+      i.factura.trim().toLowerCase() === fFact &&
+      i.valor_aceptado === fAceptado &&
+      i.valor_no_aceptado === fNoAceptado &&
+      (i as any).seccion?.toUpperCase() === currentSeccion.toUpperCase()
+    );
+  }, [formData, existingIngresos, currentSeccion]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAdmin || !formData.factura) return;
+
+    if (isDupeMatch && !forceSubmit) {
+      alert('❌ ERROR: REGISTRO DUPLICADO EXACTO. Ya existe este movimiento con los mismos valores para esta factura.');
+      return;
+    }
+
     onAddIngreso({
       id: Math.random().toString(36).substr(2, 9),
       factura: formData.factura,
@@ -1877,8 +1925,11 @@ const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: 
       seccion: currentSeccion
     });
     setFormData({ factura: '', valor_aceptado: '', valor_no_aceptado: '' });
+    setForceSubmit(false);
     localStorage.removeItem(key);
   };
+
+  const alertColor = isDupeMatch ? '#ef4444' : '#f59e0b';
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="card" style={{ padding: '2rem', border: '1px solid var(--border)', background: 'var(--bg-card)', boxShadow: 'var(--shadow-md)' }}>
@@ -1899,7 +1950,47 @@ const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: 
         }}>
           <div className="input-group">
             <label className="label">Número de Factura Afectada</label>
-            <input type="text" className="input" style={{ padding: '0.85rem 1rem' }} placeholder="Ej: FAC-100" value={formData.factura} onChange={(e) => setFormData({ ...formData, factura: e.target.value })} required disabled={!isAdmin} />
+            <input
+              type="text"
+              className="input"
+              style={{
+                padding: '0.85rem 1rem',
+                borderColor: isDupeMatch ? 'rgba(239,68,68,0.6)' : facturaExiste ? 'rgba(245,158,11,0.6)' : undefined
+              }}
+              placeholder="Ej: FAC-100"
+              value={formData.factura}
+              onChange={(e) => {
+                setFormData({ ...formData, factura: e.target.value });
+                setForceSubmit(false);
+              }}
+              required
+              disabled={!isAdmin}
+            />
+
+            {/* Alerta de factura existente */}
+            {facturaExiste && (
+              <div style={{
+                marginTop: '0.85rem',
+                padding: '0.75rem 1rem',
+                borderRadius: '12px',
+                background: isDupeMatch ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
+                border: `1px solid ${isDupeMatch ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.25)'}`,
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.75rem',
+                fontSize: '0.75rem',
+                color: alertColor,
+                lineHeight: 1.5
+              }}>
+                <AlertTriangle size={16} style={{ marginTop: '2px', flexShrink: 0 }} />
+                <div>
+                  {isDupeMatch
+                    ? <strong>⚠ DUPLICADO EXACTO: Ya existe un registro con estos mismos valores para esta factura.</strong>
+                    : <><strong>ATENCIÓN:</strong> Esta factura ya tiene {facturaMatch!.length} registro(s) previos de pago/valor.</>
+                  }
+                </div>
+              </div>
+            )}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="input-group">
@@ -1914,9 +2005,51 @@ const IngresoForm = ({ onAddIngreso, isAdmin, currentSeccion }: { onAddIngreso: 
         </div>
 
         {isAdmin ? (
-          <motion.button whileHover={{ scale: 1.02, background: '#059669' }} whileTap={{ scale: 0.98 }} type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '2rem', background: '#10b981', height: '52px', fontSize: '0.9rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            REGISTRAR MOVIMIENTO
-          </motion.button>
+          isDupeMatch && !forceSubmit ? (
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+              <button
+                type="button"
+                onClick={() => setFormData({ factura: '', valor_aceptado: '', valor_no_aceptado: '' })}
+                className="btn btn-secondary"
+                style={{ flex: 1 }}
+              >
+                Limpiar
+              </button>
+              <button
+                type="button"
+                onClick={() => setForceSubmit(true)}
+                className="btn"
+                style={{ flex: 1, background: 'rgba(239,68,68,0.8)', color: 'white', fontWeight: 900 }}
+              >
+                Registrar de todas formas
+              </button>
+            </div>
+          ) : (
+            <motion.button
+              whileHover={{ scale: 1.02, background: facturaExiste ? '#d97706' : '#059669' }}
+              whileTap={{ scale: 0.98 }}
+              type="submit"
+              className="btn"
+              style={{
+                width: '100%',
+                marginTop: '2rem',
+                background: facturaExiste ? '#f59e0b' : '#10b981',
+                color: 'white',
+                height: '52px',
+                fontSize: '0.9rem',
+                fontWeight: 900,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.75rem'
+              }}
+            >
+              {facturaExiste ? <AlertTriangle size={18} /> : <Plus size={18} />}
+              {facturaExiste ? 'Añadir nuevo registro a Factura' : 'REGISTRAR MOVIMIENTO'}
+            </motion.button>
+          )
         ) : (
           <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.1)', marginTop: '2rem' }}>
             Modo LECTURA. Registro de movimientos deshabilitado.
@@ -1945,6 +2078,39 @@ const IngresoList = ({
   setSearchTerm: (val: string) => void
 }) => {
   const totalAceptado = ingresos.reduce((acc, i) => acc + i.valor_aceptado, 0);
+
+  // Detectar duplicados de facturas similar a GlosaTable
+  const duplicateData = useMemo(() => {
+    const seenFact = new Map<string, string>(); // factura -> id
+    const exactSeen = new Map<string, string>(); // factura|aceptado|noaceptado -> id
+
+    const repeatedFacts = new Set<string>();
+    const exactDupes = new Set<string>();
+
+    (ingresos || []).forEach(i => {
+      const fact = i.factura.trim().toLowerCase();
+      const exactKey = `${fact}|${i.valor_aceptado}|${i.valor_no_aceptado}`;
+
+      if (exactSeen.has(exactKey)) {
+        exactDupes.add(i.id);
+        exactDupes.add(exactSeen.get(exactKey)!);
+      } else {
+        exactSeen.set(exactKey, i.id);
+      }
+
+      if (seenFact.has(fact)) {
+        repeatedFacts.add(i.id);
+        repeatedFacts.add(seenFact.get(fact)!);
+      } else {
+        seenFact.set(fact, i.id);
+      }
+    });
+
+    return { exactDupes, repeatedFacts };
+  }, [ingresos]);
+
+  const { exactDupes, repeatedFacts } = duplicateData;
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', flex: 1, gap: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1988,98 +2154,107 @@ const IngresoList = ({
               Sin movimientos registrados
             </motion.p>
           ) : (
-            ingresos.map((i, idx) => (
-              <motion.div key={i.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ delay: idx * 0.05 }} style={{
-                background: idx % 2 === 0 ? 'var(--background)' : 'transparent',
-                borderRadius: '1.25rem',
-                padding: '1.5rem',
-                marginBottom: '1rem',
-                border: '1px solid var(--border)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                position: 'relative',
-                overflow: 'hidden',
-                boxShadow: idx % 2 === 0 ? 'var(--shadow-sm)' : 'none'
-              }}>
-                <div style={{ opacity: 0.8, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.03))', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}></div>
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
-                    <h4 style={{ color: 'var(--text-primary)', fontWeight: 900, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>{i.factura}</h4>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <Activity size={10} /> {i.fecha}
-                      {i.sincronizado === false ? (
-                        <span style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.2rem', marginLeft: '0.5rem' }}>
-                          <CloudOff size={10} /> PENDIENTE
-                        </span>
-                      ) : (
-                        <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.2rem', marginLeft: '0.5rem' }}>
-                          <Cloud size={10} /> NUBE
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '1.5rem' }}>
-                    <div>
-                      <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.2rem' }}>No Aceptado</p>
-                      <p style={{ color: 'var(--secondary)', fontWeight: 900, fontSize: '0.95rem' }}>${formatPesos(i.valor_no_aceptado)}</p>
+            ingresos.map((i, idx) => {
+              const isExactDupe = exactDupes.has(i.id);
+              const isRepeated = repeatedFacts.has(i.id);
+              const isOnlyRepeated = isRepeated && !isExactDupe;
+
+              return (
+                <motion.div key={i.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ delay: idx * 0.05 }} style={{
+                  background: isExactDupe ? 'rgba(239, 68, 68, 0.05)' : (isOnlyRepeated ? 'rgba(245, 158, 11, 0.03)' : (idx % 2 === 0 ? 'var(--background)' : 'transparent')),
+                  borderRadius: '1.25rem',
+                  padding: '1.5rem',
+                  marginBottom: '1rem',
+                  border: `1px solid ${isExactDupe ? 'rgba(239, 68, 68, 0.2)' : (isOnlyRepeated ? 'rgba(245, 158, 11, 0.2)' : 'var(--border)')}`,
+                  borderLeft: isExactDupe ? '6px solid #ef4444' : (isOnlyRepeated ? '6px solid #f59e0b' : '1px solid var(--border)'),
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  boxShadow: idx % 2 === 0 ? 'var(--shadow-sm)' : 'none'
+                }}>
+                  <div style={{ opacity: 0.8, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.03))', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}></div>
+                  <div style={{ position: 'relative', zIndex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
+                      {isExactDupe && <Copy size={14} style={{ color: '#ef4444' }} />}
+                      {isOnlyRepeated && <AlertTriangle size={14} style={{ color: '#f59e0b' }} />}
+                      <h4 style={{ color: 'var(--text-primary)', fontWeight: 900, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>{i.factura}</h4>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <Activity size={10} /> {i.fecha}
+                        {i.sincronizado === false ? (
+                          <span style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.2rem', marginLeft: '0.5rem' }}>
+                            <CloudOff size={10} /> PENDIENTE
+                          </span>
+                        ) : (
+                          <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.2rem', marginLeft: '0.5rem' }}>
+                            <Cloud size={10} /> NUBE
+                          </span>
+                        )}
+                      </span>
                     </div>
-                    <div>
-                      <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.2rem' }}>Aceptado</p>
-                      <p style={{ color: 'var(--danger)', fontWeight: 900, fontSize: '0.95rem' }}>${formatPesos(i.valor_aceptado)}</p>
+                    <div style={{ display: 'flex', gap: '1.5rem' }}>
+                      <div>
+                        <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.2rem' }}>No Aceptado</p>
+                        <p style={{ color: 'var(--secondary)', fontWeight: 900, fontSize: '0.95rem' }}>${formatPesos(i.valor_no_aceptado)}</p>
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.2rem' }}>Aceptado</p>
+                        <p style={{ color: 'var(--danger)', fontWeight: 900, fontSize: '0.95rem' }}>${formatPesos(i.valor_aceptado)}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem', zIndex: 1 }}>
-                  {i.soporte_pdf && (
-                    <div style={{ display: 'flex', gap: '0.25rem' }}>
-                      <a
-                        href={i.soporte_pdf}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Ver Nota Crédito/PDF"
-                        style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '0.75rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', transition: 'all 0.2s', textDecoration: 'none' }}
-                      >
-                        <FileText size={16} />
-                      </a>
-                      {isAdmin && (
-                        <motion.button
-                          onClick={() => onDeletePdf(i.id)}
-                          whileHover={{ scale: 1.1, background: 'rgba(239, 68, 68, 0.2)' }}
-                          title="Eliminar PDF"
-                          style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '0.75rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', transition: 'all 0.2s', cursor: 'pointer' }}
+                  <div style={{ display: 'flex', gap: '0.5rem', zIndex: 1 }}>
+                    {i.soporte_pdf && (
+                      <div style={{ display: 'flex', gap: '0.25rem' }}>
+                        <a
+                          href={i.soporte_pdf}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Ver Nota Crédito/PDF"
+                          style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '0.75rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', transition: 'all 0.2s', textDecoration: 'none' }}
                         >
-                          <Trash2 size={16} />
-                        </motion.button>
-                      )}
-                    </div>
-                  )}
-                  {!i.soporte_pdf && isAdmin && (
-                    <label
-                      title="Anexar Nota Crédito PDF"
-                      style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', color: '#10b981', padding: '0.75rem', borderRadius: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.2s', margin: 0 }}
-                    >
-                      <UploadCloud size={16} />
-                      <input
-                        type="file"
-                        accept=".pdf"
-                        style={{ display: 'none' }}
-                        onChange={(e) => {
-                          if (e.target.files && e.target.files[0]) {
-                            onUploadPdf(i.id, e.target.files[0]);
-                          }
-                        }}
-                      />
-                    </label>
-                  )}
-                  {isAdmin && (
-                    <motion.button onClick={() => onDelete(i.id)} whileHover={{ scale: 1.1, background: 'rgba(239, 68, 68, 0.2)' }} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)', color: '#ef4444', padding: '0.75rem', borderRadius: '1rem', cursor: 'pointer' }}>
-                      <Trash2 size={16} />
-                    </motion.button>
-                  )}
-                </div>
-              </motion.div>
-            ))
+                          <FileText size={16} />
+                        </a>
+                        {isAdmin && (
+                          <motion.button
+                            onClick={() => onDeletePdf(i.id)}
+                            whileHover={{ scale: 1.1, background: 'rgba(239, 68, 68, 0.2)' }}
+                            title="Eliminar PDF"
+                            style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '0.75rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', transition: 'all 0.2s', cursor: 'pointer' }}
+                          >
+                            <Trash2 size={16} />
+                          </motion.button>
+                        )}
+                      </div>
+                    )}
+                    {!i.soporte_pdf && isAdmin && (
+                      <label
+                        title="Anexar Nota Crédito PDF"
+                        style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', color: '#10b981', padding: '0.75rem', borderRadius: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'all 0.2s', margin: 0 }}
+                      >
+                        <UploadCloud size={16} />
+                        <input
+                          type="file"
+                          accept=".pdf"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              onUploadPdf(i.id, e.target.files[0]);
+                            }
+                          }}
+                        />
+                      </label>
+                    )}
+                    {isAdmin && (
+                      <motion.button onClick={() => onDelete(i.id)} whileHover={{ scale: 1.1, background: 'rgba(239, 68, 68, 0.2)' }} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)', color: '#ef4444', padding: '0.75rem', borderRadius: '1rem', cursor: 'pointer' }}>
+                        <Trash2 size={16} />
+                      </motion.button>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })
           )}
         </AnimatePresence>
       </div>
