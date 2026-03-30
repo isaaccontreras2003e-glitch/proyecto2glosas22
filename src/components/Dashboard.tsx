@@ -136,12 +136,12 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                 noAcceptedValue: executiveStats.totalNoAceptado,
                 totalRespondedValue: executiveStats.totalAceptado + executiveStats.totalNoAceptado,
                 acceptedCount: executiveStats.acceptedCount,
-                percentResponded: executiveStats.totalGlosado > 0 ? ((executiveStats.totalAceptado + executiveStats.totalNoAceptado) / executiveStats.totalGlosado) * 100 : 0,
-                percentAcceptedTotal: executiveStats.percentAceptado,
-                percentNoAcceptedTotal: executiveStats.totalGlosado > 0 ? (executiveStats.totalNoAceptado / executiveStats.totalGlosado) * 100 : 0,
+                percentResponded: executiveStats.totalGlosado > 0 ? Math.min(100, Math.max(0, ((executiveStats.totalAceptado + executiveStats.totalNoAceptado) / executiveStats.totalGlosado) * 100)) : 0,
+                percentAcceptedTotal: Math.min(100, Math.max(0, executiveStats.percentAceptado)),
+                percentNoAcceptedTotal: executiveStats.totalGlosado > 0 ? Math.min(100, Math.max(0, (executiveStats.totalNoAceptado / executiveStats.totalGlosado) * 100)) : 0,
                 pendingValue: executiveStats.totalPendiente,
                 respondedInvoicesCount: allConsolidado.filter(item => item.aceptado > 0 || item.noAceptado > 0).length,
-                percentPendingTotal: executiveStats.totalGlosado > 0 ? (executiveStats.totalPendiente / executiveStats.totalGlosado) * 100 : 0,
+                percentPendingTotal: executiveStats.totalGlosado > 0 ? Math.min(100, Math.max(0, (executiveStats.totalPendiente / executiveStats.totalGlosado) * 100)) : 0,
                 waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
             };
         }
@@ -161,12 +161,12 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
             noAcceptedValue,
             totalRespondedValue,
             acceptedCount,
-            percentResponded: totalValue > 0 ? (totalRespondedValue / totalValue) * 100 : 0,
-            percentAcceptedTotal: totalValue > 0 ? (acceptedValue / totalValue) * 100 : 0,
-            percentNoAcceptedTotal: totalValue > 0 ? (noAcceptedValue / totalValue) * 100 : 0,
+            percentResponded: totalValue > 0 ? Math.min(100, Math.max(0, (totalRespondedValue / totalValue) * 100)) : 0,
+            percentAcceptedTotal: totalValue > 0 ? Math.min(100, Math.max(0, (acceptedValue / totalValue) * 100)) : 0,
+            percentNoAcceptedTotal: totalValue > 0 ? Math.min(100, Math.max(0, (noAcceptedValue / totalValue) * 100)) : 0,
             pendingValue: totalValue - acceptedValue - noAcceptedValue,
             respondedInvoicesCount: filteredConsolidado.filter(item => item.aceptado > 0 || item.noAceptado > 0).length,
-            percentPendingTotal: totalValue > 0 ? ((totalValue - acceptedValue - noAcceptedValue) / totalValue) * 100 : 0,
+            percentPendingTotal: totalValue > 0 ? Math.min(100, Math.max(0, ((totalValue - acceptedValue - noAcceptedValue) / totalValue) * 100)) : 0,
             waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
         };
     }, [filteredConsolidado, selectedService, selectedType, executiveStats]);
@@ -191,8 +191,17 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
     // 4. Status Stats (Bottom legend)
     const statusStats = useMemo(() => {
         const total = metrics.totalValue || 1;
-        const acceptedPerc = Math.round((metrics.acceptedValue / total) * 100);
-        const noAcceptedPerc = Math.round((metrics.noAcceptedValue / total) * 100);
+        let acceptedPerc = Math.round((metrics.acceptedValue / total) * 100);
+        let noAcceptedPerc = Math.round((metrics.noAcceptedValue / total) * 100);
+        
+        // Cap individual and total
+        acceptedPerc = Math.min(100, Math.max(0, acceptedPerc));
+        noAcceptedPerc = Math.min(100, Math.max(0, noAcceptedPerc));
+        
+        if (acceptedPerc + noAcceptedPerc > 100) {
+            noAcceptedPerc = Math.max(0, 100 - acceptedPerc);
+        }
+        
         const pendingPerc = Math.max(0, 100 - acceptedPerc - noAcceptedPerc);
 
         return [
