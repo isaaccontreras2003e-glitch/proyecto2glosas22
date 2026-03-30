@@ -234,7 +234,7 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
                                 <span style={{ fontSize: '0.6rem', fontWeight: 800, opacity: 0.5 }}>TOTAL GLOSAS</span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--secondary)' }} />
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.25)' }} />
                                 <span style={{ fontSize: '0.6rem', fontWeight: 800, opacity: 0.5 }}>VALOR ACUMULADO</span>
                             </div>
                         </div>
@@ -254,7 +254,7 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
                             </defs>
                         </svg>
                         <ResponsiveContainer width="100%" height="100%">
-                            <ComposedChart data={monthlyData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+                            <LineChart data={monthlyData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.02)" vertical={false} />
                                 <XAxis 
                                     dataKey="month" 
@@ -262,9 +262,10 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
                                     tickLine={false} 
                                     tick={{ fill: 'var(--text-muted)', fontSize: 9, fontWeight: 700 }}
                                     dy={10}
+                                    tickFormatter={(v) => (v.split(' ')[0].substring(0,3) + ' ' + v.split(' ')[1]).toUpperCase()}
                                 />
-                                <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: 'var(--primary)', fontSize: 9, fontWeight: 700 }} />
-                                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v/1000000).toFixed(0)}M`} tick={{ fill: 'var(--secondary)', fontSize: 9, fontWeight: 700 }} />
+                                <YAxis yAxisId="left" axisLine={false} tickLine={false} hide />
+                                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} hide />
                                 <Tooltip 
                                     contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: 'var(--shadow-lg)' }}
                                     itemStyle={{ fontSize: '0.75rem', fontWeight: 700 }}
@@ -273,26 +274,28 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
                                         return [value, 'Cantidad Glosas'];
                                     }}
                                 />
-                                <Bar 
+                                <Line 
                                     yAxisId="left"
+                                    type="monotone" 
                                     dataKey="count" 
-                                    fill="var(--primary)" 
-                                    barSize={20} 
-                                    radius={[4, 4, 0, 0]} 
-                                    opacity={0.8} 
+                                    stroke="var(--primary)" 
+                                    strokeWidth={3} 
+                                    dot={false}
+                                    activeDot={{ r: 6, fill: '#fff', stroke: 'var(--primary)', strokeWidth: 2 }}
                                     name="count"
+                                    style={{ filter: 'drop-shadow(0 0 6px var(--primary-glow))' }}
                                 />
                                 <Line 
                                     yAxisId="right"
                                     type="monotone" 
                                     dataKey="totalVal" 
-                                    stroke="var(--secondary)" 
-                                    strokeWidth={3} 
-                                    dot={{ r: 4, fill: 'var(--secondary)', strokeWidth: 2, stroke: 'var(--bg-card)' }}
-                                    activeDot={{ r: 6, fill: '#fff' }}
+                                    stroke="rgba(255,255,255,0.25)" 
+                                    strokeWidth={2} 
+                                    dot={false}
+                                    activeDot={{ r: 4, fill: '#fff', stroke: 'rgba(255,255,255,0.25)', strokeWidth: 2 }}
                                     name="totalVal"
                                 />
-                            </ComposedChart>
+                            </LineChart>
                         </ResponsiveContainer>
                     </div>
                 </Card>
