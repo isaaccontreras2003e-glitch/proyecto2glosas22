@@ -44,6 +44,7 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
         const months: Record<string, { 
             month: string, 
             count: number, 
+            acceptedCount: number,
             totalVal: number, 
             totalAceptado: number,
             year: number, 
@@ -67,6 +68,7 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
                     month: `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${year}`,
                     period: `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${year}`,
                     count: 0, 
+                    acceptedCount: 0,
                     totalVal: 0,
                     totalAceptado: 0,
                     year,
@@ -75,6 +77,9 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
             }
             
             months[key].count += 1;
+            if (g.estado === 'Aceptada') {
+                months[key].acceptedCount += 1;
+            }
             months[key].totalVal += (Number(g.valor_glosa) || 0);
             months[key].totalAceptado += (Number(g.valor_aceptado) || 0);
         });
@@ -90,7 +95,6 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
     const totalRecords = glosas.length;
     const totalValue = glosas.reduce((acc, curr) => acc + (Number(curr.valor_glosa) || 0), 0);
     const totalAccepted = glosas.reduce((acc, curr) => acc + (Number(curr.valor_aceptado) || 0), 0);
-    const recoveryRate = totalValue > 0 ? (totalAccepted / totalValue) * 100 : 0;
     
     // Cálculo de "Tiempo Promedio" en días para las glosas no resueltas
     const avgTime = useMemo(() => {
@@ -118,14 +122,17 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
         return Math.round(totalDays / validDates) + "d";
     }, [glosas]);
 
-    // Mes reciente para mostrar cantidad suministrada
+    // Mes reciente para mostrar cantidad suministrada y cálculos
     const recentMonthData = useMemo(() => {
-        if (monthlyData.length === 0) return { count: 0, name: '' };
+        if (monthlyData.length === 0) return { count: 0, acceptedCount: 0, name: '' };
         return {
             count: monthlyData[monthlyData.length - 1].count,
+            acceptedCount: monthlyData[monthlyData.length - 1].acceptedCount,
             name: monthlyData[monthlyData.length - 1].period.split(' ')[0]
         };
     }, [monthlyData]);
+
+    const recoveryRate = recentMonthData.count > 0 ? (recentMonthData.acceptedCount / recentMonthData.count) * 100 : 0;
 
     // Cálculo de incremento neto respecto al mes anterior
     const netIncrement = useMemo(() => {
@@ -143,7 +150,7 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
             'Cantidad Glosas': d.count,
             'Valor Total': d.totalVal,
             'Valor Aceptado': d.totalAceptado,
-            'Tasa Recuperación': d.totalVal > 0 ? ((d.totalAceptado / d.totalVal) * 100).toFixed(1) + '%' : '0%'
+            'Tasa Recuperación (Cantidad)': d.count > 0 ? ((d.acceptedCount / d.count) * 100).toFixed(1) + '%' : '0%'
         }));
 
         const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -217,7 +224,7 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
                     <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>TASA DE RECUPERACIÓN</p>
                     <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{recoveryRate.toFixed(1)}%</span>
                     <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, marginTop: 'auto' }}>
-                        <strong>{formatMillions(totalAccepted)}</strong> recuperados
+                        <strong>{recentMonthData.acceptedCount}</strong> exitosas en {recentMonthData.name}
                     </p>
                 </Card>
                 <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
