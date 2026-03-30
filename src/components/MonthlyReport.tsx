@@ -216,10 +216,16 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
                 <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>TASA DE RECUPERACIÓN</p>
                     <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{recoveryRate.toFixed(1)}%</span>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, marginTop: 'auto' }}>
+                        <strong>{formatMillions(totalAccepted)}</strong> recuperados
+                    </p>
                 </Card>
                 <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>TIEMPO PROMEDIO</p>
                     <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{avgTime}</span>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, marginTop: 'auto' }}>
+                        Días en proceso de resolución
+                    </p>
                 </Card>
             </div>
 
