@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { Card } from './Card';
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-    AreaChart, Area, Legend, Cell, LineChart, Line
+    AreaChart, Area, Legend, Cell, LineChart, Line, ComposedChart
 } from 'recharts';
 import { Download, Calendar, TrendingUp, BarChart3, FileSpreadsheet, Clock, CheckCircle, Activity, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -92,8 +92,40 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
     const totalAccepted = glosas.reduce((acc, curr) => acc + (Number(curr.valor_aceptado) || 0), 0);
     const recoveryRate = totalValue > 0 ? (totalAccepted / totalValue) * 100 : 0;
     
-    // Simulación de "Tiempo Promedio" (podría refinarse con más campos de fecha)
-    const avgTime = "18d"; 
+    // Cálculo de "Tiempo Promedio" en días para las glosas no resueltas
+    const avgTime = useMemo(() => {
+        const pendientes = glosas.filter(g => g.estado !== 'Aceptada' && g.estado !== 'Conciliada');
+        if (pendientes.length === 0) return "0d";
+        
+        let totalDays = 0;
+        let validDates = 0;
+        const now = new Date().getTime();
+        
+        pendientes.forEach(g => {
+            if (!g.fecha) return;
+            const [datePart] = g.fecha.split(',');
+            const [day, month, year] = datePart.split('/').map(Number);
+            if (day && month && year) {
+                const gDate = new Date(year, month - 1, day).getTime();
+                const diffTime = Math.abs(now - gDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                totalDays += diffDays;
+                validDates++;
+            }
+        });
+        
+        if (validDates === 0) return "0d";
+        return Math.round(totalDays / validDates) + "d";
+    }, [glosas]);
+
+    // Mes reciente para mostrar cantidad suministrada
+    const recentMonthData = useMemo(() => {
+        if (monthlyData.length === 0) return { count: 0, name: '' };
+        return {
+            count: monthlyData[monthlyData.length - 1].count,
+            name: monthlyData[monthlyData.length - 1].period.split(' ')[0]
+        };
+    }, [monthlyData]);
 
     // Cálculo de incremento neto respecto al mes anterior
     const netIncrement = useMemo(() => {
@@ -173,6 +205,9 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
                         <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{totalRecords}</span>
                         <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 700 }}>{netIncrement}</span>
                     </div>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, marginTop: 'auto' }}>
+                        <strong>{recentMonthData.count}</strong> registradas en {recentMonthData.name}
+                    </p>
                 </Card>
                 <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>VALOR ACUMULADO</p>
@@ -219,7 +254,7 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
                             </defs>
                         </svg>
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <ComposedChart data={monthlyData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.02)" vertical={false} />
                                 <XAxis 
                                     dataKey="month" 
@@ -228,33 +263,36 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
                                     tick={{ fill: 'var(--text-muted)', fontSize: 9, fontWeight: 700 }}
                                     dy={10}
                                 />
-                                <YAxis yAxisId="left" axisLine={false} tickLine={false} hide />
-                                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} hide />
+                                <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: 'var(--primary)', fontSize: 9, fontWeight: 700 }} />
+                                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v/1000000).toFixed(0)}M`} tick={{ fill: 'var(--secondary)', fontSize: 9, fontWeight: 700 }} />
                                 <Tooltip 
                                     contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: 'var(--shadow-lg)' }}
                                     itemStyle={{ fontSize: '0.75rem', fontWeight: 700 }}
+                                    formatter={(value: any, name: any) => {
+                                        if (name === 'totalVal') return [formatCurrency(Number(value) || 0), 'Valor Acumulado'];
+                                        return [value, 'Cantidad Glosas'];
+                                    }}
                                 />
-                                <Area 
+                                <Bar 
                                     yAxisId="left"
-                                    type="monotone" 
                                     dataKey="count" 
-                                    stroke="var(--primary)" 
-                                    fill="url(#areaGrad)" 
-                                    strokeWidth={3}
-                                    style={{ filter: 'url(#glow-line)' }}
-                                    animationDuration={2000}
+                                    fill="var(--primary)" 
+                                    barSize={20} 
+                                    radius={[4, 4, 0, 0]} 
+                                    opacity={0.8} 
+                                    name="count"
                                 />
-                                <Area 
+                                <Line 
                                     yAxisId="right"
                                     type="monotone" 
                                     dataKey="totalVal" 
                                     stroke="var(--secondary)" 
-                                    fill="transparent"
-                                    strokeWidth={2}
-                                    opacity={0.4}
-                                    animationDuration={2500}
+                                    strokeWidth={3} 
+                                    dot={{ r: 4, fill: 'var(--secondary)', strokeWidth: 2, stroke: 'var(--bg-card)' }}
+                                    activeDot={{ r: 6, fill: '#fff' }}
+                                    name="totalVal"
                                 />
-                            </AreaChart>
+                            </ComposedChart>
                         </ResponsiveContainer>
                     </div>
                 </Card>
