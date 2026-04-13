@@ -112,19 +112,13 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
         // 1. Filtrar Glosas de hoy
         const todayGlosas = (existingGlosas || []).filter(g => {
             if (!g.fecha) return false;
-            const matchesDate = normalizeDate(g.fecha) === todayNormalized;
-            const itemSection = (g as any).seccion?.toUpperCase() || 'GLOSAS';
-            const currentUpper = currentSeccion.toUpperCase();
-            return matchesDate && itemSection === currentUpper;
+            return normalizeDate(g.fecha) === todayNormalized;
         });
 
         // 2. Filtrar Ingresos (Pagos) de hoy
         const todayIngresos = (existingIngresos || []).filter(i => {
             if (!i.fecha) return false;
-            const matchesDate = normalizeDate(i.fecha) === todayNormalized;
-            const itemSection = (i as any).seccion?.toUpperCase() || 'GLOSAS';
-            const currentUpper = currentSeccion.toUpperCase();
-            return matchesDate && itemSection === currentUpper;
+            return normalizeDate(i.fecha) === todayNormalized;
         });
 
         const uniqueFacturas = new Set(todayGlosas.map(g => g.factura)).size;
@@ -255,7 +249,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
         console.log('✅ Registro enviado y formulario reseteado:', uniqueId);
     };
 
-    const formTitle = currentSeccion === 'MEDICAMENTOS' ? 'Registrar Medicamentos' : 'Registrar Gestión de Glosa';
+    const formTitle = 'Registrar Gestión de Glosa';
     const facturaExiste = facturaMatch && facturaMatch.length > 0;
     const alertColor = isDupeMatch ? '#ef4444' : '#f59e0b';
 

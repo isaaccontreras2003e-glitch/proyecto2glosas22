@@ -53,7 +53,7 @@ interface Ingreso {
 
 function Home() {
   const [activeSection, setActiveSection] = useState<'dashboard' | 'ingreso' | 'consolidado' | 'valores' | 'reporte_mensual'>('dashboard');
-  const [currentMainSection, setCurrentMainSection] = useState<'GLOSAS' | 'MEDICAMENTOS'>('GLOSAS');
+  const currentMainSection = 'GLOSAS';
   const [glosas, setGlosas] = useState<Glosa[]>([]);
   const [ingresos, setIngresos] = useState<Ingreso[]>([]);
   const [isMounted, setIsMounted] = useState(false);
@@ -86,11 +86,6 @@ function Home() {
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
-    }
-    // Si el usuario tiene una sección asignada y no es admin, forzar esa sección
-    if (user && role !== 'admin' && seccion_asignada) {
-      const safeSection = (seccion_asignada === 'RATIFICADAS' ? 'GLOSAS' : seccion_asignada) as any;
-      setCurrentMainSection(safeSection);
     }
   }, [user, authLoading, router, role, seccion_asignada]);
 
@@ -267,15 +262,13 @@ function Home() {
           const parsed = JSON.parse(val);
           const items = Array.isArray(parsed) ? parsed : [parsed];
 
-          // Inteligencia de sección mejorada
-          let inferredSection = currentMainSection || 'GLOSAS';
-          const kLower = key.toLowerCase();
-          if (kLower.includes('medic')) inferredSection = 'MEDICAMENTOS';
+          // Inteligencia de sección simplificada: todo a GLOSAS
+          const inferredSection = 'GLOSAS';
 
           for (const item of items) {
             if (!item || typeof item !== 'object') continue;
 
-            const itemSection = (item.seccion?.toUpperCase() || inferredSection.toUpperCase());
+            const itemSection = 'GLOSAS';
 
             if (item.factura && (item.valor_glosa !== undefined || item.servicio !== undefined)) {
               const id = item.id || `rec_${item.factura}_${item.valor_glosa}_${Date.now()}`;
@@ -324,12 +317,7 @@ function Home() {
   const [searchTermConsolidado, setSearchTermConsolidado] = useState('');
 
   const filteredGlosas = useMemo(() => {
-    const currentUpper = currentMainSection.toUpperCase();
     return glosas.filter(g => {
-      // Normalización nuclear para la tabla
-      const gSection = (g as any).seccion?.toUpperCase() || 'GLOSAS';
-      const matchesSection = gSection === currentUpper;
-
       const matchesSearch = g.factura.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (g.servicio && g.servicio.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (g.descripcion && g.descripcion.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -338,9 +326,9 @@ function Home() {
       const matchesInterno = filterInterno === 'Todos' ||
         (filterInterno === 'Registrado' ? g.registrada_internamente : !g.registrada_internamente);
 
-      return matchesSection && matchesSearch && matchesTipo && matchesEstado && matchesInterno;
+      return matchesSearch && matchesTipo && matchesEstado && matchesInterno;
     });
-  }, [glosas, currentMainSection, searchTerm, filterTipo, filterEstado, filterInterno]);
+  }, [glosas, searchTerm, filterTipo, filterEstado, filterInterno]);
 
   const handleToggleInternalRegistry = async (id: string, currentStatus: boolean) => {
     if (currentStatus) return; // Si ya está registrado, no permitir desmarcar
@@ -358,21 +346,14 @@ function Home() {
   };
 
   const filteredIngresos = useMemo(() => {
-    const currentUpper = currentMainSection.toUpperCase();
     return ingresos.filter(i => {
-      const iSection = (i as any).seccion?.toUpperCase() || 'GLOSAS';
-      const matchesSection = iSection === currentUpper;
-      return matchesSection && i.factura.toLowerCase().includes(searchTermIngresos.toLowerCase());
+      return i.factura.toLowerCase().includes(searchTermIngresos.toLowerCase());
     });
-  }, [ingresos, currentMainSection, searchTermIngresos]);
+  }, [ingresos, searchTermIngresos]);
 
   const currentSectionGlosas = useMemo(() => {
-    const currentUpper = currentMainSection.toUpperCase();
-    return glosas.filter(g => {
-      const gSection = (g as any).seccion?.toUpperCase() || 'GLOSAS';
-      return gSection === currentUpper;
-    });
-  }, [glosas, currentMainSection]);
+    return glosas;
+  }, [glosas]);
 
   const consolidado = useMemo(() => {
     const parseDate = (d: string) => {
@@ -383,9 +364,8 @@ function Home() {
       return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
     };
 
-    const currentUpper = currentMainSection.toUpperCase();
-    const sectionGlosas = safeArray(glosas).filter(g => (((g as any).seccion || 'GLOSAS').toUpperCase()) === currentUpper);
-    const sectionIngresos = safeArray(ingresos).filter(i => (((i as any).seccion || 'GLOSAS').toUpperCase()) === currentUpper);
+    const sectionGlosas = safeArray(glosas);
+    const sectionIngresos = safeArray(ingresos);
 
     const facturas = new Set([
       ...sectionGlosas.map(g => (g.factura || '').trim().toUpperCase()),
@@ -440,8 +420,7 @@ function Home() {
 
   const stats = useMemo(() => {
     try {
-      const currentUpper = currentMainSection.toUpperCase();
-      const sectionGlosas = safeArray(glosas).filter(g => (((g as any).seccion || 'GLOSAS').toUpperCase()) === currentUpper);
+      const sectionGlosas = safeArray(glosas);
 
       const totalRegistradoInternoValue = sectionGlosas
         .filter(g => g.registrada_internamente)
@@ -481,7 +460,7 @@ function Home() {
       console.error('[stats] Error calculando estadísticas:', err);
       return { totalCount: 0, totalFacturas: 0, totalGlosado: 0, totalAceptado: 0, totalPendiente: 0, totalRegistradoInterno: 0, totalNoAceptado: 0, percentAceptado: 0, percentRegistrado: 0, totalValue: 0, totalIngresos: 0, pendingCount: 0, respondedCount: 0, acceptedCount: 0 };
     }
-  }, [glosas, consolidado, currentMainSection]);
+  }, [glosas, consolidado]);
 
   const handleAddGlosa = async (newGlosa: Glosa) => {
     const backupBuffer = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
@@ -494,6 +473,14 @@ function Home() {
     });
     try {
       const { error } = await supabase.from('glosas').insert([newGlosa]);
+      
+      // Sincronización automática con Excel (Escritorio)
+      fetch('/api/backup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'glosa', data: newGlosa })
+      }).catch(err => console.error('Error backup Excel:', err));
+
       if (error) {
         console.error('Error sincronizando nueva glosa:', error);
         showToast('Guardado localmente. Se subirá automáticamente al recuperar conexión.', 'info');
@@ -628,6 +615,14 @@ function Home() {
     });
     try {
       const { error } = await supabase.from('ingresos').insert([newIngreso]);
+
+      // Sincronización automática con Excel (Escritorio)
+      fetch('/api/backup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'ingreso', data: newIngreso })
+      }).catch(err => console.error('Error backup Excel:', err));
+
       if (error) {
         console.error('Error sincronizando ingreso:', error);
         showToast('Guardado localmente. Se subirá de fondo.', 'info');
@@ -751,19 +746,14 @@ function Home() {
     if (!confirm('Esta acción buscará todas las glosas ACEPTADAS y generará registros de pago automáticos si no existen. ¿Deseas continuar?')) return;
     try {
       setLoading(true);
-      const currentUpper = currentMainSection.toUpperCase();
-      const glosasAceptadas = glosas.filter(g =>
-        g.estado === 'Aceptada' &&
-        ((g as any).seccion?.toUpperCase() || 'GLOSAS') === currentUpper
-      );
+      const glosasAceptadas = glosas.filter(g => g.estado === 'Aceptada');
 
       let created = 0;
       for (const glosa of glosasAceptadas) {
         // Verificar si ya existe un ingreso para esta factura con este valor
         const exists = ingresos.some(i =>
           i.factura === glosa.factura &&
-          i.valor_aceptado === glosa.valor_aceptado &&
-          ((i as any).seccion?.toUpperCase() || 'GLOSAS') === currentUpper
+          i.valor_aceptado === glosa.valor_aceptado
         );
 
         if (!exists) {
@@ -773,11 +763,18 @@ function Home() {
             valor_aceptado: glosa.valor_aceptado,
             valor_no_aceptado: glosa.valor_glosa - glosa.valor_aceptado,
             fecha: new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-            seccion: currentUpper
+            seccion: 'GLOSAS'
           };
 
           const { error } = await supabase.from('ingresos').insert([newIngreso]);
           if (!error) {
+            // Backup Excel
+            fetch('/api/backup', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ type: 'ingreso', data: newIngreso })
+            }).catch(err => console.error('Error backup Excel:', err));
+            
             setIngresos(prev => [{ ...newIngreso, sincronizado: true }, ...prev]);
             created++;
           }
@@ -821,6 +818,25 @@ function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFullBackupSync = async () => {
+    try {
+      showToast('Sincronizando base de datos completa con Excel...', 'info');
+      const res = await fetch('/api/backup');
+      const data = await res.json();
+      if (res.ok) {
+        showToast('✅ Excel en escritorio actualizado correctamente', 'success');
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      showToast('❌ Error al sincronizar Excel: ' + err.message, 'error');
+    }
+  };
+
+  const handleDownloadExcel = () => {
+    window.open('/api/backup?download=true', '_blank');
   };
 
   const handleDeepRecovery = () => {
@@ -1153,54 +1169,6 @@ function Home() {
             </div>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>AUDITORÍA DIGITAL V4.0</h2>
           </div>
-
-
-          {/* Selector de Sección Principal (Visible para Admins) */}
-          {role === 'admin' ? (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.5rem',
-              padding: '1rem',
-              background: 'rgba(255,255,255,0.02)',
-              borderRadius: '16px',
-              border: '1px solid rgba(255,255,255,0.05)'
-            }}>
-              <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>SECCIÓN ACTIVA</p>
-              <select
-                value={currentMainSection}
-                onChange={(e) => {
-                  setCurrentMainSection(e.target.value as any);
-                  setSearchTerm(''); // Limpiar búsquedas al cambiar sección
-                }}
-                style={{
-                  width: '100%',
-                  background: 'rgba(15, 23, 42, 0.5)',
-                  border: '1px solid rgba(0, 242, 254, 0.3)',
-                  borderRadius: '10px',
-                  padding: '0.6rem',
-                  color: 'white',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="GLOSAS">GLOSAS</option>
-                <option value="MEDICAMENTOS">MEDICAMENTOS</option>
-              </select>
-            </div>
-          ) : (
-            <div style={{
-              padding: '1rem',
-              background: 'linear-gradient(135deg, rgba(0, 99, 65, 0.05), transparent)',
-              borderRadius: '16px',
-              border: '1px solid var(--border)'
-            }}>
-              <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.1em' }}>MODALIDAD</p>
-              <p style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '0.2rem' }}>{currentMainSection}</p>
-            </div>
-          )}
         </div>
 
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
@@ -1254,6 +1222,55 @@ function Home() {
             );
           })}
         </nav>
+        
+        {/* Sección de Respaldo Excel */}
+        <div style={{ marginTop: '1.5rem', padding: '0 1rem' }}>
+          <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Respaldo Excel</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <motion.button
+              whileHover={{ background: 'rgba(59, 130, 246, 0.1)' }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleFullBackupSync}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.65rem 0.85rem',
+                borderRadius: '10px',
+                border: '1px solid rgba(59, 130, 246, 0.2)',
+                background: 'rgba(59, 130, 246, 0.05)',
+                color: '#60a5fa',
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontSize: '0.75rem',
+                fontWeight: 600
+              }}
+            >
+              <RefreshCw size={14} /> Sincronizar Todo
+            </motion.button>
+            <motion.button
+              whileHover={{ background: 'rgba(16, 185, 129, 0.1)' }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleDownloadExcel}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.65rem 0.85rem',
+                borderRadius: '10px',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                background: 'rgba(16, 185, 129, 0.05)',
+                color: '#10b981',
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontSize: '0.75rem',
+                fontWeight: 600
+              }}
+            >
+              <Download size={14} /> Descargar Copia
+            </motion.button>
+          </div>
+        </div>
 
         {/* User Profile / Logout bottom section */}
         <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
