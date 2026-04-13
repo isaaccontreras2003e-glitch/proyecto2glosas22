@@ -1169,58 +1169,60 @@ function Home() {
             </div>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>AUDITORÍA DIGITAL V4.0</h2>
           </div>
+          <div style={{ fontSize: '0.55rem', color: 'var(--primary)', fontWeight: 900, background: 'rgba(0,177,113,0.1)', padding: '4px 10px', borderRadius: '4px', display: 'inline-block', border: '1px solid var(--primary)' }}>SISTEMA V4.1 - EXCEL ACTIVADO</div>
         </div>
 
-        {/* Sección de Respaldo Excel - MOVIDO AL TOPE PARA VISIBILIDAD */}
-        <div style={{ padding: '0 1rem', marginBottom: '1.5rem', background: 'rgba(0,177,113,0.03)', borderRadius: '12px', border: '1px solid rgba(0,177,113,0.1)', paddingBottom: '1rem', paddingTop: '0.5rem' }}>
-          <p style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Respaldo Excel</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          {/* BOTONES DE EXCEL INTEGRADOS EN NAV - FORZAR VISIBILIDAD */}
+          <div style={{ padding: '0 0.5rem 1rem 0.5rem', display: 'flex', flexDirection: 'column', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '1rem' }}>
             <motion.button
-              whileHover={{ background: 'rgba(59, 130, 246, 0.1)' }}
+              whileHover={{ scale: 1.02, background: 'rgba(59, 130, 246, 0.15)' }}
               whileTap={{ scale: 0.98 }}
               onClick={handleFullBackupSync}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.65rem 0.85rem',
-                borderRadius: '10px',
-                border: '1px solid rgba(59, 130, 246, 0.2)',
-                background: 'rgba(59, 130, 246, 0.05)',
+                gap: '12px',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                border: '1.5px solid #3b82f6',
+                background: 'rgba(59, 130, 246, 0.1)',
                 color: '#60a5fa',
                 cursor: 'pointer',
-                textAlign: 'left',
-                fontSize: '0.75rem',
-                fontWeight: 600
+                fontSize: '0.8rem',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.02em',
+                width: '100%'
               }}
             >
-              <RefreshCw size={14} /> Sincronizar Todo
+              <RefreshCw size={16} /> SINCRONIZAR EXCEL
             </motion.button>
             <motion.button
-              whileHover={{ background: 'rgba(16, 185, 129, 0.1)' }}
+              whileHover={{ scale: 1.02, background: 'rgba(16, 185, 129, 0.15)' }}
               whileTap={{ scale: 0.98 }}
               onClick={handleDownloadExcel}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.65rem 0.85rem',
-                borderRadius: '10px',
-                border: '1px solid rgba(16, 185, 129, 0.2)',
-                background: 'rgba(16, 185, 129, 0.05)',
+                gap: '12px',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                border: '1.5px solid #10b981',
+                background: 'rgba(16, 185, 129, 0.1)',
                 color: '#10b981',
                 cursor: 'pointer',
-                textAlign: 'left',
-                fontSize: '0.75rem',
-                fontWeight: 600
+                fontSize: '0.8rem',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: '0.02em',
+                width: '100%'
               }}
             >
-              <Download size={14} /> Descargar Copia
+              <Download size={16} /> DESCARGAR COPIA
             </motion.button>
           </div>
-        </div>
-
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
           {[
             { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
             { id: 'ingreso', label: 'Registro', icon: PieChart },
