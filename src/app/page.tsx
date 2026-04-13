@@ -1171,6 +1171,55 @@ function Home() {
           </div>
         </div>
 
+        {/* Sección de Respaldo Excel - MOVIDO AL TOPE PARA VISIBILIDAD */}
+        <div style={{ padding: '0 1rem', marginBottom: '1.5rem', background: 'rgba(0,177,113,0.03)', borderRadius: '12px', border: '1px solid rgba(0,177,113,0.1)', paddingBottom: '1rem', paddingTop: '0.5rem' }}>
+          <p style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Respaldo Excel</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <motion.button
+              whileHover={{ background: 'rgba(59, 130, 246, 0.1)' }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleFullBackupSync}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.65rem 0.85rem',
+                borderRadius: '10px',
+                border: '1px solid rgba(59, 130, 246, 0.2)',
+                background: 'rgba(59, 130, 246, 0.05)',
+                color: '#60a5fa',
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontSize: '0.75rem',
+                fontWeight: 600
+              }}
+            >
+              <RefreshCw size={14} /> Sincronizar Todo
+            </motion.button>
+            <motion.button
+              whileHover={{ background: 'rgba(16, 185, 129, 0.1)' }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleDownloadExcel}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.65rem 0.85rem',
+                borderRadius: '10px',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                background: 'rgba(16, 185, 129, 0.05)',
+                color: '#10b981',
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontSize: '0.75rem',
+                fontWeight: 600
+              }}
+            >
+              <Download size={14} /> Descargar Copia
+            </motion.button>
+          </div>
+        </div>
+
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
           {[
             { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -1222,55 +1271,6 @@ function Home() {
             );
           })}
         </nav>
-        
-        {/* Sección de Respaldo Excel */}
-        <div style={{ marginTop: '1.5rem', padding: '0 1rem' }}>
-          <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Respaldo Excel</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <motion.button
-              whileHover={{ background: 'rgba(59, 130, 246, 0.1)' }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleFullBackupSync}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.65rem 0.85rem',
-                borderRadius: '10px',
-                border: '1px solid rgba(59, 130, 246, 0.2)',
-                background: 'rgba(59, 130, 246, 0.05)',
-                color: '#60a5fa',
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontSize: '0.75rem',
-                fontWeight: 600
-              }}
-            >
-              <RefreshCw size={14} /> Sincronizar Todo
-            </motion.button>
-            <motion.button
-              whileHover={{ background: 'rgba(16, 185, 129, 0.1)' }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleDownloadExcel}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.65rem 0.85rem',
-                borderRadius: '10px',
-                border: '1px solid rgba(16, 185, 129, 0.2)',
-                background: 'rgba(16, 185, 129, 0.05)',
-                color: '#10b981',
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontSize: '0.75rem',
-                fontWeight: 600
-              }}
-            >
-              <Download size={14} /> Descargar Copia
-            </motion.button>
-          </div>
-        </div>
 
         {/* User Profile / Logout bottom section */}
         <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
