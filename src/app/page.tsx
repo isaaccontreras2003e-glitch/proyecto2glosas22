@@ -15,6 +15,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { InteractiveLogo } from '@/components/InteractiveLogo';
 import { ToastProvider, useToast } from '@/lib/contexts/ToastContext';
 import { MonthlyReport } from '@/components/MonthlyReport';
+import { ExcelSyncPanel } from '@/components/ExcelSyncPanel';
 
 const formatPesos = (value: any): string => {
   const num = typeof value === 'number' ? value : parseFloat(value);
@@ -342,6 +343,9 @@ function Home() {
     if (error) {
       console.error('Error actualizando registro interno:', error);
       showToast('Error al guardar en la nube. Verifica tu conexión.', 'error');
+    } else {
+      const glosa = glosas.find(g => g.id === id);
+      if (glosa) syncExcel('glosa', 'update', { ...glosa, registrada_internamente: true });
     }
   };
 
@@ -462,6 +466,36 @@ function Home() {
     }
   }, [glosas, consolidado]);
 
+  // ─── HELPER: Sincronización automática con Excel ─────────────────────────
+  const syncExcel = useCallback(async (
+    type: 'glosa' | 'ingreso',
+    action: 'insert' | 'update' | 'delete',
+    data: any
+  ) => {
+    const ts = new Date().toLocaleString('es-ES', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+    
+    let cloudUrl = null;
+    try {
+      const response = await fetch('/api/backup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, action, data })
+      });
+      const result = await response.json();
+      if (result.cloudUrl) cloudUrl = result.cloudUrl;
+    } catch (err) {
+      console.error('❌ Error sincronización Excel:', err);
+    }
+
+    // Emitir evento global para que ExcelSyncPanel actualice su feed
+    window.dispatchEvent(new CustomEvent('excel-sync-event', {
+      detail: { timestamp: ts, action: action.toUpperCase(), type, factura: data?.factura || data?.id || '—', cloudUrl }
+    }));
+  }, []);
+
   const handleAddGlosa = async (newGlosa: Glosa) => {
     const backupBuffer = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
     safeStorage.setJson('emergency_buffer', [newGlosa, ...backupBuffer]);
@@ -473,14 +507,7 @@ function Home() {
     });
     try {
       const { error } = await supabase.from('glosas').insert([newGlosa]);
-      
-      // Sincronización automática con Excel (Escritorio)
-      fetch('/api/backup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'glosa', data: newGlosa })
-      }).catch(err => console.error('Error backup Excel:', err));
-
+      syncExcel('glosa', 'insert', newGlosa);
       if (error) {
         console.error('Error sincronizando nueva glosa:', error);
         showToast('Guardado localmente. Se subirá automáticamente al recuperar conexión.', 'info');
@@ -504,6 +531,8 @@ function Home() {
     try {
       const { error } = await supabase.from('glosas').update({ estado: newEstado }).eq('id', id);
       if (error) console.error('Error actualizando estado:', error);
+      const glosa = glosas.find(g => g.id === id);
+      if (glosa) syncExcel('glosa', 'update', { ...glosa, estado: newEstado });
     } catch (err) { console.error('Error crítico actualizando estado:', err); }
   };
 
@@ -576,10 +605,12 @@ function Home() {
     try {
       const { error } = await supabase.from('glosas').update(updatedGlosa).eq('id', updatedGlosa.id);
       if (error) console.error('Error actualizando glosa:', error);
+      syncExcel('glosa', 'update', updatedGlosa);
     } catch (err) { console.error('Error crítico actualizando glosa:', err); }
   };
 
   const handleDeleteGlosa = async (id: string) => {
+    const glosaToDelete = glosas.find(g => g.id === id);
     setGlosas(prev => {
       const updated = safeArray(prev).filter(g => g.id !== id);
       safeStorage.setJson('cached_glosas', updated);
@@ -588,6 +619,7 @@ function Home() {
     try {
       const { error } = await supabase.from('glosas').delete().eq('id', id);
       if (error) console.error('Error eliminando glosa:', error);
+      if (glosaToDelete) syncExcel('glosa', 'delete', glosaToDelete);
     } catch (err) { console.error('Error crítico eliminando glosa:', err); }
   };
 
@@ -615,14 +647,7 @@ function Home() {
     });
     try {
       const { error } = await supabase.from('ingresos').insert([newIngreso]);
-
-      // Sincronización automática con Excel (Escritorio)
-      fetch('/api/backup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'ingreso', data: newIngreso })
-      }).catch(err => console.error('Error backup Excel:', err));
-
+      syncExcel('ingreso', 'insert', newIngreso);
       if (error) {
         console.error('Error sincronizando ingreso:', error);
         showToast('Guardado localmente. Se subirá de fondo.', 'info');
@@ -638,12 +663,14 @@ function Home() {
   };
 
   const handleDeleteIngreso = async (id: string) => {
+    const ingresoToDelete = ingresos.find(i => i.id === id);
     const updatedIngresos = safeArray(ingresos).filter(i => i.id !== id);
     setIngresos(updatedIngresos);
     safeStorage.setJson('cached_ingresos', updatedIngresos);
     try {
       const { error } = await supabase.from('ingresos').delete().eq('id', id);
       if (error) console.error('Error eliminando ingreso:', error);
+      if (ingresoToDelete) syncExcel('ingreso', 'delete', ingresoToDelete);
     } catch (err) { console.error('Error crítico eliminando ingreso:', err); }
   };
 
@@ -1174,54 +1201,14 @@ function Home() {
 
 
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          {/* BOTONES DE EXCEL INTEGRADOS EN NAV - FORZAR VISIBILIDAD */}
-          <div style={{ padding: '0 0.5rem 1rem 0.5rem', display: 'flex', flexDirection: 'column', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '1rem' }}>
-            <motion.button
-              whileHover={{ scale: 1.02, background: 'rgba(59, 130, 246, 0.15)' }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleFullBackupSync}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 16px',
-                borderRadius: '12px',
-                border: '1.5px solid #3b82f6',
-                background: 'rgba(59, 130, 246, 0.1)',
-                color: '#60a5fa',
-                cursor: 'pointer',
-                fontSize: '0.8rem',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.02em',
-                width: '100%'
-              }}
-            >
-              <RefreshCw size={16} /> SINCRONIZAR EXCEL
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02, background: 'rgba(16, 185, 129, 0.15)' }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleDownloadExcel}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 16px',
-                borderRadius: '12px',
-                border: '1.5px solid #10b981',
-                background: 'rgba(16, 185, 129, 0.1)',
-                color: '#10b981',
-                cursor: 'pointer',
-                fontSize: '0.8rem',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.02em',
-                width: '100%'
-              }}
-            >
-              <Download size={16} /> DESCARGAR COPIA
-            </motion.button>
+          {/* PANEL EXCEL EN TIEMPO REAL */}
+          <div style={{ padding: '0 0.5rem 1rem 0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '1rem' }}>
+            <ExcelSyncPanel
+              glosaCount={glosas.length}
+              ingresoCount={ingresos.length}
+              onFullSync={handleFullBackupSync}
+              onDownload={handleDownloadExcel}
+            />
           </div>
           {[
             { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
