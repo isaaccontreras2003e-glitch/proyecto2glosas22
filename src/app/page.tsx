@@ -54,7 +54,7 @@ interface Ingreso {
 
 function Home() {
   const [activeSection, setActiveSection] = useState<'dashboard' | 'ingreso' | 'consolidado' | 'valores' | 'reporte_mensual'>('dashboard');
-  const currentMainSection = 'GLOSAS';
+  const [currentMainSection, setCurrentMainSection] = useState<'GLOSAS' | 'MEDICAMENTOS'>('GLOSAS');
   const [glosas, setGlosas] = useState<Glosa[]>([]);
   const [ingresos, setIngresos] = useState<Ingreso[]>([]);
   const [isMounted, setIsMounted] = useState(false);
@@ -368,8 +368,8 @@ function Home() {
       return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
     };
 
-    const sectionGlosas = safeArray(glosas);
-    const sectionIngresos = safeArray(ingresos);
+    const sectionGlosas = safeArray(glosas).filter(g => (g as any).seccion?.toUpperCase() === currentMainSection || !g.seccion);
+    const sectionIngresos = safeArray(ingresos).filter(i => (i as any).seccion?.toUpperCase() === currentMainSection || !i.seccion);
 
     const facturas = new Set([
       ...sectionGlosas.map(g => (g.factura || '').trim().toUpperCase()),
@@ -424,7 +424,7 @@ function Home() {
 
   const stats = useMemo(() => {
     try {
-      const sectionGlosas = safeArray(glosas);
+      const sectionGlosas = safeArray(glosas).filter(g => (g as any).seccion?.toUpperCase() === currentMainSection || !g.seccion);
 
       const totalRegistradoInternoValue = sectionGlosas
         .filter(g => g.registrada_internamente)
@@ -1328,7 +1328,7 @@ function Home() {
               <Activity size={18} />
             </div>
             <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-              Gestión de Glosas <span style={{ fontSize: '0.6rem', background: '#1DB954', color: '#000', padding: '2px 8px', borderRadius: '4px', marginLeft: '0.5rem', verticalAlign: 'middle', fontWeight: 950 }}>EXCEL LIVE V4.3</span>
+              Gestión de Glosas <span style={{ fontSize: '0.6rem', background: '#1DB954', color: '#000', padding: '2px 8px', borderRadius: '4px', marginLeft: '0.5rem', verticalAlign: 'middle', fontWeight: 950 }}>EXCEL LIVE V4.4</span>
             </h1>
           </div>
 
