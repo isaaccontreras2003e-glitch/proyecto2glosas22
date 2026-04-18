@@ -1200,6 +1200,35 @@ function Home() {
         </div>
 
 
+        <div style={{ padding: '0 1rem', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', opacity: 0.6 }}>
+            <Activity size={12} color="var(--primary)" />
+            <span style={{ fontSize: '0.65rem', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'white' }}>Sección Activa</span>
+          </div>
+          <select
+            value={currentMainSection}
+            onChange={(e) => setCurrentMainSection(e.target.value)}
+            style={{
+              width: '100%',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid var(--border)',
+              borderRadius: '10px',
+              padding: '0.6rem 0.75rem',
+              color: 'white',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              outline: 'none',
+              transition: 'border-color 0.2s'
+            }}
+            onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+            onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+          >
+            <option value="GLOSAS">GLOSAS (CONSOLIDADO)</option>
+            <option value="MEDICAMENTOS">MEDICAMENTOS (SALA)</option>
+          </select>
+        </div>
+
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
           {/* PANEL EXCEL EN TIEMPO REAL */}
           <div style={{ padding: '0 0.5rem 1rem 0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '1rem' }}>
@@ -1299,7 +1328,7 @@ function Home() {
               <Activity size={18} />
             </div>
             <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-              Gestión de Glosas <span style={{ fontSize: '0.6rem', background: 'var(--primary)', color: '#fff', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.5rem', verticalAlign: 'middle', fontWeight: 900 }}>V4.0 PREMIUM</span>
+              Gestión de Glosas <span style={{ fontSize: '0.6rem', background: '#1DB954', color: '#000', padding: '2px 8px', borderRadius: '4px', marginLeft: '0.5rem', verticalAlign: 'middle', fontWeight: 950 }}>EXCEL LIVE V4.3</span>
             </h1>
           </div>
 
