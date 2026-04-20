@@ -1220,7 +1220,7 @@ function Home() {
           </div>
           <select
             value={currentMainSection}
-            onChange={(e) => setCurrentMainSection(e.target.value)}
+            onChange={(e) => setCurrentMainSection(e.target.value as 'GLOSAS' | 'MEDICAMENTOS')}
             style={{
               width: '100%',
               background: 'rgba(255,255,255,0.03)',
@@ -1341,7 +1341,7 @@ function Home() {
               <Activity size={18} />
             </div>
             <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-              Gestión de Glosas <span style={{ fontSize: '0.6rem', background: '#1DB954', color: '#000', padding: '2px 8px', borderRadius: '4px', marginLeft: '0.5rem', verticalAlign: 'middle', fontWeight: 950 }}>EXCEL LIVE V4.6</span>
+              Gestión de Glosas <span style={{ fontSize: '0.6rem', background: '#1DB954', color: '#000', padding: '2px 8px', borderRadius: '4px', marginLeft: '0.5rem', verticalAlign: 'middle', fontWeight: 950 }}>EXCEL LIVE V4.7 - STABLE</span>
             </h1>
           </div>
 
