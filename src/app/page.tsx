@@ -879,25 +879,6 @@ function Home() {
     }
   };
 
-  const handleFullBackupSync = async () => {
-    try {
-      showToast('Sincronizando base de datos completa con Excel...', 'info');
-      const res = await fetch('/api/backup');
-      const data = await res.json();
-      if (res.ok) {
-        showToast('✅ Excel en escritorio actualizado correctamente', 'success');
-      } else {
-        throw new Error(data.error);
-      }
-    } catch (err: any) {
-      showToast('❌ Error al sincronizar Excel: ' + err.message, 'error');
-    }
-  };
-
-  const handleDownloadExcel = () => {
-    window.open('/api/backup?download=true', '_blank');
-  };
-
   const handleDeepRecovery = () => {
     try {
       let foundMarks = 0;
@@ -1360,7 +1341,7 @@ function Home() {
               <Activity size={18} />
             </div>
             <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-              Gestión de Glosas <span style={{ fontSize: '0.6rem', background: '#1DB954', color: '#000', padding: '2px 8px', borderRadius: '4px', marginLeft: '0.5rem', verticalAlign: 'middle', fontWeight: 950 }}>EXCEL LIVE V4.5</span>
+              Gestión de Glosas <span style={{ fontSize: '0.6rem', background: '#1DB954', color: '#000', padding: '2px 8px', borderRadius: '4px', marginLeft: '0.5rem', verticalAlign: 'middle', fontWeight: 950 }}>EXCEL LIVE V4.6</span>
             </h1>
           </div>
 
