@@ -496,6 +496,38 @@ function Home() {
     }));
   }, []);
 
+  const handleFullBackupSync = async () => {
+    try {
+      showToast('Sincronizando base de datos completa con Excel...', 'info');
+      const response = await fetch('/api/backup?sync=true');
+      const result = await response.json();
+      if (response.ok) {
+        showToast('Sincronización completa exitosa', 'success');
+        if (result.cloudUrl) {
+          window.dispatchEvent(new CustomEvent('excel-sync-event', {
+            detail: { 
+              timestamp: new Date().toLocaleTimeString(), 
+              action: 'UPDATE', 
+              type: 'glosa', 
+              factura: 'SINCRO COMPLETA', 
+              cloudUrl: result.cloudUrl 
+            }
+          }));
+        }
+      } else {
+        throw new Error(result.error || 'Error en sincronización');
+      }
+    } catch (err: any) {
+      console.error('Error en sincronización completa:', err);
+      showToast('Error en la sincronización: ' + err.message, 'error');
+    }
+  };
+
+  const handleDownloadExcel = () => {
+    // Reutiliza la lógica de exportación existente
+    exportToExcel();
+  };
+
   const handleAddGlosa = async (newGlosa: Glosa) => {
     const backupBuffer = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
     safeStorage.setJson('emergency_buffer', [newGlosa, ...backupBuffer]);
@@ -1244,7 +1276,7 @@ function Home() {
             { id: 'ingreso', label: 'Registro', icon: PieChart },
             { id: 'consolidado', label: 'Auditoría', icon: ListChecks },
             { id: 'valores', label: 'Pagos', icon: Wallet },
-            { id: 'reporte_mensual', label: 'Máster Mensual', icon: BarChart3 },
+            { id: 'reporte_mensual', label: 'Trazabilidad', icon: BarChart3 },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = activeSection === item.id;
@@ -1328,7 +1360,7 @@ function Home() {
               <Activity size={18} />
             </div>
             <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-              Gestión de Glosas <span style={{ fontSize: '0.6rem', background: '#1DB954', color: '#000', padding: '2px 8px', borderRadius: '4px', marginLeft: '0.5rem', verticalAlign: 'middle', fontWeight: 950 }}>EXCEL LIVE V4.4</span>
+              Gestión de Glosas <span style={{ fontSize: '0.6rem', background: '#1DB954', color: '#000', padding: '2px 8px', borderRadius: '4px', marginLeft: '0.5rem', verticalAlign: 'middle', fontWeight: 950 }}>EXCEL LIVE V4.5</span>
             </h1>
           </div>
 
