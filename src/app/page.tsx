@@ -1209,38 +1209,9 @@ function Home() {
             </div>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>AUDITORÍA DIGITAL V4.0</h2>
           </div>
-          <div style={{ fontSize: '0.55rem', color: 'var(--primary)', fontWeight: 900, background: 'rgba(0,177,113,0.1)', padding: '4px 10px', borderRadius: '4px', display: 'inline-block', border: '1px solid var(--primary)' }}>SISTEMA V4.1 - EXCEL ACTIVADO</div>
         </div>
 
 
-        <div style={{ padding: '0 1rem', marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', opacity: 0.6 }}>
-            <Activity size={12} color="var(--primary)" />
-            <span style={{ fontSize: '0.65rem', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'white' }}>Sección Activa</span>
-          </div>
-          <select
-            value={currentMainSection}
-            onChange={(e) => setCurrentMainSection(e.target.value as 'GLOSAS' | 'MEDICAMENTOS')}
-            style={{
-              width: '100%',
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid var(--border)',
-              borderRadius: '10px',
-              padding: '0.6rem 0.75rem',
-              color: 'white',
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              outline: 'none',
-              transition: 'border-color 0.2s'
-            }}
-            onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-            onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
-          >
-            <option value="GLOSAS">GLOSAS (CONSOLIDADO)</option>
-            <option value="MEDICAMENTOS">MEDICAMENTOS (SALA)</option>
-          </select>
-        </div>
 
           {[
             { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
