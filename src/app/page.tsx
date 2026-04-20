@@ -15,7 +15,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { InteractiveLogo } from '@/components/InteractiveLogo';
 import { ToastProvider, useToast } from '@/lib/contexts/ToastContext';
 import { MonthlyReport } from '@/components/MonthlyReport';
-import { ExcelSyncPanel } from '@/components/ExcelSyncPanel';
 
 const formatPesos = (value: any): string => {
   const num = typeof value === 'number' ? value : parseFloat(value);
@@ -1211,8 +1210,7 @@ function Home() {
           </div>
         </div>
 
-
-
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0 0.5rem' }}>
           {[
             { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
             { id: 'ingreso', label: 'Registro', icon: PieChart },
