@@ -1242,16 +1242,6 @@ function Home() {
           </select>
         </div>
 
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          {/* PANEL EXCEL EN TIEMPO REAL */}
-          <div style={{ padding: '0 0.5rem 1rem 0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '1rem' }}>
-            <ExcelSyncPanel
-              glosaCount={glosas.length}
-              ingresoCount={ingresos.length}
-              onFullSync={handleFullBackupSync}
-              onDownload={handleDownloadExcel}
-            />
-          </div>
           {[
             { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
             { id: 'ingreso', label: 'Registro', icon: PieChart },
@@ -1341,7 +1331,7 @@ function Home() {
               <Activity size={18} />
             </div>
             <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-              Gestión de Glosas <span style={{ fontSize: '0.6rem', background: '#1DB954', color: '#000', padding: '2px 8px', borderRadius: '4px', marginLeft: '0.5rem', verticalAlign: 'middle', fontWeight: 950 }}>EXCEL LIVE V4.7 - STABLE</span>
+              Gestión de Glosas
             </h1>
           </div>
 
