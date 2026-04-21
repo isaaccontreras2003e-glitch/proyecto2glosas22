@@ -126,7 +126,7 @@ export const InteractiveLogo = () => {
                     letterSpacing: '0.2rem',
                     textTransform: 'uppercase'
                 }}>
-                    THE FUTURE OF BILLING V4.0
+                    THE FUTURE OF BILLING V5.5
                 </p>
             </div>
 

@@ -139,7 +139,7 @@ export default function LoginPage() {
                         <Activity size={32} />
                     </div>
                     <h1 style={{ fontSize: '2.1rem', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
-                        SisFact <span style={{ color: 'var(--primary)', fontSize: '0.75rem', verticalAlign: 'middle', background: 'rgba(0, 242, 254, 0.12)', padding: '4px 10px', borderRadius: '8px', fontWeight: 900 }}>PRO V4.0</span>
+                        SisFact <span style={{ color: 'var(--primary)', fontSize: '0.75rem', verticalAlign: 'middle', background: 'rgba(0, 242, 254, 0.12)', padding: '4px 10px', borderRadius: '8px', fontWeight: 900 }}>PRO V5.5</span>
                     </h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.6rem', fontWeight: 500, letterSpacing: '0.02em' }}>
                         THE DIGITAL AUDITOR

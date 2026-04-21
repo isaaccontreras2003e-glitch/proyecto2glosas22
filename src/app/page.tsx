@@ -293,6 +293,22 @@ function Home() {
     };
   }, [user?.id, isMounted]);
 
+  const APP_VERSION = "5.5";
+
+  // --- VERSION GUARD: Cache Buster ---
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedVersion = localStorage.getItem('sisfact_app_version');
+      if (storedVersion !== APP_VERSION) {
+        console.log(`[VersionGuard] Outdated version detected (${storedVersion} vs ${APP_VERSION}). Clearing cache...`);
+        localStorage.clear();
+        sessionStorage.clear();
+        localStorage.setItem('sisfact_app_version', APP_VERSION);
+        window.location.reload();
+      }
+    }
+  }, []);
+
   // Migración de datos desde localStorage a Supabase (SUPER ESCANEO V5.1 - Sensible a Contexto)
   const migrateData = useCallback(async (force = false) => {
     try {
@@ -710,13 +726,39 @@ function Home() {
   const handleDeleteDuplicates = async () => {
     const seen = new Map<string, string>();
     const toDelete: string[] = [];
+    
+    // Identificar duplicados exactos en el estado actual
     glosas.forEach(g => {
       const key = `${g.factura.trim().toLowerCase()}|${g.servicio.trim().toLowerCase()}|${g.valor_glosa}`;
-      if (!seen.has(key)) seen.set(key, g.id); else toDelete.push(g.id);
+      if (!seen.has(key)) {
+        seen.set(key, g.id);
+      } else {
+        toDelete.push(g.id);
+      }
     });
+
     if (toDelete.length > 0) {
-      await supabase.from('glosas').delete().in('id', toDelete);
-      setGlosas(prev => prev.filter(g => !toDelete.includes(g.id)));
+      showToast(`Limpiando ${toDelete.length} duplicados detectados...`, 'info');
+      try {
+        // 1. Eliminar de Supabase
+        const { error } = await supabase.from('glosas').delete().in('id', toDelete);
+        if (error) throw error;
+
+        // 2. Eliminar del estado local
+        setGlosas(prev => {
+          const updated = prev.filter(g => !toDelete.includes(g.id));
+          // 3. Sincronizar con localStorage inmediatamente
+          safeStorage.setJson('cached_glosas', updated);
+          return updated;
+        });
+
+        showToast(`✅ Limpieza exitosa: ${toDelete.length} registros eliminados.`, 'success');
+      } catch (err: any) {
+        console.error('Error eliminando duplicados:', err);
+        showToast('Error al eliminar registros: ' + err.message, 'error');
+      }
+    } else {
+      showToast('No se encontraron duplicados exactos.', 'info');
     }
   };
 
@@ -1259,7 +1301,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>V5.4 - SINCRONIZADO</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>V5.5 - SINCRONIZADO</h2>
           </div>
         </div>
 
