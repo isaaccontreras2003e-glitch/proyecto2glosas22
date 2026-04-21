@@ -375,6 +375,33 @@ function Home() {
     if (isMounted) migrateData();
   }, [isMounted, migrateData]);
 
+  // AUTO-CLEANUP v6.0: Ejecutar limpieza de duplicados una vez después de cargar datos
+  const autoCleanupDoneRef = useRef(false);
+  useEffect(() => {
+    if (!user || !isMounted || loading || autoCleanupDoneRef.current) return;
+    if (glosas.length === 0) return; // Esperar a que haya datos
+
+    autoCleanupDoneRef.current = true;
+
+    // Verificar si hay duplicados en el estado actual
+    const seen = new Map<string, string>();
+    let hasDuplicates = false;
+    for (const g of glosas) {
+      const factura = (g.factura || '').trim().toUpperCase();
+      const servicio = (g.servicio || '').trim().toLowerCase();
+      const valor = String(g.valor_glosa || '0');
+      const descripcion = (g.descripcion || '').trim().toLowerCase().substring(0, 50);
+      const key = `${factura}|${servicio}|${valor}|${descripcion}`;
+      if (seen.has(key)) { hasDuplicates = true; break; }
+      seen.set(key, g.id);
+    }
+
+    if (hasDuplicates) {
+      console.log('[AutoCleanup v6.0] Duplicados detectados — iniciando limpieza automática...');
+      handleDeleteDuplicates();
+    }
+  }, [user, isMounted, loading, glosas.length]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('Todos');
   const [filterEstado, setFilterEstado] = useState('Todos');
@@ -721,41 +748,61 @@ function Home() {
   };
 
   const handleDeleteDuplicates = async () => {
-    const seen = new Map<string, string>();
-    const toDelete: string[] = [];
-    
-    // Identificar duplicados exactos en el estado actual
-    glosas.forEach(g => {
-      const key = `${g.factura.trim().toLowerCase()}|${g.servicio.trim().toLowerCase()}|${g.valor_glosa}`;
-      if (!seen.has(key)) {
-        seen.set(key, g.id);
-      } else {
-        toDelete.push(g.id);
-      }
-    });
+    showToast('Buscando duplicados en Supabase...', 'info');
+    try {
+      // Obtener TODOS los registros directamente de Supabase (fuente de verdad)
+      const { data: allGlosas, error: fetchError } = await supabase
+        .from('glosas')
+        .select('id, factura, servicio, valor_glosa, descripcion')
+        .order('id', { ascending: true });
 
-    if (toDelete.length > 0) {
-      showToast(`Limpiando ${toDelete.length} duplicados detectados...`, 'info');
-      try {
-        // 1. Eliminar de Supabase
-        const { error } = await supabase.from('glosas').delete().in('id', toDelete);
+      if (fetchError) throw fetchError;
+      if (!allGlosas || allGlosas.length === 0) {
+        showToast('No hay registros en la base de datos.', 'info');
+        return;
+      }
+
+      // Identificar duplicados: factura + servicio + valor_glosa + descripcion(50)
+      const seen = new Map<string, string>();
+      const toDelete: string[] = [];
+
+      for (const g of allGlosas) {
+        const factura = (g.factura || '').trim().toUpperCase();
+        const servicio = (g.servicio || '').trim().toLowerCase();
+        const valor = String(g.valor_glosa || '0');
+        const descripcion = (g.descripcion || '').trim().toLowerCase().substring(0, 50);
+        const key = `${factura}|${servicio}|${valor}|${descripcion}`;
+
+        if (seen.has(key)) {
+          toDelete.push(g.id);
+        } else {
+          seen.set(key, g.id);
+        }
+      }
+
+      if (toDelete.length === 0) {
+        showToast('✅ La base de datos ya está limpia, sin duplicados.', 'info');
+        return;
+      }
+
+      // Eliminar en lotes de 50
+      const BATCH_SIZE = 50;
+      let totalDeleted = 0;
+
+      for (let i = 0; i < toDelete.length; i += BATCH_SIZE) {
+        const batch = toDelete.slice(i, i + BATCH_SIZE);
+        const { error } = await supabase.from('glosas').delete().in('id', batch);
         if (error) throw error;
-
-        // 2. Eliminar del estado local
-        setGlosas(prev => {
-          const updated = prev.filter(g => !toDelete.includes(g.id));
-          // 3. Sincronizar con localStorage inmediatamente
-          safeStorage.setJson('cached_glosas', updated);
-          return updated;
-        });
-
-        showToast(`✅ Limpieza exitosa: ${toDelete.length} registros eliminados.`, 'success');
-      } catch (err: any) {
-        console.error('Error eliminando duplicados:', err);
-        showToast('Error al eliminar registros: ' + err.message, 'error');
+        totalDeleted += batch.length;
       }
-    } else {
-      showToast('No se encontraron duplicados exactos.', 'info');
+
+      showToast(`✅ ${totalDeleted} duplicados eliminados de Supabase.`, 'success');
+
+      // Recargar datos limpios desde la nube
+      await loadData(true);
+    } catch (err: any) {
+      console.error('Error eliminando duplicados:', err);
+      showToast('Error al eliminar: ' + err.message, 'error');
     }
   };
 
