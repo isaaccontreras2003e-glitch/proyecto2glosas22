@@ -142,25 +142,18 @@ function Home() {
         if (iRes?.error) throw iRes.error;
 
         if (gRes && Array.isArray(gRes.data)) {
-          // MEJORADO: Merge inteligente que no destruye el estado local optimista
-          setGlosas(prev => {
-            const emergencyBuffer = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
-            const cloudIds = new Set(safeArray(gRes.data).map((c: any) => c.id));
-            const localOnly = safeArray(prev).filter(p => !cloudIds.has(p.id));
+          // FIX: Reemplazar estado completamente con datos de la nube (fuente de verdad).
+          // El emergency_buffer se limpia porque todos sus items ya están en Supabase.
+          setGlosas(() => {
+            const cloudData = safeArray(gRes.data);
 
-            // USANDO MAP PARA EVITAR DUPLICADOS DE IDS
+            // La nube es la fuente de verdad. Solo agregar items pendientes de subir
+            // (aquellos que aún no tienen ID en la nube, i.e. recién creados sin conexión).
+            // Como todos los items tienen un ID único generado antes del insert,
+            // simplemente usamos los datos de la nube directamente.
             const glosaMap = new Map();
-
-            // 1. Prioridad: Datos de la Nube
-            safeArray(gRes.data).forEach((c: any) => {
+            cloudData.forEach((c: any) => {
               if (c && c.id) glosaMap.set(c.id, { ...c, sincronizado: true });
-            });
-
-            // 2. Complemento: Local y Buffer
-            [...localOnly, ...emergencyBuffer].forEach(item => {
-              if (item && item.id && !glosaMap.has(item.id)) {
-                glosaMap.set(item.id, { ...item, sincronizado: false });
-              }
             });
 
             const sorted = Array.from(glosaMap.values()).sort((a: any, b: any) => {
@@ -169,6 +162,8 @@ function Home() {
               return dateB.localeCompare(dateA);
             });
 
+            // Limpiar el emergency_buffer ya que la nube está sincronizada
+            safeStorage.setJson('emergency_buffer', []);
             safeStorage.setJson('cached_glosas', sorted);
             return sorted;
           });
@@ -176,18 +171,11 @@ function Home() {
         }
 
         if (iRes && Array.isArray(iRes.data)) {
-          setIngresos(prev => {
-            const cloudIds = new Set(safeArray(iRes.data).map((c: any) => c.id));
-            const localOnly = safeArray(prev).filter(p => !cloudIds.has(p.id));
-
+          // FIX: Usar la nube como única fuente de verdad para ingresos también
+          setIngresos(() => {
             const ingresoMap = new Map();
             safeArray(iRes.data).forEach((c: any) => {
               if (c && c.id) ingresoMap.set(c.id, { ...c, sincronizado: true });
-            });
-            localOnly.forEach(l => {
-              if (l && l.id && !ingresoMap.has(l.id)) {
-                ingresoMap.set(l.id, { ...l, sincronizado: false });
-              }
             });
 
             const combined = Array.from(ingresoMap.values()).sort((a: any, b: any) => {
@@ -195,6 +183,8 @@ function Home() {
               const dateB = (b.fecha || '').split(',')[0].trim().split('/').reverse().join('') || '0';
               return dateB.localeCompare(dateA);
             });
+            // Limpiar buffer de ingresos también
+            safeStorage.setJson('emergency_buffer_ingresos', []);
             safeStorage.setJson('cached_ingresos', combined);
             return combined;
           });
@@ -225,8 +215,15 @@ function Home() {
   useEffect(() => {
     const g = safeStorage.getJson<Glosa[]>('cached_glosas', []);
     const i = safeStorage.getJson<Ingreso[]>('cached_ingresos', []);
-    if (g.length > 0) setGlosas(g);
-    if (i.length > 0) setIngresos(i);
+    // Deduplicar por ID antes de colocar en estado (previene duplicados del caché)
+    if (g.length > 0) {
+      const uniqueG = Array.from(new Map(g.map((item: Glosa) => [item.id, item])).values());
+      setGlosas(uniqueG);
+    }
+    if (i.length > 0) {
+      const uniqueI = Array.from(new Map(i.map((item: Ingreso) => [item.id, item])).values());
+      setIngresos(uniqueI);
+    }
     if (g.length > 0 || i.length > 0) {
       setLoading(false);
       setLastUpdate(new Date());
@@ -1395,7 +1392,7 @@ function Home() {
             <motion.button
                whileHover={{ scale: 1.1, color: '#ef4444' }}
                whileTap={{ scale: 0.9 }}
-               onClick={handleLogout}
+               onClick={signOut}
                style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '5px' }}
             >
               <LogOut size={18} />
