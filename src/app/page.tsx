@@ -375,32 +375,7 @@ function Home() {
     if (isMounted) migrateData();
   }, [isMounted, migrateData]);
 
-  // AUTO-CLEANUP v6.0: Ejecutar limpieza de duplicados una vez después de cargar datos
-  const autoCleanupDoneRef = useRef(false);
-  useEffect(() => {
-    if (!user || !isMounted || loading || autoCleanupDoneRef.current) return;
-    if (glosas.length === 0) return; // Esperar a que haya datos
-
-    autoCleanupDoneRef.current = true;
-
-    // Verificar si hay duplicados en el estado actual
-    const seen = new Map<string, string>();
-    let hasDuplicates = false;
-    for (const g of glosas) {
-      const factura = (g.factura || '').trim().toUpperCase();
-      const servicio = (g.servicio || '').trim().toLowerCase();
-      const valor = String(g.valor_glosa || '0');
-      const descripcion = (g.descripcion || '').trim().toLowerCase().substring(0, 50);
-      const key = `${factura}|${servicio}|${valor}|${descripcion}`;
-      if (seen.has(key)) { hasDuplicates = true; break; }
-      seen.set(key, g.id);
-    }
-
-    if (hasDuplicates) {
-      console.log('[AutoCleanup v6.0] Duplicados detectados — iniciando limpieza automática...');
-      handleDeleteDuplicates();
-    }
-  }, [user, isMounted, loading, glosas.length]);
+  // AUTO-CLEANUP DESACTIVADO — solo limpieza manual por botón para evitar borrado accidental
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState('Todos');
