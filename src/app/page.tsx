@@ -114,7 +114,8 @@ function Home() {
 
   const loadData = React.useCallback(async (force = false) => {
     if (!user) return;
-    if (!force && lastFetchedUserId.current === user.id && glosas.length > 0) return;
+    // v5.4: Eliminamos el bypass de glosas.length > 0 para asegurar que siempre intente traer de la nube al iniciar sesión
+    if (!force && lastFetchedUserId.current === user.id) return;
 
     let retries = 0;
     const maxRetries = 2;
@@ -1175,7 +1176,7 @@ function Home() {
       }
     };
 
-    const interval = setInterval(autoSync, 60000); // Cada 1 minuto
+    const interval = setInterval(autoSync, 20000); // v5.4: Cada 20 segundos para máxima respuesta
     return () => clearInterval(interval);
   }, [glosas, ingresos, isMounted]);
 
@@ -1258,7 +1259,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>AUDITORÍA DIGITAL V4.0</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>V5.4 - SINCRONIZADO</h2>
           </div>
         </div>
 
@@ -1314,16 +1315,49 @@ function Home() {
           })}
         </nav>
 
-        {/* User Profile / Logout bottom section */}
-        <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem' }}>
+        {/* Footer Sidebar: User & Force Sync - V5.4 */}
+        <div style={{ marginTop: 'auto', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <motion.button
+            whileHover={{ background: 'rgba(0, 177, 113, 0.1)', scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => loadData(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              padding: '0.6rem',
+              width: '100%',
+              borderRadius: '10px',
+              border: '1px solid rgba(0, 177, 113, 0.2)',
+              background: 'transparent',
+              color: 'var(--primary)',
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              textTransform: 'uppercase'
+            }}
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            Sincronizar Cloud
+          </motion.button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0 0.5rem' }}>
             <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#000', fontSize: '0.75rem' }}>
               {user?.email?.charAt(0).toUpperCase()}
             </div>
             <div style={{ flex: 1, overflow: 'hidden' }}>
               <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</p>
-              <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, textTransform: 'uppercase' }}>{role}</p>
+              <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0 }}>{role}</p>
             </div>
+            <motion.button
+               whileHover={{ scale: 1.1, color: '#ef4444' }}
+               whileTap={{ scale: 0.9 }}
+               onClick={handleLogout}
+               style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '5px' }}
+            >
+              <LogOut size={18} />
+            </motion.button>
           </div>
         </div>
       </motion.aside>
