@@ -204,36 +204,71 @@ export const MonthlyReport = ({ glosas }: MonthlyReportProps) => {
                 </motion.button>
             </div>
 
-            {/* 4 Cards de Métricas Grid */}
+            {/* 4 Cards de Métricas Grid - Premium V5.3 */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
-                <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>TOTAL GLOSAS</p>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                        <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{totalRecords}</span>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 700 }}>{netIncrement}</span>
-                    </div>
-                    <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, marginTop: 'auto' }}>
-                        <strong>{recentMonthData.count}</strong> registradas en {recentMonthData.name}
-                    </p>
-                </Card>
-                <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>VALOR ACUMULADO</p>
-                    <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--secondary)', textShadow: '0 0 15px var(--secondary-glow)' }}>{formatMillions(totalValue)}</span>
-                </Card>
-                <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>TASA DE RECUPERACIÓN</p>
-                    <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{recoveryRate.toFixed(1)}%</span>
-                    <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, marginTop: 'auto' }}>
-                        <strong>{recentMonthData.acceptedCount}</strong> exitosas en {recentMonthData.name}
-                    </p>
-                </Card>
-                <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>TIEMPO PROMEDIO</p>
-                    <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{avgTime}</span>
-                    <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, marginTop: 'auto' }}>
-                        Días en proceso de resolución
-                    </p>
-                </Card>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                    <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', top: '-10px', right: '-10px', opacity: 0.05 }}>
+                            <FileText size={80} color="white" />
+                        </div>
+                        <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>TOTAL GLOSAS</p>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{totalRecords}</span>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 700 }}>{netIncrement}</span>
+                        </div>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, marginTop: 'auto', opacity: 0.8 }}>
+                            <Calendar size={10} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                            <strong>{recentMonthData.count}</strong> en {recentMonthData.name}
+                        </p>
+                    </Card>
+                </motion.div>
+
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                    <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative', overflow: 'hidden', borderLeft: '3px solid var(--secondary)' }}>
+                        <div style={{ position: 'absolute', top: '-10px', right: '-10px', opacity: 0.05 }}>
+                            <TrendingUp size={80} color="var(--secondary)" />
+                        </div>
+                        <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>VALOR ACUMULADO</p>
+                        <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--secondary)', textShadow: '0 0 15px var(--secondary-glow)' }}>{formatMillions(totalValue)}</span>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, marginTop: 'auto', background: 'rgba(0,177,113,0.05)', padding: '2px 8px', borderRadius: '4px', width: 'fit-content' }}>
+                            Impacto Financiero Real
+                        </p>
+                    </Card>
+                </motion.div>
+
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                    <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', bottom: '-5px', right: '-5px', opacity: 0.1 }}>
+                            <Activity size={50} color="var(--primary)" />
+                        </div>
+                        <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>TASA DE RECUPERACIÓN</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{recoveryRate.toFixed(1)}%</span>
+                            <div style={{ padding: '4px', background: 'rgba(0, 242, 254, 0.1)', borderRadius: '50%' }}>
+                                <TrendingUp size={14} color="var(--primary)" />
+                            </div>
+                        </div>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, marginTop: 'auto' }}>
+                            <strong>{recentMonthData.acceptedCount}</strong> exitosas en {recentMonthData.name}
+                        </p>
+                    </Card>
+                </motion.div>
+
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+                    <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', bottom: '-5px', right: '-5px', opacity: 0.1 }}>
+                            <Clock size={50} color="var(--text-muted)" />
+                        </div>
+                        <p style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>TIEMPO PROMEDIO</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'white' }}>{avgTime}</span>
+                            <Clock size={16} color="var(--text-muted)" opacity={0.5} />
+                        </div>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, marginTop: 'auto' }}>
+                            Días en proceso de resolución
+                        </p>
+                    </Card>
+                </motion.div>
             </div>
 
             {/* Layout Principal: Evolución y Comparativa */}

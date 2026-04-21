@@ -240,6 +240,58 @@ function Home() {
     }
   }, [user?.id, loadData]);
 
+  // Configurar Sincronización Real-Time (TRABAJO EN LÍNEA V5.3)
+  useEffect(() => {
+    if (!user || !isMounted) return;
+
+    // Suscripción a GLOSAS
+    const glosasChannel = supabase
+      .channel('realtime_glosas')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'glosas' }, (payload) => {
+        setGlosas(prev => {
+          let updated = [...prev];
+          if (payload.eventType === 'INSERT') {
+            if (!updated.some(g => g.id === payload.new.id)) {
+              updated = [payload.new as Glosa, ...updated];
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            updated = updated.map(g => g.id === payload.new.id ? { ...g, ...payload.new } : g);
+          } else if (payload.eventType === 'DELETE') {
+            updated = updated.filter(g => g.id === payload.old.id);
+          }
+          safeStorage.setJson('cached_glosas', updated);
+          return updated;
+        });
+      })
+      .subscribe();
+
+    // Suscripción a INGRESOS
+    const ingresosChannel = supabase
+      .channel('realtime_ingresos')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ingresos' }, (payload) => {
+        setIngresos(prev => {
+          let updated = [...prev];
+          if (payload.eventType === 'INSERT') {
+            if (!updated.some(i => i.id === payload.new.id)) {
+              updated = [payload.new as Ingreso, ...updated];
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            updated = updated.map(i => i.id === payload.new.id ? { ...i, ...payload.new } : i);
+          } else if (payload.eventType === 'DELETE') {
+            updated = updated.filter(i => i.id === payload.old.id);
+          }
+          safeStorage.setJson('cached_ingresos', updated);
+          return updated;
+        });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(glosasChannel);
+      supabase.removeChannel(ingresosChannel);
+    };
+  }, [user?.id, isMounted]);
+
   // Migración de datos desde localStorage a Supabase (SUPER ESCANEO V5.1 - Sensible a Contexto)
   const migrateData = useCallback(async (force = false) => {
     try {
