@@ -1806,6 +1806,7 @@ function Home() {
                         setFilterEstado={setFilterEstado}
                         filterInterno={filterInterno}
                         setFilterInterno={setFilterInterno}
+                        onMarkAllAsRegistered={handleMarkAllAsRegistered}
                         isAdmin={role === 'admin'}
                       />
                     </div>
