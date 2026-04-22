@@ -7,7 +7,7 @@ import { GlosaForm } from '@/components/GlosaForm';
 import { GlosaTable } from '@/components/GlosaTable';
 import { supabase } from '@/lib/supabase';
 import { safeNumber, safeArray, safeStorage } from '@/lib/safeUtils';
-import { LayoutDashboard, TrendingUp, Wallet, Activity, Trash2, Download, ListChecks, PieChart, ChevronUp, RefreshCw, ClipboardList, LogOut, FileText, CheckCircle, Clock, Cloud, CloudOff, UploadCloud, Plus, AlertTriangle, Copy, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Wallet, Activity, Trash2, Download, ListChecks, PieChart, ChevronUp, RefreshCw, ClipboardList, LogOut, FileText, CheckCircle, Clock, Cloud, CloudOff, UploadCloud, Plus, AlertTriangle, Copy, BarChart3, FileSpreadsheet } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -544,11 +544,23 @@ function Home() {
       console.error('[stats] Error calculando estadísticas:', err);
       // Retorno SEGURO para evitar que la UI se rompa
       return { 
-        totalCount: 0, totalFacturas: 0, totalGlosas: 0, totalAceptado: 0, 
-        totalPendiente: 0, totalRegistradoInterno: 0, totalNoRegistrado: 0, 
-        totalPotential: 0, totalNoAceptado: 0, percentAceptado: 0, 
-        percentRegistrado: 0, totalValue: 0, totalIngresos: 0, 
-        pendingCount: 0, respondedCount: 0, acceptedCount: 0 
+        totalGlosado: 0,
+        totalAceptado: 0, 
+        totalPendiente: 0, 
+        totalRegistradoInterno: 0, 
+        percentAceptado: 0, 
+        percentRegistrado: 0, 
+        totalCount: 0, 
+        totalFacturas: 0, 
+        acceptedCount: 0,
+        totalNoAceptado: 0,
+        // Propiedades adicionales del estado local
+        totalNoRegistrado: 0, 
+        totalPotential: 0, 
+        totalValue: 0, 
+        totalIngresos: 0, 
+        pendingCount: 0, 
+        respondedCount: 0
       };
     }
   }, [glosas, consolidado, currentMainSection]);
