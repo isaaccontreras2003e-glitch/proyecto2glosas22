@@ -43,7 +43,9 @@ interface GlosaTableProps {
     setFilterEstado: (val: string) => void;
     filterInterno: string;
     setFilterInterno: (val: string) => void;
+    onMarkAllAsRegistered: () => void;
     isAdmin?: boolean;
+
 }
 
 export const GlosaTable = ({
@@ -63,12 +65,16 @@ export const GlosaTable = ({
     setFilterEstado,
     filterInterno,
     setFilterInterno,
+    onMarkAllAsRegistered,
     isAdmin = true
+
 }: GlosaTableProps) => {
     const [selectedGlosa, setSelectedGlosa] = useState<Glosa | null>(null);
     const [editingGlosa, setEditingGlosa] = useState<Glosa | null>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
     const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
+    const [confirmMarkAll, setConfirmMarkAll] = useState(false);
+
 
     const getStatusStyle = (status: string) => {
         switch (status) {
@@ -322,6 +328,60 @@ export const GlosaTable = ({
                         )}
                     </div>
                 )}
+
+                {/* Barra de Registro Masivo */}
+                {isAdmin && (
+                    <div style={{
+                        marginBottom: '1.25rem',
+                        padding: '0.85rem 1.25rem',
+                        borderRadius: '12px',
+                        background: 'rgba(0, 242, 254, 0.05)',
+                        border: '1px solid rgba(0, 242, 254, 0.15)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '1rem'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 700 }}>
+                            <CheckCircle2 size={18} />
+                            <span>Gestión de Auditoría: Registro Masivo Interno</span>
+                        </div>
+                        {confirmMarkAll ? (
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.72rem', color: 'var(--primary)' }}>¿Marcar todas como registradas?</span>
+                                <button
+                                    onClick={() => { onMarkAllAsRegistered(); setConfirmMarkAll(false); }}
+                                    style={{ background: 'var(--primary)', border: 'none', color: '#000', padding: '0.35rem 0.85rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 800 }}
+                                >SÍ, REGISTRAR TODO</button>
+                                <button
+                                    onClick={() => setConfirmMarkAll(false)}
+                                    style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0.35rem 0.85rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.75rem' }}
+                                >Cancelar</button>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => setConfirmMarkAll(true)}
+                                style={{
+                                    background: 'rgba(0, 242, 254, 0.1)',
+                                    border: '1px solid rgba(0, 242, 254, 0.3)',
+                                    color: 'var(--primary)',
+                                    padding: '0.4rem 1rem',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 800,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem',
+                                    textTransform: 'uppercase'
+                                }}
+                            >
+                                <ClipboardList size={14} /> Marcar todas como registradas (Auditoría OK)
+                            </button>
+                        )}
+                    </div>
+                )}
+
 
                 <div style={{ overflowX: 'auto', maxHeight: '500px', overflowY: 'auto' }} className="custom-scrollbar">
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>

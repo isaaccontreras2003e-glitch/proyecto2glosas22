@@ -15,7 +15,8 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { InteractiveLogo } from '@/components/InteractiveLogo';
 import { ToastProvider, useToast } from '@/lib/contexts/ToastContext';
 import { MonthlyReport } from '@/components/MonthlyReport';
-import { ExcelImport } from '@/components/ExcelImport';
+
+
 
 
 const formatPesos = (value: any): string => {
@@ -77,8 +78,19 @@ function Home() {
     return () => clearInterval(timer);
   }, [today]);
 
+  // Protección contra recargas accidentales para no perder datos ingresados
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
   const [supabaseError, setSupabaseError] = useState<string | null>(null);
-  const [showImportTool, setShowImportTool] = useState(false);
+
   const lastFetchedUserId = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, role, seccion_asignada, loading: authLoading, signOut } = useAuth();
@@ -145,18 +157,28 @@ function Home() {
         if (iRes?.error) throw iRes.error;
 
         if (gRes && Array.isArray(gRes.data)) {
-          // FIX: Reemplazar estado completamente con datos de la nube (fuente de verdad).
-          // El emergency_buffer se limpia porque todos sus items ya están en Supabase.
+          // FIX: Reemplazar estado integrando los datos pendientes locales con la nube
           setGlosas(() => {
             const glosaMap = new Map();
+            
+            // 1. Cargar items pendientes del buffer
+            const pendingGlosas = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
+            pendingGlosas.forEach((c: any) => {
+              if (c && c.id) {
+                const contentKey = (c.factura || '').trim().toUpperCase();
+                if (!glosaMap.has(contentKey)) {
+                  glosaMap.set(contentKey, { ...c, sincronizado: false });
+                }
+              }
+            });
+
             // deduplicación estricta por Factura (Instrucción Usuario V9.0)
             const gData = safeArray(gRes.data);
             gData.forEach((c: any) => {
               if (c && c.id) {
                 const contentKey = (c.factura || '').trim().toUpperCase();
-                if (!glosaMap.has(contentKey)) {
-                  glosaMap.set(contentKey, { ...c, sincronizado: true });
-                }
+                // Sobrescribimos si viene de la nube, es la fuente de verdad y ya está sincronizado
+                glosaMap.set(contentKey, { ...c, sincronizado: true });
               }
             });
 
@@ -166,8 +188,10 @@ function Home() {
               return dateB.localeCompare(dateA);
             });
 
-            // Limpiar el emergency_buffer ya que la nube está sincronizada
-            safeStorage.setJson('emergency_buffer', []);
+            // 3. Actualizar el buffer solo con los que siguen pendientes
+            const remainingPending = pendingGlosas.filter((p: any) => !gData.some((g: any) => g.id === p.id));
+            safeStorage.setJson('emergency_buffer', remainingPending);
+
             safeStorage.setJson('cached_glosas', sorted);
             return sorted;
           });
@@ -175,9 +199,17 @@ function Home() {
         }
 
         if (iRes && Array.isArray(iRes.data)) {
-          // FIX: Usar la nube como única fuente de verdad para ingresos también
+          // FIX: Integrar nube con ingresos locales pendientes para evitar pérdida de datos al recargar
           setIngresos(() => {
             const ingresoMap = new Map();
+            
+            // 1. Cargar items pendientes del buffer
+            const pendingIngresos = safeStorage.getJson<Ingreso[]>('emergency_buffer_ingresos', []);
+            pendingIngresos.forEach((c: any) => {
+              if (c && c.id) ingresoMap.set(c.id, { ...c, sincronizado: false });
+            });
+
+            // 2. Sobrescribir con datos de la nube
             safeArray(iRes.data).forEach((c: any) => {
               if (c && c.id) ingresoMap.set(c.id, { ...c, sincronizado: true });
             });
@@ -187,8 +219,11 @@ function Home() {
               const dateB = (b.fecha || '').split(',')[0].trim().split('/').reverse().join('') || '0';
               return dateB.localeCompare(dateA);
             });
-            // Limpiar buffer de ingresos también
-            safeStorage.setJson('emergency_buffer_ingresos', []);
+            
+            // 3. Actualizar el buffer solo con los que siguen pendientes
+            const remainingPending = pendingIngresos.filter((p: any) => !safeArray(iRes.data).some((i: any) => i.id === p.id));
+            safeStorage.setJson('emergency_buffer_ingresos', remainingPending);
+
             safeStorage.setJson('cached_ingresos', combined);
             return combined;
           });
@@ -259,7 +294,7 @@ function Home() {
           } else if (payload.eventType === 'UPDATE') {
             updated = updated.map(g => g.id === payload.new.id ? { ...g, ...payload.new } : g);
           } else if (payload.eventType === 'DELETE') {
-            updated = updated.filter(g => g.id === payload.old.id);
+            updated = updated.filter(g => g.id !== payload.old.id);
           }
           safeStorage.setJson('cached_glosas', updated);
           return updated;
@@ -280,7 +315,7 @@ function Home() {
           } else if (payload.eventType === 'UPDATE') {
             updated = updated.map(i => i.id === payload.new.id ? { ...i, ...payload.new } : i);
           } else if (payload.eventType === 'DELETE') {
-            updated = updated.filter(i => i.id === payload.old.id);
+            updated = updated.filter(i => i.id !== payload.old.id);
           }
           safeStorage.setJson('cached_ingresos', updated);
           return updated;
@@ -309,82 +344,6 @@ function Home() {
       }
     }
   }, []);
-
-  // Migración de datos desde localStorage a Supabase (SUPER ESCANEO V5.1 - Sensible a Contexto)
-  const migrateData = useCallback(async (force = false) => {
-    try {
-      const isMigrated = localStorage.getItem('migrated_to_supabase_v9_recovery_fix');
-      if (isMigrated === 'true' && !force) return;
-
-      console.log(`--- INICIANDO ${force ? 'RESCATE PROFUNDO' : 'SUPER ESCANEO'} V8.7 ---`);
-      let recoveredGlosas: any[] = [];
-      let recoveredIngresos: any[] = [];
-      const seenIds = new Set(glosas.map(g => g.id)); // No duplicar lo que ya está en RAM
-
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key) continue;
-
-        try {
-          const val = localStorage.getItem(key);
-          if (!val || (!val.includes('[') && !val.includes('{'))) continue;
-
-          const parsed = JSON.parse(val);
-          const items = Array.isArray(parsed) ? parsed : [parsed];
-
-          // Inteligencia de sección simplificada: todo a GLOSAS
-          const inferredSection = 'GLOSAS';
-
-          for (const item of items) {
-            if (!item || typeof item !== 'object') continue;
-
-            const itemSection = 'GLOSAS';
-
-            if (item.factura && (item.valor_glosa !== undefined || item.servicio !== undefined)) {
-              const id = item.id || `rec_${item.factura}_${item.valor_glosa}_${Date.now()}`;
-              if (!seenIds.has(id)) {
-                recoveredGlosas.push({ ...item, id: id.toString(), seccion: itemSection });
-                seenIds.add(id);
-              }
-            }
-            else if (item.factura && (item.valor_aceptado !== undefined || item.valor_no_aceptado !== undefined)) {
-              const id = item.id || `rec_ing_${item.factura}_${item.valor_aceptado}_${Date.now()}`;
-              if (!seenIds.has(id)) {
-                recoveredIngresos.push({ ...item, id: id.toString(), seccion: itemSection });
-                seenIds.add(id);
-              }
-            }
-          }
-        } catch (e) { }
-      }
-
-      if (recoveredGlosas.length > 0 || recoveredIngresos.length > 0) {
-        if (recoveredGlosas.length > 0) await supabase.from('glosas').upsert(recoveredGlosas);
-        if (recoveredIngresos.length > 0) await supabase.from('ingresos').upsert(recoveredIngresos);
-        showToast(`¡Rescate exitoso! ${recoveredGlosas.length} registros recuperados.`, 'success');
-        loadData(true);
-      } else if (force) {
-        showToast('No se encontraron más registros para recuperar.', 'info');
-      }
-
-      localStorage.setItem('migrated_to_supabase_v9_recovery_fix', 'true');
-    } catch (err: any) {
-      console.error('Error durante la recuperación:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [glosas, currentMainSection, loadData, showToast]);
-
-  useEffect(() => {
-    // v10.0: Desactivamos la migración automática para evitar resucitar datos borrados
-    // if (isMounted) migrateData();
-    
-    // Limpieza de claves de cache que causan duplicados visuales
-    if (isMounted) {
-      localStorage.removeItem('cached_glosas');
-      localStorage.removeItem('emergency_buffer_glosas');
-    }
-  }, [isMounted]);
 
   // AUTO-CLEANUP DESACTIVADO — solo limpieza manual por botón para evitar borrado accidental
 
@@ -426,6 +385,38 @@ function Home() {
       if (glosa) syncExcel('glosa', 'update', { ...glosa, registrada_internamente: true });
     }
   };
+
+  const handleMarkAllAsRegistered = async () => {
+    try {
+      const pendingIds = glosas
+        .filter(g => !g.registrada_internamente)
+        .map(g => g.id);
+
+      if (pendingIds.length === 0) {
+        showToast('No hay glosas pendientes por registrar.', 'info');
+        return;
+      }
+
+      showToast(`Registrando ${pendingIds.length} glosas...`, 'info');
+
+      const { error } = await supabase
+        .from('glosas')
+        .update({ registrada_internamente: true })
+        .in('id', pendingIds);
+
+      if (error) throw error;
+
+      const updatedGlosas = glosas.map(g => ({ ...g, registrada_internamente: true }));
+      setGlosas(updatedGlosas);
+      localStorage.setItem('cached_glosas', JSON.stringify(updatedGlosas));
+      
+      showToast('✅ Todas las glosas han sido marcadas como registradas.', 'success');
+    } catch (err: any) {
+      console.error('Error in handleMarkAllAsRegistered:', err);
+      showToast('Error al registrar glosas masivamente.', 'error');
+    }
+  };
+
 
   const filteredIngresos = useMemo(() => {
     return ingresos.filter(i => {
@@ -1406,31 +1397,8 @@ function Home() {
               </motion.button>
             );
           })}
-          {/* Botón de Recuperación de Emergencia */}
-          <button
-            onClick={() => setShowImportTool(!showImportTool)}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '12px 18px',
-              borderRadius: '16px',
-              border: 'none',
-              background: showImportTool ? 'rgba(0, 177, 113, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-              color: showImportTool ? 'var(--primary)' : '#ef4444',
-              cursor: 'pointer',
-              fontSize: '0.8rem',
-              fontWeight: 800,
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              marginTop: '1rem',
-              borderLeft: `4px solid ${showImportTool ? 'var(--primary)' : '#ef4444'}`
-            }}
-          >
-            {showImportTool ? <CheckCircle size={20} /> : <RefreshCw size={20} />}
-            {showImportTool ? 'CERRAR IMPORTADOR' : 'RESCATE DE DATOS'}
-          </button>
         </nav>
+
 
         {/* Footer Sidebar: User & Force Sync - V5.4 */}
         <div style={{ marginTop: 'auto', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -1474,65 +1442,7 @@ function Home() {
             Borrado Total Glosas
           </motion.button>
 
-          <motion.button
-            whileHover={{ background: 'rgba(46, 125, 50, 0.1)', scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              const url = '/api/backup?download=true';
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = `Glosas_Maestro_${new Date().toLocaleDateString()}.xlsx`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              showToast('Generando Exportación Maestra...', 'info');
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              padding: '0.6rem',
-              width: '100%',
-              borderRadius: '10px',
-              border: '1px solid rgba(46, 125, 50, 0.3)',
-              background: 'rgba(46, 125, 50, 0.05)',
-              color: '#2e7d32',
-              fontSize: '0.7rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              textTransform: 'uppercase',
-              marginBottom: '0.5rem'
-            }}
-          >
-            <FileSpreadsheet size={14} />
-            Exportación Maestra
-          </motion.button>
 
-          <motion.button
-            whileHover={{ background: 'rgba(0, 177, 113, 0.1)', scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => loadData(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              padding: '0.6rem',
-              width: '100%',
-              borderRadius: '10px',
-              border: '1px solid rgba(0, 177, 113, 0.2)',
-              background: 'transparent',
-              color: 'var(--primary)',
-              fontSize: '0.7rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              textTransform: 'uppercase'
-            }}
-          >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            Sincronizar Cloud
-          </motion.button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0 0.5rem' }}>
             <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#000', fontSize: '0.75rem' }}>
@@ -1555,21 +1465,7 @@ function Home() {
       </motion.aside>
 
       <main className="container" style={{ flex: 1, margin: 0, maxWidth: 'none', overflowY: 'auto', padding: '1.5rem 2.5rem', position: 'relative' }}>
-        <AnimatePresence>
-          {showImportTool && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              style={{ marginBottom: '2rem' }}
-            >
-              <ExcelImport onComplete={() => {
-                setShowImportTool(false);
-                loadData(true);
-              }} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+
 
         <header style={{
           display: 'flex',
@@ -1806,7 +1702,9 @@ function Home() {
                         setFilterEstado={setFilterEstado}
                         filterInterno={filterInterno}
                         setFilterInterno={setFilterInterno}
+                        onMarkAllAsRegistered={handleMarkAllAsRegistered}
                         isAdmin={role === 'admin'}
+
                       />
                     </div>
                   </motion.div>
@@ -1828,23 +1726,8 @@ function Home() {
                           <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: 0 }}>
                             Resumen agrupado por factura para visualizar el balance final de <strong>{currentMainSection.toLowerCase()}</strong>.
                           </p>
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            onClick={() => migrateData(true)}
-                            className="btn"
-                            style={{
-                              padding: '4px 12px',
-                              fontSize: '0.7rem',
-                              background: 'rgba(239, 68, 68, 0.1)',
-                              color: '#f87171',
-                              border: '1px solid rgba(239, 68, 68, 0.3)',
-                              fontWeight: 800,
-                              borderRadius: '6px'
-                            }}
-                          >
-                            RESCATAR FACTURAS PERDIDAS
-                          </motion.button>
                         </div>
+
                       </div>
                     </div>
 
@@ -1887,7 +1770,11 @@ function Home() {
                         <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'white', margin: 0 }}>Listado Detallado</h3>
                         <motion.button
                           whileHover={{ scale: 1.05 }}
-                          onClick={handleDeepRecovery}
+                          onClick={() => {
+                            if (window.confirm('¿Seguro que deseas marcar TODAS las facturas como NO PENDIENTES (Registradas internamente)?')) {
+                              handleMarkAllAsRegistered();
+                            }
+                          }}
                           className="btn"
                           style={{
                             padding: '4px 12px',
@@ -1899,7 +1786,7 @@ function Home() {
                             borderRadius: '6px'
                           }}
                         >
-                          SINCRO. REGISTRO INTERNO (CHECK POINT)
+                          MARCAR TODAS COMO NO PENDIENTES (CHECK POINT)
                         </motion.button>
                       </div>
                       <GlosaTable
@@ -1986,152 +1873,8 @@ function Home() {
                     Panel de Control y Gestión de Datos
                   </h3>
 
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: '1.25rem', flexWrap: 'wrap', marginBottom: '4rem' }}>
-                    {/* Grupo: Gestión de Archivos */}
-                    <div style={{ display: 'flex', gap: '0.75rem', background: 'var(--bg-card)', padding: '0.75rem', borderRadius: '1.25rem', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-                      {role === 'admin' && (
-                        <>
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            onClick={() => fileInputRef.current?.click()}
-                            className="btn btn-secondary"
-                            style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--secondary)', borderColor: 'rgba(0,177,113,0.2)' }}
-                          >
-                            <ListChecks size={16} />
-                            IMPORTAR EXCEL
-                          </motion.button>
-                          <input type="file" ref={fileInputRef} onChange={handleCSVImport} accept=".csv" style={{ display: 'none' }} />
-                        </>
-                      )}
+                  {/* Botones de Mantenimiento y Exportación Eliminados según requerimiento */}
 
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        onClick={exportGlosasToExcel}
-                        className="btn btn-secondary"
-                        style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--primary)', borderColor: 'rgba(0,99,65,0.2)' }}
-                      >
-                        <Download size={16} />
-                        EXPORTAR DATOS
-                      </motion.button>
-
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        onClick={exportToExcel}
-                        className="btn btn-secondary"
-                        style={{ padding: '0.7rem 1.5rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}
-                      >
-                        <Download size={16} />
-                        CONSOLIDADO
-                      </motion.button>
-                    </div>
-
-                    {/* Grupo: Mantenimiento (Discreto) */}
-                    {role === 'admin' && (
-                      <div style={{ display: 'flex', gap: '0.75rem', opacity: 0.6, flexWrap: 'wrap' }}>
-                        <motion.button
-                          whileHover={{ scale: 1.05, opacity: 1 }}
-                          onClick={async () => {
-                            if (!confirm('Esta acción forzará un nuevo escaneo profundo V5.1 (Contextual). Si estás en la pestaña MEDICAMENTOS, los datos se recuperarán allí. ¿Continuar?')) return;
-                            localStorage.removeItem('migrated_to_supabase_v5_final_context');
-                            window.location.reload();
-                          }}
-                          className="btn btn-secondary"
-                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--secondary)', borderColor: 'rgba(0,177,113,0.1)' }}
-                        >
-                          <RefreshCw size={12} />
-                          FORZAR NUEVO ESCANEO
-                        </motion.button>
-
-                        <motion.button
-                          whileHover={{ scale: 1.05, opacity: 1 }}
-                          onClick={handleReconcilePayments}
-                          className="btn btn-secondary"
-                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', borderColor: 'rgba(0,99,65,0.1)' }}
-                        >
-                          <TrendingUp size={12} />
-                          SINCRONIZAR PAGOS
-                        </motion.button>
-
-                        <motion.button
-                          whileHover={{ scale: 1.05, opacity: 1 }}
-                          onClick={async () => {
-                            if (!confirm('SINCRO UNIVERSAL: Intentará subir CUALQUIER dato encontrado categorizándolo por sección (Glosas/Med). ¿Continuar?')) return;
-                            setLoading(true);
-                            try {
-                              let count = 0;
-                              for (let i = 0; i < localStorage.length; i++) {
-                                const key = localStorage.key(i);
-                                if (!key) continue;
-                                const val = localStorage.getItem(key);
-                                if (val && (val.includes('factura') || val.includes('valor_glosa'))) {
-                                  try {
-                                    const parsed = JSON.parse(val);
-                                    const items = Array.isArray(parsed) ? parsed : [parsed];
-
-                                    // Inteligencia de sección
-                                    let inferred = 'GLOSAS';
-                                    if (key.toLowerCase().includes('medic')) inferred = 'MEDICAMENTOS';
-
-                                    const prepared = items.map(it => ({
-                                      ...it,
-                                      seccion: it.seccion?.toUpperCase() || inferred
-                                    })).filter(it => it && it.factura);
-
-                                    if (prepared.length > 0) {
-                                      await supabase.from(key.includes('ingreso') ? 'ingresos' : 'glosas').upsert(prepared);
-                                      count += prepared.length;
-                                    }
-                                  } catch (e) { }
-                                }
-                              }
-                              showToast(`Sincronización Inteligente finalizada.`, 'success');
-                              loadData(true);
-                            } catch (e) {
-                              showToast('Error en sincronización.', 'error');
-                            } finally {
-                              setLoading(false);
-                            }
-                          }}
-                          className="btn btn-secondary"
-                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.1)' }}
-                        >
-                          <RefreshCw size={12} />
-                          SINCRO UNIVERSAL
-                        </motion.button>
-
-                        <motion.button
-                          whileHover={{ scale: 1.05, opacity: 1 }}
-                          onClick={() => {
-                            const sections = {
-                              medicamentos: glosas.filter(g => (g as any).seccion === 'MEDICAMENTOS' || (g as any).seccion === 'medicamentos').length,
-                            };
-                            const todayManual = (() => {
-                              const d = new Date();
-                              return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
-                            })();
-                            const buffer = JSON.parse(localStorage.getItem('emergency_buffer') || '[]');
-                            const last10 = glosas.slice(0, 10).map(g => `• ${g.factura} | ${g.seccion} | ${g.fecha}`).join('\n');
-                            const todayRecords = glosas.filter(g => (g.fecha || '').includes(todayManual));
-
-                            const confirmRescue = window.confirm(`DIAGNÓSTICO V8.7 (RESCATE PROFUNDO):\n\n` +
-                              `EN NUBE (Total): ${glosas.length}\n` +
-                              `HOY EN RAM: ${todayRecords.length}\n` +
-                              `ESCUDO (Buffer): ${buffer.length}\n\n` +
-                              `¿Deseas ejecutar un ESCANEO FORZADO para buscar tus 3 facturas perdidas?`);
-
-                            if (confirmRescue) {
-                              migrateData(true);
-                            }
-                          }}
-                          className="btn btn-secondary"
-                          style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}
-                        >
-                          <Activity size={12} />
-                          INFORME DE SALUD
-                        </motion.button>
-                      </div>
-                    )}
-                  </div>
 
                   <div style={{ opacity: 0.6 }}>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>
