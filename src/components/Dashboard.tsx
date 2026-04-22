@@ -300,7 +300,17 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         </div>
                         <div>
                             <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>IMPORTE TOTAL GLOSADO</p>
-                            <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: 'var(--text-primary)' }}>${formatPesos(metrics.totalValue)}</h2>
+                            <h2 style={{ 
+                                fontSize: '1.4rem', 
+                                fontWeight: 950, 
+                                margin: '4px 0', 
+                                color: 'var(--text-primary)',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                            }} title={`$${formatPesos(metrics.totalValue)}`}>
+                                ${formatPesos(metrics.totalValue)}
+                            </h2>
                         </div>
                         <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
                             <div style={{ height: '3px', background: 'rgba(255,255,255,0.03)', borderRadius: '100px', display: 'flex' }}>

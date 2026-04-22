@@ -147,20 +147,17 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
         );
     }, [formData.factura, existingGlosas]);
 
-    // v9.1: Protección de integridad con navegación segura
+    // v9.1: Protección de integridad estricta por número de factura (Instrucción Usuario V9.0)
     const isDupeMatch = useMemo(() => {
-        if (!formData.factura || !formData.servicio) return false;
+        if (!formData.factura) return false;
         const formFact = (formData.factura || '').trim().toLowerCase();
-        const formServ = (formData.servicio || '').trim().toLowerCase();
-        const formValor = parseFloat(formData.valor_glosa) || 0;
 
         return (existingGlosas || []).some(g => {
             if (!g) return false;
             const gFact = (g.factura || '').trim().toLowerCase();
-            const gServ = (g.servicio || '').trim().toLowerCase();
-            return gFact === formFact && gServ === formServ && g.valor_glosa === formValor;
+            return gFact === formFact;
         });
-    }, [formData, existingGlosas]);
+    }, [formData.factura, existingGlosas]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -251,7 +248,13 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
 
     const formTitle = 'Registrar Gestión de Glosa';
     const facturaExiste = facturaMatch && facturaMatch.length > 0;
+    const [confirmDupe, setConfirmDupe] = useState(false);
     const alertColor = isDupeMatch ? '#ef4444' : '#f59e0b';
+
+    // Reset de confirmación si cambia el formulario
+    useEffect(() => {
+        setConfirmDupe(false);
+    }, [formData.factura, formData.servicio, formData.valor_glosa]);
 
     return (
         <Card
@@ -316,29 +319,46 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                                     setForceSubmit(false);
                                 }}
                             />
-                            {/* Alerta de factura existente */}
+                            {/* Alerta de factura existente - REDISEÑADA PARA SER MÁS PROMINENTE */}
                             {facturaExiste && (
-                                <div style={{
-                                    marginTop: '0.5rem',
-                                    padding: '0.6rem 0.85rem',
-                                    borderRadius: '10px',
-                                    background: `rgba(${isDupeMatch ? '239,68,68' : '245,158,11'},0.08)`,
-                                    border: `1px solid rgba(${isDupeMatch ? '239,68,68' : '245,158,11'},0.25)`,
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: '0.6rem',
-                                    fontSize: '0.72rem',
-                                    color: alertColor,
-                                    lineHeight: 1.4
-                                }}>
-                                    <AlertTriangle size={14} style={{ marginTop: '1px', flexShrink: 0 }} />
-                                    <div>
-                                        {isDupeMatch
-                                            ? <><strong>⚠ DUPLICADO EXACTO:</strong> Esta factura ya tiene registrado el mismo servicio y valor.</>
-                                            : <><strong>Factura ya ingresada</strong> con {facturaMatch!.length} registro(s): {facturaMatch!.map(g => g.servicio).join(', ')}.</>
-                                        }
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    style={{
+                                        marginTop: '1rem',
+                                        padding: '1rem',
+                                        borderRadius: '16px',
+                                        background: isDupeMatch ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                        border: `2px solid ${isDupeMatch ? '#ef4444' : '#f59e0b'}`,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '0.75rem',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: isDupeMatch ? '#ef4444' : '#f59e0b', fontWeight: 900, fontSize: '0.85rem' }}>
+                                        <AlertTriangle size={20} />
+                                        <span>{isDupeMatch ? 'ADVERTENCIA: DUPLICADO DETECTADO' : 'FACTURA YA REGISTRADA'}</span>
                                     </div>
-                                </div>
+                                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 600, lineHeight: 1.5 }}>
+                                        {isDupeMatch
+                                            ? `Esta factura (${formData.factura}) YA EXISTE en el sistema. Por seguridad, no se permiten duplicados del mismo número de factura.`
+                                            : `Esta factura ya cuenta con registros previos. Verifica si este es un nuevo servicio adicional.`
+                                        }
+                                    </p>
+                                    
+                                    {isDupeMatch && (
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', cursor: 'pointer' }}>
+                                            <input 
+                                                type="checkbox" 
+                                                checked={confirmDupe} 
+                                                onChange={(e) => setConfirmDupe(e.target.checked)}
+                                                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                            />
+                                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ef4444' }}>CONFIRMO QUE ES UN REGISTRO DISTINTO Y NO UN DUPLICADO</span>
+                                        </label>
+                                    )}
+                                </motion.div>
                             )}
                         </div>
                         <div className="input-group">
@@ -475,46 +495,42 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                     </div>
                 )}
 
-                {/* Botón principal o botón de confirmación si es duplicado exacto */}
+                {/* Botón principal rediseñado para seguridad de duplicados */}
                 {isAdmin && (
-                    isDupeMatch && !forceSubmit ? (
-                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-                            <button
-                                type="button"
-                                onClick={() => setFormData({ ...formData, factura: '', servicio: '', valor_glosa: '', valor_aceptado: '' })}
-                                className="btn btn-secondary"
-                                style={{ flex: 1, gap: '0.5rem' }}
-                            >
-                                Limpiar Formulario
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setForceSubmit(true)}
-                                className="btn btn-primary"
-                                style={{ flex: 1, gap: '0.5rem', background: 'rgba(239,68,68,0.8)', fontSize: '0.8rem' }}
-                            >
-                                <AlertTriangle size={16} />
-                                Registrar de todas formas
-                            </button>
-                        </div>
-                    ) : (
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            disabled={isUploadingPdf}
-                            style={{
-                                width: '100%',
-                                gap: '0.75rem',
-                                marginTop: '1rem',
-                                opacity: isUploadingPdf ? 0.7 : 1,
-                                cursor: isUploadingPdf ? 'wait' : 'pointer',
-                                background: facturaExiste ? 'var(--secondary)' : undefined,
-                            }}
-                        >
-                            {facturaExiste ? <AlertTriangle size={18} /> : (isUploadingPdf ? <Save size={18} /> : <Plus size={18} />)}
-                            {facturaExiste ? 'Añadir nuevo registro a Factura' : (isUploadingPdf ? 'Subiendo PDF y Guardando...' : 'Guardar Ingreso Diario')}
-                        </button>
-                    )
+                    <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={isUploadingPdf || (isDupeMatch && !confirmDupe)}
+                        style={{
+                            width: '100%',
+                            gap: '0.75rem',
+                            marginTop: '1rem',
+                            opacity: (isUploadingPdf || (isDupeMatch && !confirmDupe)) ? 0.6 : 1,
+                            cursor: (isUploadingPdf || (isDupeMatch && !confirmDupe)) ? 'not-allowed' : 'pointer',
+                            background: isDupeMatch 
+                                ? (confirmDupe ? '#ef4444' : 'rgba(239, 68, 68, 0.3)') 
+                                : (facturaExiste ? 'var(--secondary)' : undefined),
+                            border: isDupeMatch ? 'none' : undefined,
+                            transition: 'all 0.3s ease'
+                        }}
+                    >
+                        {isDupeMatch ? (
+                            <>
+                                <AlertTriangle size={18} />
+                                {confirmDupe ? 'FORZAR REGISTRO DE DUPLICADO' : 'BLOQUEADO: CONFIRMA QUE NO ES DUPLICADO'}
+                            </>
+                        ) : facturaExiste ? (
+                            <>
+                                <Plus size={18} />
+                                Añadir Nuevo Registro a Factura
+                            </>
+                        ) : (
+                            <>
+                                {isUploadingPdf ? <Save size={18} /> : <Plus size={18} />}
+                                {isUploadingPdf ? 'Subiendo PDF y Guardando...' : 'Guardar Gestión de Glosa'}
+                            </>
+                        )}
+                    </button>
                 )}
 
                 {/* Indicadores de Control Diario */}

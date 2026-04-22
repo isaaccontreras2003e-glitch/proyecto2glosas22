@@ -15,6 +15,8 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { InteractiveLogo } from '@/components/InteractiveLogo';
 import { ToastProvider, useToast } from '@/lib/contexts/ToastContext';
 import { MonthlyReport } from '@/components/MonthlyReport';
+import { ExcelImport } from '@/components/ExcelImport';
+import { useRef } from 'react';
 
 const formatPesos = (value: any): string => {
   const num = typeof value === 'number' ? value : parseFloat(value);
@@ -76,6 +78,7 @@ function Home() {
   }, [today]);
 
   const [supabaseError, setSupabaseError] = useState<string | null>(null);
+  const [showImportTool, setShowImportTool] = useState(false);
   const lastFetchedUserId = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, role, seccion_asignada, loading: authLoading, signOut } = useAuth();
@@ -145,15 +148,16 @@ function Home() {
           // FIX: Reemplazar estado completamente con datos de la nube (fuente de verdad).
           // El emergency_buffer se limpia porque todos sus items ya están en Supabase.
           setGlosas(() => {
-            const cloudData = safeArray(gRes.data);
-
-            // La nube es la fuente de verdad. Solo agregar items pendientes de subir
-            // (aquellos que aún no tienen ID en la nube, i.e. recién creados sin conexión).
-            // Como todos los items tienen un ID único generado antes del insert,
-            // simplemente usamos los datos de la nube directamente.
             const glosaMap = new Map();
-            cloudData.forEach((c: any) => {
-              if (c && c.id) glosaMap.set(c.id, { ...c, sincronizado: true });
+            // deduplicación estricta por Factura (Instrucción Usuario V9.0)
+            const gData = safeArray(gRes.data);
+            gData.forEach((c: any) => {
+              if (c && c.id) {
+                const contentKey = (c.factura || '').trim().toUpperCase();
+                if (!glosaMap.has(contentKey)) {
+                  glosaMap.set(contentKey, { ...c, sincronizado: true });
+                }
+              }
             });
 
             const sorted = Array.from(glosaMap.values()).sort((a: any, b: any) => {
@@ -372,8 +376,15 @@ function Home() {
   }, [glosas, currentMainSection, loadData, showToast]);
 
   useEffect(() => {
-    if (isMounted) migrateData();
-  }, [isMounted, migrateData]);
+    // v10.0: Desactivamos la migración automática para evitar resucitar datos borrados
+    // if (isMounted) migrateData();
+    
+    // Limpieza de claves de cache que causan duplicados visuales
+    if (isMounted) {
+      localStorage.removeItem('cached_glosas');
+      localStorage.removeItem('emergency_buffer_glosas');
+    }
+  }, [isMounted]);
 
   // AUTO-CLEANUP DESACTIVADO — solo limpieza manual por botón para evitar borrado accidental
 
@@ -505,9 +516,11 @@ function Home() {
       const totalAceptadoValue = consolidado.reduce((acc, curr) => acc + curr.aceptado, 0);
       const totalNoAceptadoValue = consolidado.reduce((acc, curr) => acc + curr.noAceptado, 0);
 
-      // El "Total Glosado" principal ahora será el Registrado por instrucción del usuario
-      const mainTotalGlosado = totalRegistradoInternoValue;
-      const pendingValue = mainTotalGlosado - totalAceptadoValue - (totalNoAceptadoValue);
+      // CORRECCIÓN V8.0: El "Total Glosado" ahora es la suma de TODO lo ingresado.
+      const mainTotalGlosado = totalPotentialGlosado;
+      
+      // El saldo pendiente es lo glosado menos lo que ya se aceptó o rechazó oficialmente
+      const pendingValue = mainTotalGlosado - totalAceptadoValue - totalNoAceptadoValue;
 
       return {
         totalCount: sectionGlosas.length,
@@ -529,9 +542,16 @@ function Home() {
       };
     } catch (err) {
       console.error('[stats] Error calculando estadísticas:', err);
-      return { totalCount: 0, totalFacturas: 0, totalGlosado: 0, totalAceptado: 0, totalPendiente: 0, totalRegistradoInterno: 0, totalNoAceptado: 0, percentAceptado: 0, percentRegistrado: 0, totalValue: 0, totalIngresos: 0, pendingCount: 0, respondedCount: 0, acceptedCount: 0 };
+      // Retorno SEGURO para evitar que la UI se rompa
+      return { 
+        totalCount: 0, totalFacturas: 0, totalGlosas: 0, totalAceptado: 0, 
+        totalPendiente: 0, totalRegistradoInterno: 0, totalNoRegistrado: 0, 
+        totalPotential: 0, totalNoAceptado: 0, percentAceptado: 0, 
+        percentRegistrado: 0, totalValue: 0, totalIngresos: 0, 
+        pendingCount: 0, respondedCount: 0, acceptedCount: 0 
+      };
     }
-  }, [glosas, consolidado]);
+  }, [glosas, consolidado, currentMainSection]);
 
   // ─── HELPER: Sincronización automática con Excel ─────────────────────────
   const syncExcel = useCallback(async (
@@ -1374,10 +1394,69 @@ function Home() {
               </motion.button>
             );
           })}
+          {/* Botón de Recuperación de Emergencia */}
+          <button
+            onClick={() => setShowImportTool(!showImportTool)}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 18px',
+              borderRadius: '16px',
+              border: 'none',
+              background: showImportTool ? 'rgba(0, 177, 113, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+              color: showImportTool ? 'var(--primary)' : '#ef4444',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              marginTop: '1rem',
+              borderLeft: `4px solid ${showImportTool ? 'var(--primary)' : '#ef4444'}`
+            }}
+          >
+            {showImportTool ? <CheckCircle size={20} /> : <RefreshCw size={20} />}
+            {showImportTool ? 'CERRAR IMPORTADOR' : 'RESCATE DE DATOS'}
+          </button>
         </nav>
 
         {/* Footer Sidebar: User & Force Sync - V5.4 */}
         <div style={{ marginTop: 'auto', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <motion.button
+            whileHover={{ background: 'rgba(46, 125, 50, 0.1)', scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              const url = '/api/backup?download=true';
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `Glosas_Maestro_${new Date().toLocaleDateString()}.xlsx`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              showToast('Generando Exportación Maestra...', 'info');
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              padding: '0.6rem',
+              width: '100%',
+              borderRadius: '10px',
+              border: '1px solid rgba(46, 125, 50, 0.3)',
+              background: 'rgba(46, 125, 50, 0.05)',
+              color: '#2e7d32',
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+              marginBottom: '0.5rem'
+            }}
+          >
+            <FileSpreadsheet size={14} />
+            Exportación Maestra
+          </motion.button>
+
           <motion.button
             whileHover={{ background: 'rgba(0, 177, 113, 0.1)', scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -1423,7 +1502,23 @@ function Home() {
         </div>
       </motion.aside>
 
-      <main className="container" style={{ flex: 1, margin: 0, maxWidth: 'none', overflowY: 'auto', padding: '1.5rem 2.5rem' }}>
+      <main className="container" style={{ flex: 1, margin: 0, maxWidth: 'none', overflowY: 'auto', padding: '1.5rem 2.5rem', position: 'relative' }}>
+        <AnimatePresence>
+          {showImportTool && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              style={{ marginBottom: '2rem' }}
+            >
+              <ExcelImport onComplete={() => {
+                setShowImportTool(false);
+                loadData(true);
+              }} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <header style={{
           display: 'flex',
           alignItems: 'center',
