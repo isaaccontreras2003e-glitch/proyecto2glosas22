@@ -1435,6 +1435,46 @@ function Home() {
         {/* Footer Sidebar: User & Force Sync - V5.4 */}
         <div style={{ marginTop: 'auto', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <motion.button
+            whileHover={{ background: 'rgba(239, 68, 68, 0.1)', scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={async () => {
+              if (window.confirm('⚠️ ATENCIÓN: Esto borrará TODAS las glosas de la nube permanentemente. ¿Estás seguro? (Los pagos no se tocarán)')) {
+                showToast('Iniciando borrado nuclear...', 'info');
+                const { error } = await supabase.from('glosas').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                if (error) {
+                  showToast('Error en borrado: ' + error.message, 'error');
+                } else {
+                  showToast('Vaciado completo exitoso', 'success');
+                  setGlosas([]);
+                  localStorage.removeItem('cached_glosas');
+                  localStorage.removeItem('emergency_buffer_glosas');
+                  loadData(true);
+                }
+              }
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              padding: '0.6rem',
+              width: '100%',
+              borderRadius: '10px',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              background: 'rgba(239, 68, 68, 0.05)',
+              color: '#ef4444',
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+              marginBottom: '0.5rem'
+            }}
+          >
+            <Trash2 size={14} />
+            Borrado Total Glosas
+          </motion.button>
+
+          <motion.button
             whileHover={{ background: 'rgba(46, 125, 50, 0.1)', scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => {
