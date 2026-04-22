@@ -16,7 +16,7 @@ import { InteractiveLogo } from '@/components/InteractiveLogo';
 import { ToastProvider, useToast } from '@/lib/contexts/ToastContext';
 import { MonthlyReport } from '@/components/MonthlyReport';
 import { ExcelImport } from '@/components/ExcelImport';
-import { useRef } from 'react';
+
 
 const formatPesos = (value: any): string => {
   const num = typeof value === 'number' ? value : parseFloat(value);
@@ -1340,7 +1340,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white', letterSpacing: '0.05em' }}>V5.5 - SINCRONIZADO</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V10.0 - NUCLEAR</h2>
           </div>
         </div>
 
