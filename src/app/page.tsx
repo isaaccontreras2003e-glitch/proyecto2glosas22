@@ -1874,8 +1874,17 @@ function Home() {
                     Panel de Control y Gestión de Datos
                   </h3>
 
-                  {/* Botones de Mantenimiento y Exportación Eliminados según requerimiento */}
-
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '3rem' }}>
+                    <motion.button
+                      whileHover={{ scale: 1.05, opacity: 1 }}
+                      onClick={exportGlosasToExcel}
+                      className="btn btn-secondary"
+                      style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10b981', borderColor: 'rgba(16,185,129,0.1)' }}
+                    >
+                      <Download size={12} />
+                      EXPORTAR DATOS
+                    </motion.button>
+                  </div>
 
                   <div style={{ opacity: 0.6 }}>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>
