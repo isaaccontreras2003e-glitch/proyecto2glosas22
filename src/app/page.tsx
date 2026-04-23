@@ -161,24 +161,25 @@ function Home() {
           setGlosas(() => {
             const glosaMap = new Map();
             
-            // 1. Cargar items pendientes del buffer
-            const pendingGlosas = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
-            pendingGlosas.forEach((c: any) => {
-              if (c && c.id) {
-                const contentKey = (c.factura || '').trim().toUpperCase();
-                if (!glosaMap.has(contentKey)) {
-                  glosaMap.set(contentKey, { ...c, sincronizado: false });
+            // 1. Cargar items pendientes de TODOS los posibles buffers conocidos
+            const bufferKeys = ['emergency_buffer', 'emergency_buffer_glosas', 'pending_glosas', 'cached_glosas'];
+            bufferKeys.forEach(key => {
+              const items = safeStorage.getJson<Glosa[]>(key, []);
+              items.forEach((c: any) => {
+                if (c && c.id) {
+                  // PRIORIDAD: Si es local y no sincronizado, lo mantenemos como base
+                  if (!glosaMap.has(c.id)) {
+                    glosaMap.set(c.id, { ...c, sincronizado: !!c.sincronizado });
+                  }
                 }
-              }
+              });
             });
 
-            // deduplicación estricta por Factura (Instrucción Usuario V9.0)
+            // 2. Integrar con datos de la nube (Nube manda sobre el estado de sincronización)
             const gData = safeArray(gRes.data);
             gData.forEach((c: any) => {
               if (c && c.id) {
-                const contentKey = (c.factura || '').trim().toUpperCase();
-                // Sobrescribimos si viene de la nube, es la fuente de verdad y ya está sincronizado
-                glosaMap.set(contentKey, { ...c, sincronizado: true });
+                glosaMap.set(c.id, { ...c, sincronizado: true });
               }
             });
 
@@ -188,8 +189,8 @@ function Home() {
               return dateB.localeCompare(dateA);
             });
 
-            // 3. Actualizar el buffer solo con los que siguen pendientes
-            const remainingPending = pendingGlosas.filter((p: any) => !gData.some((g: any) => g.id === p.id));
+            // 3. Actualizar el buffer solo con los que siguen pendientes (no están en la nube)
+            const remainingPending = Array.from(glosaMap.values()).filter((item: any) => !item.sincronizado);
             safeStorage.setJson('emergency_buffer', remainingPending);
 
             safeStorage.setJson('cached_glosas', sorted);
@@ -203,14 +204,22 @@ function Home() {
           setIngresos(() => {
             const ingresoMap = new Map();
             
-            // 1. Cargar items pendientes del buffer
-            const pendingIngresos = safeStorage.getJson<Ingreso[]>('emergency_buffer_ingresos', []);
-            pendingIngresos.forEach((c: any) => {
-              if (c && c.id) ingresoMap.set(c.id, { ...c, sincronizado: false });
+            // 1. Cargar de TODOS los posibles buffers conocidos
+            const iBufferKeys = ['emergency_buffer_ingresos', 'cached_ingresos'];
+            iBufferKeys.forEach(key => {
+              const items = safeStorage.getJson<Ingreso[]>(key, []);
+              items.forEach((c: any) => {
+                if (c && c.id) {
+                  if (!ingresoMap.has(c.id)) {
+                    ingresoMap.set(c.id, { ...c, sincronizado: !!c.sincronizado });
+                  }
+                }
+              });
             });
 
             // 2. Sobrescribir con datos de la nube
-            safeArray(iRes.data).forEach((c: any) => {
+            const iData = safeArray(iRes.data);
+            iData.forEach((c: any) => {
               if (c && c.id) ingresoMap.set(c.id, { ...c, sincronizado: true });
             });
 
@@ -221,7 +230,7 @@ function Home() {
             });
             
             // 3. Actualizar el buffer solo con los que siguen pendientes
-            const remainingPending = pendingIngresos.filter((p: any) => !safeArray(iRes.data).some((i: any) => i.id === p.id));
+            const remainingPending = Array.from(ingresoMap.values()).filter((item: any) => !item.sincronizado);
             safeStorage.setJson('emergency_buffer_ingresos', remainingPending);
 
             safeStorage.setJson('cached_ingresos', combined);
@@ -1017,52 +1026,73 @@ function Home() {
     }
   };
 
-  const handleDeepRecovery = () => {
+  const handleMasterRescue = async () => {
     try {
-      let foundMarks = 0;
-      const recoveredGlosas = [...glosas];
+      setLoading(true);
+      showToast('🔍 Iniciando rescate nuclear de datos...', 'info');
+      let recoveredGlosasCount = 0;
+      let recoveredIngresosCount = 0;
+      
+      const allRecoveredGlosas: Glosa[] = [...glosas];
+      const allRecoveredIngresos: Ingreso[] = [...ingresos];
 
-      // ESCANEO TOTAL: Revisamos absolutamente todas las llaves en el navegador
+      // ESCANEO AGRESIVO: Buscamos en CUALQUIER llave del localStorage
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (!key) continue;
 
         try {
           const raw = localStorage.getItem(key);
-          if (!raw || !raw.includes('registrada_internamente')) continue;
-
+          if (!raw) continue;
+          
           const data = JSON.parse(raw);
           const dataArray = Array.isArray(data) ? data : [data];
 
-          dataArray.forEach((g: any) => {
-            if (g && g.registrada_internamente) {
-              // Intentar encontrar la glosa por ID, o por coincidencia de Factura + Valor + Servicio
-              const target = recoveredGlosas.find(rg =>
-                rg.id === g.id ||
-                (rg.factura === g.factura && rg.valor_glosa === g.valor_glosa && rg.servicio === g.servicio)
-              );
+          dataArray.forEach((item: any) => {
+            if (!item || typeof item !== 'object') return;
 
-              if (target && !target.registrada_internamente) {
-                target.registrada_internamente = true;
-                foundMarks++;
+            // Detectar si parece una GLOSA
+            if (item.factura && (item.valor_glosa !== undefined || item.servicio)) {
+              if (!allRecoveredGlosas.some(g => g.id === item.id)) {
+                allRecoveredGlosas.push({ ...item, sincronizado: false });
+                recoveredGlosasCount++;
+              }
+            }
+            // Detectar si parece un INGRESO
+            else if (item.factura && item.valor_aceptado !== undefined && item.valor_no_aceptado !== undefined) {
+              if (!allRecoveredIngresos.some(ing => ing.id === item.id)) {
+                allRecoveredIngresos.push({ ...item, sincronizado: false });
+                recoveredIngresosCount++;
               }
             }
           });
-        } catch (e) {
-          // Ignorar errores de llaves que no sean JSON
-        }
+        } catch (e) { /* No es JSON, ignorar */ }
       }
 
-      if (foundMarks > 0) {
-        setGlosas([...recoveredGlosas]);
-        localStorage.setItem('cached_glosas', JSON.stringify(recoveredGlosas));
-        showToast(`🎉 ¡ÉXITO! Se han recuperado ${foundMarks} marcas.`, 'success');
+      if (recoveredGlosasCount > 0 || recoveredIngresosCount > 0) {
+        setGlosas([...allRecoveredGlosas]);
+        setIngresos([...allRecoveredIngresos]);
+        
+        // Guardar en el buffer de emergencia para asegurar que no se pierdan al refrescar
+        const pendingG = allRecoveredGlosas.filter(g => !g.sincronizado);
+        const pendingI = allRecoveredIngresos.filter(i => !i.sincronizado);
+        
+        safeStorage.setJson('emergency_buffer', pendingG);
+        safeStorage.setJson('emergency_buffer_ingresos', pendingI);
+        
+        showToast(`✅ RESCATE EXITOSO: ${recoveredGlosasCount} glosas y ${recoveredIngresosCount} ingresos recuperados localmente.`, 'success');
       } else {
-        showToast('❌ No se encontró rastro de marcas en este navegador.', 'info');
+        showToast('❌ No se encontraron datos adicionales en el navegador.', 'info');
       }
-    } catch (e: any) {
-      showToast('Error en recuperación: ' + e.message, 'error');
+    } catch (err: any) {
+      showToast('Error en rescate: ' + err.message, 'error');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleDeepRecovery = () => {
+    handleMasterRescue(); // Redirigir a la nueva lógica más potente
   };
 
   const handleManualImport = async () => {
@@ -1643,6 +1673,7 @@ function Home() {
                       glosas={currentSectionGlosas}
                       consolidado={consolidado}
                       stats={stats}
+                      onRescue={handleMasterRescue}
                     />
                   </motion.div>
                 )}

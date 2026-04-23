@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 // V3.1 - Force Sync Update
-import { FileText, DollarSign, Clock, CheckCircle, TrendingUp, Filter, PieChart, Activity, ChevronDown, AlertTriangle, LayoutDashboard } from 'lucide-react';
+import { FileText, DollarSign, Clock, CheckCircle, TrendingUp, Filter, PieChart, Activity, ChevronDown, AlertTriangle, LayoutDashboard, RefreshCw } from 'lucide-react';
 // Build Trigger: v2.0.2 - Redesign Force Sync REFRESH
 import { Card } from './Card';
 
@@ -38,6 +38,7 @@ interface DashboardProps {
         acceptedCount: number;
         totalNoAceptado: number;
     };
+    onRescue?: () => void;
 }
 
 const Sparkline = ({ data, color }: { data: number[], color: string }) => {
@@ -222,6 +223,31 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         <span style={{ fontSize: '0.55rem', background: 'var(--primary)', color: '#000', padding: '3px 8px', borderRadius: '4px', marginLeft: '0.75rem', verticalAlign: 'middle', fontWeight: 900 }}>COI V.RECONCILIADA</span>
                     </h2>
                 </div>
+
+                {onRescue && (
+                    <motion.button
+                        whileHover={{ scale: 1.05, background: 'rgba(139, 92, 246, 0.2)' }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={onRescue}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.6rem',
+                            padding: '0.6rem 1.25rem',
+                            borderRadius: '10px',
+                            background: 'rgba(139, 92, 246, 0.1)',
+                            border: '1px solid rgba(139, 92, 246, 0.3)',
+                            color: 'var(--primary)',
+                            fontSize: '0.75rem',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            letterSpacing: '0.02em'
+                        }}
+                    >
+                        <RefreshCw size={14} />
+                        RESCATAR REGISTROS PERDIDOS
+                    </motion.button>
+                )}
             </div>
 
             <div style={{ display: 'flex', gap: '1rem' }}>
