@@ -336,8 +336,10 @@ function Home() {
     if (typeof window !== 'undefined') {
       const storedVersion = localStorage.getItem('sisfact_app_version');
       if (storedVersion !== APP_VERSION) {
-        console.log(`[VersionGuard] Outdated version detected (${storedVersion} vs ${APP_VERSION}). Clearing cache...`);
-        localStorage.clear();
+        console.log(`[VersionGuard] Outdated version detected (${storedVersion} vs ${APP_VERSION}). Clearing cache safely...`);
+        // ATENCIÓN: NUNCA usar localStorage.clear() porque borra los ingresos pendientes y la sesión de Supabase
+        localStorage.removeItem('cached_glosas');
+        localStorage.removeItem('cached_ingresos');
         sessionStorage.clear();
         localStorage.setItem('sisfact_app_version', APP_VERSION);
         window.location.reload();
