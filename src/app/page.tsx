@@ -329,7 +329,7 @@ function Home() {
     };
   }, [user?.id, isMounted]);
 
-  const APP_VERSION = "5.5";
+  const APP_VERSION = "5.6";
 
   // --- VERSION GUARD: Cache Buster ---
   useEffect(() => {
