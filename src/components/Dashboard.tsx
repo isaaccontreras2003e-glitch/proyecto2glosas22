@@ -87,7 +87,7 @@ const Sparkline = ({ data, color }: { data: number[], color: string }) => {
     );
 };
 
-export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stats: executiveStats }: DashboardProps) => {
+export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stats: executiveStats, onRescue }: DashboardProps) => {
     const [selectedService, setSelectedService] = useState('Todos');
     const [selectedType, setSelectedType] = useState('Todos');
     const [selectedStatus, setSelectedStatus] = useState('Todos');
