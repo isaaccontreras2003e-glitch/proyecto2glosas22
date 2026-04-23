@@ -31,10 +31,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
     private handleClearAndReload = () => {
         try {
-            // Limpiar caché que puede contener datos corruptos
+            // Limpiar caché que puede contener datos corruptos (SÓLO CACHÉ)
             localStorage.removeItem('cached_glosas');
             localStorage.removeItem('cached_ingresos');
-            localStorage.removeItem('emergency_buffer');
+            localStorage.removeItem('last_sync_ts');
+            // IMPORTANTE: NUNCA borrar el 'emergency_buffer' ni 'MASTER_LOG' aquí
         } catch {
             // Si localStorage falla, ignorar y recargar de todas formas
         }

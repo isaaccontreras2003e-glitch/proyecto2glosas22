@@ -127,7 +127,21 @@ function Home() {
     };
   }, [loading, authLoading]);
 
-  const loadData = React.useCallback(async (force = false) => {
+  // ─── HELPER: Registro Maestro Inmutable (Local) ──────────────────────────
+  // Guarda una copia de CADA registro ingresado en un historial permanente
+  const saveToMasterLog = (item: any) => {
+    try {
+      const history = safeStorage.getJson<any[]>('MASTER_RECORD_LOG', []);
+      // Evitar duplicados exactos por ID
+      if (!history.some(h => h.id === item.id)) {
+        safeStorage.setJson('MASTER_RECORD_LOG', [item, ...history].slice(0, 5000)); // Límite de 5000
+      }
+    } catch (e) {
+      console.error('Error en Master Log:', e);
+    }
+  };
+
+  const loadData = useCallback(async (force = false) => {
     if (!user) return;
     // v5.4: Eliminamos el bypass de glosas.length > 0 para asegurar que siempre intente traer de la nube al iniciar sesión
     if (!force && lastFetchedUserId.current === user.id) return;
@@ -160,6 +174,7 @@ function Home() {
           // FIX: Reemplazar estado integrando los datos pendientes locales con la nube
           setGlosas(() => {
             const glosaMap = new Map();
+            const gData = safeArray(gRes.data);
             
             // 1. Cargar items pendientes de TODOS los posibles buffers conocidos
             const bufferKeys = ['emergency_buffer', 'emergency_buffer_glosas', 'pending_glosas', 'cached_glosas'];
@@ -176,7 +191,6 @@ function Home() {
             });
 
             // 2. Integrar con datos de la nube (Nube manda sobre el estado de sincronización)
-            const gData = safeArray(gRes.data);
             gData.forEach((c: any) => {
               if (c && c.id) {
                 glosaMap.set(c.id, { ...c, sincronizado: true });
@@ -189,10 +203,20 @@ function Home() {
               return dateB.localeCompare(dateA);
             });
 
-            // 3. Actualizar el buffer solo con los que siguen pendientes (no están en la nube)
-            const remainingPending = Array.from(glosaMap.values()).filter((item: any) => !item.sincronizado);
-            safeStorage.setJson('emergency_buffer', remainingPending);
-
+            // 3. ACTUALIZACIÓN SEGURA DEL BUFFER
+            // SÓLO quitamos del buffer los que YA ESTÁN en la nube.
+            // NUNCA sobreescribimos el buffer con un array vacío si la nube falla.
+            const currentEmergency = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
+            const stillPending = currentEmergency.filter(localItem => {
+              // Si el item local NO está en la respuesta de la nube (gData), sigue pendiente
+              return !gData.some((cloudItem: any) => cloudItem.id === localItem.id);
+            });
+            
+            // Si encontramos nuevos pendientes en el mapa que no estaban en el buffer, los agregamos
+            const extraPending = Array.from(glosaMap.values()).filter(g => !g.sincronizado);
+            const finalBuffer = Array.from(new Map([...stillPending, ...extraPending].map(item => [item.id, item])).values());
+            
+            safeStorage.setJson('emergency_buffer', finalBuffer);
             safeStorage.setJson('cached_glosas', sorted);
             return sorted;
           });
@@ -630,14 +654,20 @@ function Home() {
   };
 
   const handleAddGlosa = async (newGlosa: Glosa) => {
+    // 1. REGISTRO INMEDIATO EN TODAS LAS CAPAS LOCALES
+    saveToMasterLog({ ...newGlosa, type: 'glosa', timestamp: Date.now() });
+    
     const backupBuffer = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
     safeStorage.setJson('emergency_buffer', [newGlosa, ...backupBuffer]);
+    
     const glosaConEstado: Glosa = { ...newGlosa, sincronizado: false };
     setGlosas(prev => {
       const updated = [glosaConEstado, ...safeArray(prev)];
       safeStorage.setJson('cached_glosas', updated);
       return updated;
     });
+
+    // 2. INTENTO DE SINCRONIZACIÓN
     try {
       const { error } = await supabase.from('glosas').insert([newGlosa]);
       syncExcel('glosa', 'insert', newGlosa);
@@ -752,6 +782,11 @@ function Home() {
     try {
       const { error } = await supabase.from('glosas').delete().eq('id', id);
       if (error) console.error('Error eliminando glosa:', error);
+      
+      // Asegurar que se elimine del buffer también si estaba ahí
+      const currentBuffer = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
+      safeStorage.setJson('emergency_buffer', currentBuffer.filter((g: any) => g.id !== id));
+      
       if (glosaToDelete) syncExcel('glosa', 'delete', glosaToDelete);
     } catch (err) { console.error('Error crítico eliminando glosa:', err); }
   };
@@ -816,8 +851,12 @@ function Home() {
   };
 
   const handleAddIngreso = async (newIngreso: Ingreso) => {
+    // 1. REGISTRO INMEDIATO EN CAPAS LOCALES
+    saveToMasterLog({ ...newIngreso, type: 'ingreso', timestamp: Date.now() });
+    
     const backupBuffer = safeStorage.getJson<Ingreso[]>('emergency_buffer_ingresos', []);
     safeStorage.setJson('emergency_buffer_ingresos', [newIngreso, ...backupBuffer]);
+    
     const ingresoConEstado = { ...newIngreso, sincronizado: false };
     setIngresos(prev => {
       const updated = [ingresoConEstado, ...safeArray(prev)];
@@ -849,6 +888,11 @@ function Home() {
     try {
       const { error } = await supabase.from('ingresos').delete().eq('id', id);
       if (error) console.error('Error eliminando ingreso:', error);
+      
+      // Asegurar que se elimine del buffer también si estaba ahí
+      const currentBuffer = safeStorage.getJson<Ingreso[]>('emergency_buffer_ingresos', []);
+      safeStorage.setJson('emergency_buffer_ingresos', currentBuffer.filter((i: any) => i.id !== id));
+      
       if (ingresoToDelete) syncExcel('ingreso', 'delete', ingresoToDelete);
     } catch (err) { console.error('Error crítico eliminando ingreso:', err); }
   };
