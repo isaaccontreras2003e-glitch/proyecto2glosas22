@@ -129,9 +129,8 @@ export const GlosaTable = ({
         return { exactDupes, repeatedFacts };
     }, [glosas]);
 
-    const { exactDupes, repeatedFacts } = duplicateData;
+    const { exactDupes } = duplicateData;
     const duplicateCount = exactDupes.size;
-    const repeatedCount = repeatedFacts.size;
 
     return (
         <>
@@ -287,12 +286,6 @@ export const GlosaTable = ({
                                     {duplicateCount} Duplicados Exactos (Rojo)
                                 </div>
                             )}
-                            {repeatedCount > 0 && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fbbf24', fontSize: '0.8rem', fontWeight: 700 }}>
-                                    <AlertTriangle size={16} />
-                                    {repeatedCount} Facturas Repetidas (Naranja)
-                                </div>
-                            )}
                         </div>
                         {confirmDeleteAll ? (
                             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -416,9 +409,9 @@ export const GlosaTable = ({
                                                 borderBottom: '1px solid var(--border)',
                                                 transition: 'background 0.2s',
                                                 background: glosa.registrada_internamente
-                                                    ? 'rgba(0, 242, 254, 0.04)'
-                                                    : (isExactDupe ? 'rgba(239,68,68,0.05)' : (isOnlyRepeated ? 'rgba(245,158,11,0.03)' : (index % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent'))),
-                                                borderLeft: glosa.registrada_internamente ? '4px solid var(--primary)' : (isExactDupe ? '4px solid var(--danger)' : (isOnlyRepeated ? '4px solid #f59e0b' : '1px solid var(--border)'))
+                                                        ? 'rgba(0, 242, 254, 0.04)'
+                                                    : (isExactDupe ? 'rgba(239,68,68,0.05)' : (index % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent')),
+                                                borderLeft: glosa.registrada_internamente ? '4px solid var(--primary)' : (isExactDupe ? '4px solid var(--danger)' : '1px solid var(--border)')
                                             }}
                                         >
                                             <td style={{ padding: '1.25rem 1rem', textAlign: 'center' }}>
@@ -443,10 +436,9 @@ export const GlosaTable = ({
                                                     <CheckCircle2 size={20} fill={glosa.registrada_internamente ? "rgba(0,177,113,0.1)" : "none"} />
                                                 </motion.button>
                                             </td>
-                                            <td style={{ padding: '1.25rem 1rem', fontWeight: 600, color: glosa.registrada_internamente ? 'var(--secondary)' : (isExactDupe ? 'var(--danger)' : (isOnlyRepeated ? '#f59e0b' : 'var(--text-primary)')) }}>
+                                            <td style={{ padding: '1.25rem 1rem', fontWeight: 600, color: glosa.registrada_internamente ? 'var(--secondary)' : (isExactDupe ? 'var(--danger)' : 'var(--text-primary)') }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                                                     {isExactDupe && <Copy size={13} style={{ flexShrink: 0 }} />}
-                                                    {isOnlyRepeated && <AlertTriangle size={13} style={{ flexShrink: 0 }} />}
                                                     <span>{glosa.factura}</span>
                                                     {glosa.sincronizado ? (
                                                         <div title="Sincronizado en la nube" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 5px #10b981' }}></div>

@@ -178,13 +178,18 @@ function Home() {
             
             // 1. Cargar items pendientes de TODOS los posibles buffers conocidos
             const bufferKeys = ['emergency_buffer', 'emergency_buffer_glosas', 'pending_glosas', 'cached_glosas'];
+            const contentSeen = new Set<string>(); // Para deduplicación por contenido exacto
+            
             bufferKeys.forEach(key => {
               const items = safeStorage.getJson<Glosa[]>(key, []);
               items.forEach((c: any) => {
                 if (c && c.id) {
-                  // PRIORIDAD: Si es local y no sincronizado, lo mantenemos como base
-                  if (!glosaMap.has(c.id)) {
+                  // Deduplicación por contenido para registros locales (no sincronizados)
+                  const contentKey = `${(c.factura || '').trim().toUpperCase()}|${(c.servicio || '').trim().toLowerCase()}|${safeNumber(c.valor_glosa)}`;
+                  
+                  if (!glosaMap.has(c.id) && !contentSeen.has(contentKey)) {
                     glosaMap.set(c.id, { ...c, sincronizado: !!c.sincronizado });
+                    if (!c.sincronizado) contentSeen.add(contentKey);
                   }
                 }
               });
@@ -193,6 +198,7 @@ function Home() {
             // 2. Integrar con datos de la nube (Nube manda sobre el estado de sincronización)
             gData.forEach((c: any) => {
               if (c && c.id) {
+                // Si viene de la nube, ignoramos el contentSeen porque es fuente de verdad
                 glosaMap.set(c.id, { ...c, sincronizado: true });
               }
             });
@@ -1420,7 +1426,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V10.3 - HARDENING</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V10.4 - STABLE</h2>
           </div>
         </div>
 
