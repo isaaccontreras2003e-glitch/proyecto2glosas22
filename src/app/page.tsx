@@ -1029,6 +1029,7 @@ function Home() {
   const handleMasterRescue = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Iniciando Rescate Maestro...');
       showToast('🔍 Iniciando rescate nuclear de datos...', 'info');
       let recoveredGlosasCount = 0;
       let recoveredIngresosCount = 0;
@@ -1375,7 +1376,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V10.0 - NUCLEAR</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V10.2 - RECOVERY</h2>
           </div>
         </div>
 
@@ -1571,7 +1572,7 @@ function Home() {
             gap: '0.4rem'
           }}>
             <ClipboardList size={12} />
-            SISTEMA DE AUDITORÍA MÉDICA V4.0
+            SISTEMA DE AUDITORÍA MÉDICA V10.2
           </p>
           {/* Fecha de creación del software */}
           <p style={{
