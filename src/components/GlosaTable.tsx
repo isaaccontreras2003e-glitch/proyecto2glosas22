@@ -399,8 +399,6 @@ export const GlosaTable = ({
                             ) : (
                                 (glosas || []).filter(g => g && g.id).map((glosa, index) => {
                                     const isExactDupe = exactDupes.has(glosa.id);
-                                    const isRepeated = repeatedFacts.has(glosa.id);
-                                    const isOnlyRepeated = isRepeated && !isExactDupe;
 
                                     return (
                                         <tr
