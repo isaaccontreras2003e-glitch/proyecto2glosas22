@@ -166,8 +166,6 @@ function Home() {
           // FIX: Reemplazar estado integrando los datos pendientes locales con la nube
           setGlosas(() => {
             const glosaMap = new Map();
-            const gData = safeArray(gRes.data);
-            
             // 1. Cargar items pendientes SOLO de buffers de emergencia (EXCLUIMOS 'cached_glosas')
             // v10.5: Ya no usamos 'cached_glosas' como fuente de mezcla porque causaba que datos borrados en la nube reaparecieran
             const bufferKeys = ['emergency_buffer', 'emergency_buffer_glosas', 'pending_glosas'];
