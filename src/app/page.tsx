@@ -78,16 +78,8 @@ function Home() {
     return () => clearInterval(timer);
   }, [today]);
 
-  // Protección contra recargas accidentales para no perder datos ingresados
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = '';
-      return '';
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
+  // Protección contra recargas accidentales (DESACTIVADO POR PEDIDO DEL USUARIO v10.6)
+  // El sistema ya cuenta con persistencia robusta en buffers locales
 
   const [supabaseError, setSupabaseError] = useState<string | null>(null);
 
@@ -176,30 +168,45 @@ function Home() {
             const glosaMap = new Map();
             const gData = safeArray(gRes.data);
             
-            // 1. Cargar items pendientes de TODOS los posibles buffers conocidos
-            const bufferKeys = ['emergency_buffer', 'emergency_buffer_glosas', 'pending_glosas', 'cached_glosas'];
+            // 1. Cargar items pendientes SOLO de buffers de emergencia (EXCLUIMOS 'cached_glosas')
+            // v10.5: Ya no usamos 'cached_glosas' como fuente de mezcla porque causaba que datos borrados en la nube reaparecieran
+            const bufferKeys = ['emergency_buffer', 'emergency_buffer_glosas', 'pending_glosas'];
             const contentSeen = new Set<string>(); // Para deduplicación por contenido exacto
             
             bufferKeys.forEach(key => {
               const items = safeStorage.getJson<Glosa[]>(key, []);
               items.forEach((c: any) => {
-                if (c && c.id) {
+                if (c && c.id && !c.sincronizado) {
                   // Deduplicación por contenido para registros locales (no sincronizados)
                   const contentKey = `${(c.factura || '').trim().toUpperCase()}|${(c.servicio || '').trim().toLowerCase()}|${safeNumber(c.valor_glosa)}`;
                   
                   if (!glosaMap.has(c.id) && !contentSeen.has(contentKey)) {
-                    glosaMap.set(c.id, { ...c, sincronizado: !!c.sincronizado });
-                    if (!c.sincronizado) contentSeen.add(contentKey);
+                    glosaMap.set(c.id, { ...c, sincronizado: false });
+                    contentSeen.add(contentKey);
                   }
                 }
               });
             });
 
-            // 2. Integrar con datos de la nube (Nube manda sobre el estado de sincronización)
+            // 2. Integrar con datos de la nube (NUBE MANDA)
+            const gData = safeArray(gRes.data);
+            const cacheG = safeStorage.getJson<Glosa[]>('cached_glosas', []);
+            const cacheMap = new Map(cacheG.map(g => [g.id, g]));
+
             gData.forEach((c: any) => {
               if (c && c.id) {
-                // Si viene de la nube, ignoramos el contentSeen porque es fuente de verdad
-                glosaMap.set(c.id, { ...c, sincronizado: true });
+                // PERSISTENCIA DE ESTADO INTERNO:
+                // Si en la nube está como 'no registrado' pero en nuestra caché local ya estaba 'registrado',
+                // mantenemos el 'registrado: true' para evitar que los valores pendientes "salten" al recargar
+                // mientras la base de datos termina de procesar el update.
+                const localItem = cacheMap.get(c.id);
+                const wasRegisteredLocally = localItem?.registrada_internamente === true;
+                
+                glosaMap.set(c.id, { 
+                  ...c, 
+                  sincronizado: true,
+                  registrada_internamente: c.registrada_internamente || wasRegisteredLocally
+                });
               }
             });
 
@@ -209,18 +216,9 @@ function Home() {
               return dateB.localeCompare(dateA);
             });
 
-            // 3. ACTUALIZACIÓN SEGURA DEL BUFFER
-            // SÓLO quitamos del buffer los que YA ESTÁN en la nube.
-            // NUNCA sobreescribimos el buffer con un array vacío si la nube falla.
-            const currentEmergency = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
-            const stillPending = currentEmergency.filter(localItem => {
-              // Si el item local NO está en la respuesta de la nube (gData), sigue pendiente
-              return !gData.some((cloudItem: any) => cloudItem.id === localItem.id);
-            });
-            
-            // Si encontramos nuevos pendientes en el mapa que no estaban en el buffer, los agregamos
-            const extraPending = Array.from(glosaMap.values()).filter(g => !g.sincronizado);
-            const finalBuffer = Array.from(new Map([...stillPending, ...extraPending].map(item => [item.id, item])).values());
+            // 3. ACTUALIZACIÓN SEGURA DEL BUFFER Y CACHÉ
+            // El buffer solo debe contener lo que NO está en la nube
+            const finalBuffer = Array.from(glosaMap.values()).filter(g => !g.sincronizado);
             
             safeStorage.setJson('emergency_buffer', finalBuffer);
             safeStorage.setJson('cached_glosas', sorted);
@@ -234,20 +232,20 @@ function Home() {
           setIngresos(() => {
             const ingresoMap = new Map();
             
-            // 1. Cargar de TODOS los posibles buffers conocidos
-            const iBufferKeys = ['emergency_buffer_ingresos', 'cached_ingresos'];
+            // 1. Cargar de buffers de emergencia (EXCLUIMOS 'cached_ingresos')
+            const iBufferKeys = ['emergency_buffer_ingresos'];
             iBufferKeys.forEach(key => {
               const items = safeStorage.getJson<Ingreso[]>(key, []);
               items.forEach((c: any) => {
-                if (c && c.id) {
+                if (c && c.id && !c.sincronizado) {
                   if (!ingresoMap.has(c.id)) {
-                    ingresoMap.set(c.id, { ...c, sincronizado: !!c.sincronizado });
+                    ingresoMap.set(c.id, { ...c, sincronizado: false });
                   }
                 }
               });
             });
 
-            // 2. Sobrescribir con datos de la nube
+            // 2. Sobrescribir con datos de la nube (NUBE MANDA)
             const iData = safeArray(iRes.data);
             iData.forEach((c: any) => {
               if (c && c.id) ingresoMap.set(c.id, { ...c, sincronizado: true });
@@ -259,10 +257,9 @@ function Home() {
               return dateB.localeCompare(dateA);
             });
             
-            // 3. Actualizar el buffer solo con los que siguen pendientes
+            // 3. Actualizar el buffer y caché
             const remainingPending = Array.from(ingresoMap.values()).filter((item: any) => !item.sincronizado);
             safeStorage.setJson('emergency_buffer_ingresos', remainingPending);
-
             safeStorage.setJson('cached_ingresos', combined);
             return combined;
           });
@@ -368,7 +365,7 @@ function Home() {
     };
   }, [user?.id, isMounted]);
 
-  const APP_VERSION = "5.6";
+  const APP_VERSION = "5.7";
 
   // --- VERSION GUARD: Cache Buster ---
   useEffect(() => {
@@ -1102,20 +1099,32 @@ function Home() {
           dataArray.forEach((item: any) => {
             if (!item || typeof item !== 'object') return;
 
-            // Detectar si parece una GLOSA
-            if (item.factura && (item.valor_glosa !== undefined || item.servicio)) {
-              if (!allRecoveredGlosas.some(g => g.id === item.id)) {
-                allRecoveredGlosas.push({ ...item, sincronizado: false });
-                recoveredGlosasCount++;
-              }
+          // Detectar si parece una GLOSA
+          if (item.factura && (item.valor_glosa !== undefined || item.servicio)) {
+            const contentKey = `${(item.factura || '').trim().toUpperCase()}|${(item.servicio || '').trim().toLowerCase()}|${safeNumber(item.valor_glosa)}`;
+            const isAlreadyInState = allRecoveredGlosas.some(g => 
+              g.id === item.id || 
+              (`${(g.factura || '').trim().toUpperCase()}|${(g.servicio || '').trim().toLowerCase()}|${safeNumber(g.valor_glosa)}` === contentKey)
+            );
+
+            if (!isAlreadyInState) {
+              allRecoveredGlosas.push({ ...item, sincronizado: false });
+              recoveredGlosasCount++;
             }
-            // Detectar si parece un INGRESO
-            else if (item.factura && item.valor_aceptado !== undefined && item.valor_no_aceptado !== undefined) {
-              if (!allRecoveredIngresos.some(ing => ing.id === item.id)) {
-                allRecoveredIngresos.push({ ...item, sincronizado: false });
-                recoveredIngresosCount++;
-              }
+          }
+          // Detectar si parece un INGRESO
+          else if (item.factura && item.valor_aceptado !== undefined && item.valor_no_aceptado !== undefined) {
+            const contentKey = `${(item.factura || '').trim().toUpperCase()}|${safeNumber(item.valor_aceptado)}|${safeNumber(item.valor_no_aceptado)}`;
+            const isAlreadyInState = allRecoveredIngresos.some(ing => 
+              ing.id === item.id || 
+              (`${(ing.factura || '').trim().toUpperCase()}|${safeNumber(ing.valor_aceptado)}|${safeNumber(ing.valor_no_aceptado)}` === contentKey)
+            );
+
+            if (!isAlreadyInState) {
+              allRecoveredIngresos.push({ ...item, sincronizado: false });
+              recoveredIngresosCount++;
             }
+          }
           });
         } catch (e) { /* No es JSON, ignorar */ }
       }
