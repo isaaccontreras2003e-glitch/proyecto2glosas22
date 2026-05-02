@@ -163,13 +163,20 @@ function Home() {
         if (iRes?.error) throw iRes.error;
 
         if (gRes && Array.isArray(gRes.data)) {
-          // FIX: Reemplazar estado integrando los datos pendientes locales con la nube
           setGlosas(() => {
             const glosaMap = new Map();
-            // 1. Cargar items pendientes SOLO de buffers de emergencia (EXCLUIMOS 'cached_glosas')
-            // v10.5: Ya no usamos 'cached_glosas' como fuente de mezcla porque causaba que datos borrados en la nube reaparecieran
+
+            // PASO 1: Cargar CACHÉ LOCAL completa como base de seguridad
+            // Esto garantiza que registros locales nunca desaparezcan por un fallo de red
+            const cachedGlosas = safeStorage.getJson<Glosa[]>('cached_glosas', []);
+            cachedGlosas.forEach((c: any) => {
+              if (c && c.id) {
+                glosaMap.set(c.id, { ...c });
+              }
+            });
+
+            // PASO 2: Cargar buffers de emergencia (no sincronizados)
             const bufferKeys = ['emergency_buffer', 'emergency_buffer_glosas', 'pending_glosas'];
-            
             bufferKeys.forEach(key => {
               const items = safeStorage.getJson<Glosa[]>(key, []);
               items.forEach((c: any) => {
@@ -181,19 +188,14 @@ function Home() {
               });
             });
 
-            // 2. Integrar con datos de la nube (NUBE MANDA)
+            // PASO 3: La nube actualiza/agrega encima (NUBE MANDA para registros que ya existen)
             const gData = safeArray(gRes.data);
-            const cacheG = safeStorage.getJson<Glosa[]>('cached_glosas', []);
-            const cacheMap = new Map(cacheG.map(g => [g.id, g]));
-
             gData.forEach((c: any) => {
               if (c && c.id) {
-                // PERSISTENCIA DE ESTADO INTERNO:
-                const localItem = cacheMap.get(c.id);
+                const localItem = glosaMap.get(c.id);
                 const wasRegisteredLocally = localItem?.registrada_internamente === true;
-                
-                glosaMap.set(c.id, { 
-                  ...c, 
+                glosaMap.set(c.id, {
+                  ...c,
                   sincronizado: true,
                   registrada_internamente: c.registrada_internamente || wasRegisteredLocally
                 });
@@ -206,10 +208,8 @@ function Home() {
               return dateB.localeCompare(dateA);
             });
 
-            // 3. ACTUALIZACIÓN SEGURA DEL BUFFER Y CACHÉ
-            // El buffer solo debe contener lo que NO está en la nube
-            const finalBuffer = Array.from(glosaMap.values()).filter(g => !g.sincronizado);
-            
+            // Actualizar caché y buffer
+            const finalBuffer = Array.from(glosaMap.values()).filter((g: any) => !g.sincronizado);
             safeStorage.setJson('emergency_buffer', finalBuffer);
             safeStorage.setJson('cached_glosas', sorted);
             return sorted;
@@ -355,7 +355,7 @@ function Home() {
     };
   }, [user?.id, isMounted]);
 
-  const APP_VERSION = "13.0";
+  const APP_VERSION = "14.0";
 
   // --- VERSION GUARD: Cache Buster ---
   useEffect(() => {
@@ -415,19 +415,33 @@ function Home() {
   };
 
   const handleMarkAllAsRegistered = async () => {
-    if (!confirm('¿Deseas marcar TODOS los registros como "No Pendientes" de forma masiva? Esto asegurará que tus 507+ facturas estén guardadas y el tablero en $0.')) return;
+    if (!confirm('¿Marcar TODOS los registros como "No Pendientes"? El sistema guardará primero tus datos en la nube para protegerlos.')) return;
     
     setLoading(true);
     try {
-      // 1. PRIMERO: Asegurar que lo que está en el buffer se suba a la nube (Safety Sync)
-      const buffer = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
-      if (buffer.length > 0) {
-        showToast(`Sincronizando ${buffer.length} registros pendientes...`, 'info');
-        const { error: syncError } = await supabase.from('glosas').upsert(buffer.map(b => ({ ...b, sincronizado: true })));
-        if (syncError) console.error('Error en safety sync:', syncError);
+      // PASO 1: Subir a la nube TODOS los registros locales que no están sincronizados
+      // Esto garantiza que las 507 facturas queden en Supabase ANTES de limpiar nada
+      const allUnsyncedKeys = ['emergency_buffer', 'emergency_buffer_glosas', 'pending_glosas'];
+      const allUnsynced: any[] = [];
+      allUnsyncedKeys.forEach(key => {
+        const items = safeStorage.getJson<Glosa[]>(key, []);
+        items.forEach(item => { if (item && item.id && !item.sincronizado) allUnsynced.push(item); });
+      });
+
+      if (allUnsynced.length > 0) {
+        showToast(`⬆️ Subiendo ${allUnsynced.length} registros a la nube antes de limpiar...`, 'info');
+        // Limpiar campos de UI antes de subir
+        const toUpsert = allUnsynced.map(({ sincronizado: _s, ...rest }) => rest);
+        const { error: upsertError } = await supabase.from('glosas').upsert(toUpsert, { onConflict: 'id' });
+        if (upsertError) {
+          console.error('Error subiendo buffer:', upsertError);
+          showToast('⚠️ Error al subir registros locales. No se proceederá para proteger tus datos.', 'error');
+          return;
+        }
+        showToast(`✅ ${allUnsynced.length} registros guardados en la nube correctamente.`, 'success');
       }
 
-      // 2. SEGUNDO: Marcar todo como registrado en la nube
+      // PASO 2: Ahora sí marcar todo como registrado en la nube
       const { error } = await supabase
         .from('glosas')
         .update({ registrada_internamente: true })
@@ -435,15 +449,15 @@ function Home() {
 
       if (error) throw error;
 
-      // 3. TERCERO: Actualizar estado local SIN borrar datos
+      // PASO 3: Actualizar estado local
       const updatedGlosas = glosas.map(g => ({ ...g, registrada_internamente: true, sincronizado: true }));
       setGlosas(updatedGlosas);
       safeStorage.setJson('cached_glosas', updatedGlosas);
+      safeStorage.setJson('emergency_buffer', []);
+      safeStorage.setJson('emergency_buffer_glosas', []);
+      safeStorage.setJson('pending_glosas', []);
       
-      // NO vaciamos el buffer, solo marcamos como sincronizado
-      safeStorage.setJson('emergency_buffer', []); 
-      
-      showToast('✅ Registro masivo completado con éxito. Tus datos están protegidos.', 'success');
+      showToast('✅ ¡Listo! Todos tus registros están protegidos y el tablero en $0.', 'success');
       loadData(true);
     } catch (err: any) {
       console.error('Error en registro masivo:', err);
@@ -1447,7 +1461,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V12.0 - PROTECCIÓN TOTAL</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V12.1 - PROTECCIÓN DEFINITIVA</h2>
           </div>
         </div>
 
