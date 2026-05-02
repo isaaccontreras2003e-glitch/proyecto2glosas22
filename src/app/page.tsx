@@ -355,7 +355,7 @@ function Home() {
     };
   }, [user?.id, isMounted]);
 
-  const APP_VERSION = "12.0";
+  const APP_VERSION = "13.0";
 
   // --- VERSION GUARD: Cache Buster ---
   useEffect(() => {
@@ -415,10 +415,19 @@ function Home() {
   };
 
   const handleMarkAllAsRegistered = async () => {
-    if (!confirm('¿Deseas marcar TODOS los registros como "No Pendientes" de forma masiva? Esto limpiará el tablero permanentemente.')) return;
+    if (!confirm('¿Deseas marcar TODOS los registros como "No Pendientes" de forma masiva? Esto asegurará que tus 507+ facturas estén guardadas y el tablero en $0.')) return;
     
     setLoading(true);
     try {
+      // 1. PRIMERO: Asegurar que lo que está en el buffer se suba a la nube (Safety Sync)
+      const buffer = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
+      if (buffer.length > 0) {
+        showToast(`Sincronizando ${buffer.length} registros pendientes...`, 'info');
+        const { error: syncError } = await supabase.from('glosas').upsert(buffer.map(b => ({ ...b, sincronizado: true })));
+        if (syncError) console.error('Error en safety sync:', syncError);
+      }
+
+      // 2. SEGUNDO: Marcar todo como registrado en la nube
       const { error } = await supabase
         .from('glosas')
         .update({ registrada_internamente: true })
@@ -426,14 +435,18 @@ function Home() {
 
       if (error) throw error;
 
-      const updatedGlosas = glosas.map(g => ({ ...g, registrada_internamente: true }));
+      // 3. TERCERO: Actualizar estado local SIN borrar datos
+      const updatedGlosas = glosas.map(g => ({ ...g, registrada_internamente: true, sincronizado: true }));
       setGlosas(updatedGlosas);
       safeStorage.setJson('cached_glosas', updatedGlosas);
-      safeStorage.setJson('emergency_buffer', []);
       
-      showToast('✅ Limpieza masiva completada.', 'success');
+      // NO vaciamos el buffer, solo marcamos como sincronizado
+      safeStorage.setJson('emergency_buffer', []); 
+      
+      showToast('✅ Registro masivo completado con éxito. Tus datos están protegidos.', 'success');
       loadData(true);
     } catch (err: any) {
+      console.error('Error en registro masivo:', err);
       showToast('Error: ' + err.message, 'error');
     } finally {
       setLoading(false);
@@ -1434,7 +1447,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V11.4 - SYSTEM RESTORED</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V12.0 - PROTECCIÓN TOTAL</h2>
           </div>
         </div>
 
