@@ -152,8 +152,8 @@ function Home() {
         );
 
         const fetchPromise = Promise.all([
-          supabase.from('glosas').select('*').order('fecha', { ascending: false }),
-          supabase.from('ingresos').select('*').order('fecha', { ascending: false }),
+          supabase.from('glosas').select('*').order('fecha', { ascending: false }).limit(50000),
+          supabase.from('ingresos').select('*').order('fecha', { ascending: false }).limit(50000),
         ]);
 
         const results = await Promise.race([fetchPromise, timeoutPromise]) as any;
@@ -355,7 +355,7 @@ function Home() {
     };
   }, [user?.id, isMounted]);
 
-  const APP_VERSION = "9.0";
+  const APP_VERSION = "10.0";
 
   // --- VERSION GUARD: Cache Buster ---
   useEffect(() => {
@@ -1415,7 +1415,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V11.1 - UNFILTERED</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V11.2 - MEGA SYNC</h2>
           </div>
         </div>
 
