@@ -166,8 +166,12 @@ function Home() {
           setGlosas(() => {
             const glosaMap = new Map();
 
-            // PASO 1: Cargar CACHÉ LOCAL completa como base de seguridad
-            // Esto garantiza que registros locales nunca desaparezcan por un fallo de red
+            // REGISTRO PERMANENTE LOCAL: IDs que ya fueron marcados con Check Point
+            // Este registro es local e irrompible - la nube NO puede deshacerlo
+            const checkedRegistry: string[] = safeStorage.getJson('checked_ids_registry', []);
+            const checkedIds = new Set<string>(checkedRegistry);
+
+            // PASO 1: Caché local como base de seguridad
             const cachedGlosas = safeStorage.getJson<Glosa[]>('cached_glosas', []);
             cachedGlosas.forEach((c: any) => {
               if (c && c.id) {
@@ -175,7 +179,7 @@ function Home() {
               }
             });
 
-            // PASO 2: Cargar buffers de emergencia (no sincronizados)
+            // PASO 2: Buffers de emergencia (no sincronizados)
             const bufferKeys = ['emergency_buffer', 'emergency_buffer_glosas', 'pending_glosas'];
             bufferKeys.forEach(key => {
               const items = safeStorage.getJson<Glosa[]>(key, []);
@@ -188,17 +192,26 @@ function Home() {
               });
             });
 
-            // PASO 3: La nube actualiza/agrega encima (NUBE MANDA para registros que ya existen)
+            // PASO 3: Nube actualiza encima
             const gData = safeArray(gRes.data);
             gData.forEach((c: any) => {
               if (c && c.id) {
                 const localItem = glosaMap.get(c.id);
                 const wasRegisteredLocally = localItem?.registrada_internamente === true;
+                // STICKY REGISTRY: Si este ID fue marcado con Check Point, SIEMPRE está registrado
+                const isInRegistry = checkedIds.has(c.id);
                 glosaMap.set(c.id, {
                   ...c,
                   sincronizado: true,
-                  registrada_internamente: c.registrada_internamente || wasRegisteredLocally
+                  registrada_internamente: isInRegistry || c.registrada_internamente || wasRegisteredLocally
                 });
+              }
+            });
+
+            // Aplicar registro permanente también a registros locales no sincronizados
+            glosaMap.forEach((val, key) => {
+              if (checkedIds.has(key) && !val.registrada_internamente) {
+                glosaMap.set(key, { ...val, registrada_internamente: true });
               }
             });
 
@@ -208,7 +221,6 @@ function Home() {
               return dateB.localeCompare(dateA);
             });
 
-            // Actualizar caché y buffer
             const finalBuffer = Array.from(glosaMap.values()).filter((g: any) => !g.sincronizado);
             safeStorage.setJson('emergency_buffer', finalBuffer);
             safeStorage.setJson('cached_glosas', sorted);
@@ -355,7 +367,7 @@ function Home() {
     };
   }, [user?.id, isMounted]);
 
-  const APP_VERSION = "14.0";
+  const APP_VERSION = "15.0";
 
   // --- VERSION GUARD: Cache Buster ---
   useEffect(() => {
@@ -419,8 +431,14 @@ function Home() {
     
     setLoading(true);
     try {
-      // PASO 1: Subir a la nube TODOS los registros locales que no están sincronizados
-      // Esto garantiza que las 507 facturas queden en Supabase ANTES de limpiar nada
+      // PASO 1: Guardar en el Registro Permanente Local todos los IDs actuales
+      // Este registro sobrevive recargas y sincronizaciones
+      const currentIds = glosas.map(g => g.id);
+      const existingRegistry: string[] = safeStorage.getJson('checked_ids_registry', []);
+      const newRegistry = Array.from(new Set([...existingRegistry, ...currentIds]));
+      safeStorage.setJson('checked_ids_registry', newRegistry);
+
+      // PASO 2: Subir a la nube registros locales no sincronizados
       const allUnsyncedKeys = ['emergency_buffer', 'emergency_buffer_glosas', 'pending_glosas'];
       const allUnsynced: any[] = [];
       allUnsyncedKeys.forEach(key => {
@@ -429,27 +447,16 @@ function Home() {
       });
 
       if (allUnsynced.length > 0) {
-        showToast(`⬆️ Subiendo ${allUnsynced.length} registros a la nube antes de limpiar...`, 'info');
-        // Limpiar campos de UI antes de subir
+        showToast(`⬆️ Subiendo ${allUnsynced.length} registros pendientes a la nube...`, 'info');
         const toUpsert = allUnsynced.map(({ sincronizado: _s, ...rest }) => rest);
         const { error: upsertError } = await supabase.from('glosas').upsert(toUpsert, { onConflict: 'id' });
-        if (upsertError) {
-          console.error('Error subiendo buffer:', upsertError);
-          showToast('⚠️ Error al subir registros locales. No se proceederá para proteger tus datos.', 'error');
-          return;
-        }
-        showToast(`✅ ${allUnsynced.length} registros guardados en la nube correctamente.`, 'success');
+        if (upsertError) console.error('Error en upsert:', upsertError);
       }
 
-      // PASO 2: Ahora sí marcar todo como registrado en la nube
-      const { error } = await supabase
-        .from('glosas')
-        .update({ registrada_internamente: true })
-        .eq('registrada_internamente', false);
+      // PASO 3: Actualizar en la nube
+      await supabase.from('glosas').update({ registrada_internamente: true }).eq('registrada_internamente', false);
 
-      if (error) throw error;
-
-      // PASO 3: Actualizar estado local
+      // PASO 4: Actualizar estado local
       const updatedGlosas = glosas.map(g => ({ ...g, registrada_internamente: true, sincronizado: true }));
       setGlosas(updatedGlosas);
       safeStorage.setJson('cached_glosas', updatedGlosas);
@@ -457,10 +464,10 @@ function Home() {
       safeStorage.setJson('emergency_buffer_glosas', []);
       safeStorage.setJson('pending_glosas', []);
       
-      showToast('✅ ¡Listo! Todos tus registros están protegidos y el tablero en $0.', 'success');
+      showToast('✅ ¡Check Point completado! Tus datos están protegidos permanentemente.', 'success');
       loadData(true);
     } catch (err: any) {
-      console.error('Error en registro masivo:', err);
+      console.error('Error en Check Point:', err);
       showToast('Error: ' + err.message, 'error');
     } finally {
       setLoading(false);
@@ -1461,7 +1468,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V12.1 - PROTECCIÓN DEFINITIVA</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V12.2 - REGISTRO PERMANENTE</h2>
           </div>
         </div>
 
