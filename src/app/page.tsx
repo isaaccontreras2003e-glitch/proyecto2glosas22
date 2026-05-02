@@ -355,7 +355,7 @@ function Home() {
     };
   }, [user?.id, isMounted]);
 
-  const APP_VERSION = "11.0";
+  const APP_VERSION = "12.0";
 
   // --- VERSION GUARD: Cache Buster ---
   useEffect(() => {
@@ -411,6 +411,32 @@ function Home() {
     } else {
       const glosa = glosas.find(g => g.id === id);
       if (glosa) syncExcel('glosa', 'update', { ...glosa, registrada_internamente: true });
+    }
+  };
+
+  const handleMarkAllAsRegistered = async () => {
+    if (!confirm('¿Deseas marcar TODOS los registros como "No Pendientes" de forma masiva? Esto limpiará el tablero permanentemente.')) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('glosas')
+        .update({ registrada_internamente: true })
+        .eq('registrada_internamente', false);
+
+      if (error) throw error;
+
+      const updatedGlosas = glosas.map(g => ({ ...g, registrada_internamente: true }));
+      setGlosas(updatedGlosas);
+      safeStorage.setJson('cached_glosas', updatedGlosas);
+      safeStorage.setJson('emergency_buffer', []);
+      
+      showToast('✅ Limpieza masiva completada.', 'success');
+      loadData(true);
+    } catch (err: any) {
+      showToast('Error: ' + err.message, 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1408,7 +1434,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V11.3 - NUCLEAR RESCUE</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V11.4 - SYSTEM RESTORED</h2>
           </div>
         </div>
 
