@@ -378,7 +378,7 @@ function Home() {
     };
   }, [user?.id, isMounted]);
 
-  const APP_VERSION = "5.9";
+  const APP_VERSION = "6.0";
 
   // --- VERSION GUARD: Cache Buster ---
   useEffect(() => {
@@ -438,33 +438,34 @@ function Home() {
   };
 
   const handleMarkAllAsRegistered = async () => {
+    if (!confirm('¿Deseas marcar TODOS los registros como "No Pendientes" de forma masiva? Esto limpiará el tablero permanentemente.')) return;
+    
+    setLoading(true);
     try {
-      const pendingIds = glosas
-        .filter(g => !g.registrada_internamente)
-        .map(g => g.id);
-
-      if (pendingIds.length === 0) {
-        showToast('No hay glosas pendientes por registrar.', 'info');
-        return;
-      }
-
-      showToast(`Registrando ${pendingIds.length} glosas...`, 'info');
-
+      // v10.8: Actualización masiva directa y eficiente
       const { error } = await supabase
         .from('glosas')
         .update({ registrada_internamente: true })
-        .in('id', pendingIds);
+        .eq('registrada_internamente', false);
 
       if (error) throw error;
 
+      // Actualizar estado local inmediato
       const updatedGlosas = glosas.map(g => ({ ...g, registrada_internamente: true }));
       setGlosas(updatedGlosas);
-      localStorage.setItem('cached_glosas', JSON.stringify(updatedGlosas));
       
-      showToast('✅ Todas las glosas han sido marcadas como registradas.', 'success');
+      // Limpieza profunda de memoria local
+      safeStorage.setJson('cached_glosas', updatedGlosas);
+      safeStorage.setJson('emergency_buffer', []);
+      safeStorage.setJson('pending_glosas', []);
+      
+      showToast('✅ Limpieza masiva completada. El tablero se actualizará ahora.', 'success');
+      loadData(true);
     } catch (err: any) {
-      console.error('Error in handleMarkAllAsRegistered:', err);
-      showToast('Error al registrar glosas masivamente.', 'error');
+      console.error('Error masivo:', err);
+      showToast('Error en limpieza masiva: ' + err.message, 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1448,7 +1449,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V10.7 - REFORZADA</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V10.8 - FINAL FIX</h2>
           </div>
         </div>
 
