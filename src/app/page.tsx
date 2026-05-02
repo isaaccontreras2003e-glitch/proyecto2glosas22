@@ -355,7 +355,7 @@ function Home() {
     };
   }, [user?.id, isMounted]);
 
-  const APP_VERSION = "10.0";
+  const APP_VERSION = "11.0";
 
   // --- VERSION GUARD: Cache Buster ---
   useEffect(() => {
@@ -1079,32 +1079,25 @@ function Home() {
           dataArray.forEach((item: any) => {
             if (!item || typeof item !== 'object') return;
 
-          // Detectar si parece una GLOSA
-          if (item.factura && (item.valor_glosa !== undefined || item.servicio)) {
-            const contentKey = `${(item.factura || '').trim().toUpperCase()}|${(item.servicio || '').trim().toLowerCase()}|${safeNumber(item.valor_glosa)}`;
-            const isAlreadyInState = allRecoveredGlosas.some(g => 
-              g.id === item.id || 
-              (`${(g.factura || '').trim().toUpperCase()}|${(g.servicio || '').trim().toLowerCase()}|${safeNumber(g.valor_glosa)}` === contentKey)
-            );
+            // v11.3: Rescate sin ninguna restricción de contenido para recuperación absoluta
+            // Detectar si parece una GLOSA
+            if (item.factura && (item.valor_glosa !== undefined || item.servicio)) {
+              const isAlreadyInState = allRecoveredGlosas.some(g => g.id === item.id);
 
-            if (!isAlreadyInState) {
-              allRecoveredGlosas.push({ ...item, sincronizado: false });
-              recoveredGlosasCount++;
+              if (!isAlreadyInState) {
+                allRecoveredGlosas.push({ ...item, sincronizado: false });
+                recoveredGlosasCount++;
+              }
             }
-          }
-          // Detectar si parece un INGRESO
-          else if (item.factura && item.valor_aceptado !== undefined && item.valor_no_aceptado !== undefined) {
-            const contentKey = `${(item.factura || '').trim().toUpperCase()}|${safeNumber(item.valor_aceptado)}|${safeNumber(item.valor_no_aceptado)}`;
-            const isAlreadyInState = allRecoveredIngresos.some(ing => 
-              ing.id === item.id || 
-              (`${(ing.factura || '').trim().toUpperCase()}|${safeNumber(ing.valor_aceptado)}|${safeNumber(ing.valor_no_aceptado)}` === contentKey)
-            );
+            // Detectar si parece un INGRESO
+            else if (item.factura && item.valor_aceptado !== undefined && item.valor_no_aceptado !== undefined) {
+              const isAlreadyInState = allRecoveredIngresos.some(ing => ing.id === item.id);
 
-            if (!isAlreadyInState) {
-              allRecoveredIngresos.push({ ...item, sincronizado: false });
-              recoveredIngresosCount++;
+              if (!isAlreadyInState) {
+                allRecoveredIngresos.push({ ...item, sincronizado: false });
+                recoveredIngresosCount++;
+              }
             }
-          }
           });
         } catch (e) { /* No es JSON, ignorar */ }
       }
@@ -1415,7 +1408,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V11.2 - MEGA SYNC</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V11.3 - NUCLEAR RESCUE</h2>
           </div>
         </div>
 
