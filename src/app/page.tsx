@@ -169,18 +169,13 @@ function Home() {
             // 1. Cargar items pendientes SOLO de buffers de emergencia (EXCLUIMOS 'cached_glosas')
             // v10.5: Ya no usamos 'cached_glosas' como fuente de mezcla porque causaba que datos borrados en la nube reaparecieran
             const bufferKeys = ['emergency_buffer', 'emergency_buffer_glosas', 'pending_glosas'];
-            const contentSeen = new Set<string>(); // Para deduplicación por contenido exacto
             
             bufferKeys.forEach(key => {
               const items = safeStorage.getJson<Glosa[]>(key, []);
               items.forEach((c: any) => {
                 if (c && c.id && !c.sincronizado) {
-                  // Deduplicación por contenido para registros locales (no sincronizados)
-                  const contentKey = `${(c.factura || '').trim().toUpperCase()}|${(c.servicio || '').trim().toLowerCase()}|${safeNumber(c.valor_glosa)}`;
-                  
-                  if (!glosaMap.has(c.id) && !contentSeen.has(contentKey)) {
+                  if (!glosaMap.has(c.id)) {
                     glosaMap.set(c.id, { ...c, sincronizado: false });
-                    contentSeen.add(contentKey);
                   }
                 }
               });
@@ -360,7 +355,7 @@ function Home() {
     };
   }, [user?.id, isMounted]);
 
-  const APP_VERSION = "7.0";
+  const APP_VERSION = "8.0";
 
   // --- VERSION GUARD: Cache Buster ---
   useEffect(() => {
@@ -419,33 +414,22 @@ function Home() {
     }
   };
 
-  const handleMarkAllAsRegistered = async () => {
-    if (!confirm('¿Deseas marcar TODOS los registros como "No Pendientes" de forma masiva? Esto limpiará el tablero permanentemente.')) return;
+  const handleRollbackCheckpoint = async () => {
+    if (!confirm('⚠️ ¿DESEAS DESHACER EL REGISTRO MASIVO? Esto volverá a poner todos tus registros como "Pendientes" para que puedas auditarlos.')) return;
     
     setLoading(true);
     try {
-      // v10.8: Actualización masiva directa y eficiente
       const { error } = await supabase
         .from('glosas')
-        .update({ registrada_internamente: true })
-        .eq('registrada_internamente', false);
+        .update({ registrada_internamente: false })
+        .eq('registrada_internamente', true);
 
       if (error) throw error;
-
-      // Actualizar estado local inmediato
-      const updatedGlosas = glosas.map(g => ({ ...g, registrada_internamente: true }));
-      setGlosas(updatedGlosas);
       
-      // Limpieza profunda de memoria local
-      safeStorage.setJson('cached_glosas', updatedGlosas);
-      safeStorage.setJson('emergency_buffer', []);
-      safeStorage.setJson('pending_glosas', []);
-      
-      showToast('✅ Limpieza masiva completada. El tablero se actualizará ahora.', 'success');
+      showToast('✅ Base de datos restaurada. Recargando...', 'success');
       loadData(true);
     } catch (err: any) {
-      console.error('Error masivo:', err);
-      showToast('Error en limpieza masiva: ' + err.message, 'error');
+      showToast('Error en restauración: ' + err.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -1431,7 +1415,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V10.9 - DATA RECOVERY</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V11.0 - FULL RECOVERY</h2>
           </div>
         </div>
 
