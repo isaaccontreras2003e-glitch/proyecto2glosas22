@@ -355,7 +355,7 @@ function Home() {
     };
   }, [user?.id, isMounted]);
 
-  const APP_VERSION = "8.0";
+  const APP_VERSION = "9.0";
 
   // --- VERSION GUARD: Cache Buster ---
   useEffect(() => {
@@ -455,8 +455,8 @@ function Home() {
       return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
     };
 
-    const sectionGlosas = safeArray(glosas).filter(g => (g as any).seccion?.toUpperCase() === currentMainSection || !g.seccion);
-    const sectionIngresos = safeArray(ingresos).filter(i => (i as any).seccion?.toUpperCase() === currentMainSection || !i.seccion);
+    const sectionGlosas = safeArray(glosas);
+    const sectionIngresos = safeArray(ingresos);
 
     const facturas = new Set([
       ...sectionGlosas.map(g => (g.factura || '').trim().toUpperCase()),
@@ -1415,7 +1415,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V11.0 - FULL RECOVERY</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V11.1 - UNFILTERED</h2>
           </div>
         </div>
 
