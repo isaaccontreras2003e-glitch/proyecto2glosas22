@@ -190,13 +190,19 @@ function Home() {
             const gData = safeArray(gRes.data);
             const cacheG = safeStorage.getJson<Glosa[]>('cached_glosas', []);
             const cacheMap = new Map(cacheG.map(g => [g.id, g]));
+            
+            // v10.7: Deduplicación incluso en datos de nube para limpiar "registros fantasma" duplicados
+            const cloudContentSeen = new Set<string>();
 
             gData.forEach((c: any) => {
               if (c && c.id) {
+                const contentKey = `${(c.factura || '').trim().toUpperCase()}|${(c.servicio || '').trim().toLowerCase()}|${safeNumber(c.valor_glosa)}`;
+                
+                // Si ya vimos este contenido en la nube, lo ignoramos (es un duplicado en la DB)
+                if (cloudContentSeen.has(contentKey)) return;
+                cloudContentSeen.add(contentKey);
+
                 // PERSISTENCIA DE ESTADO INTERNO:
-                // Si en la nube está como 'no registrado' pero en nuestra caché local ya estaba 'registrado',
-                // mantenemos el 'registrado: true' para evitar que los valores pendientes "salten" al recargar
-                // mientras la base de datos termina de procesar el update.
                 const localItem = cacheMap.get(c.id);
                 const wasRegisteredLocally = localItem?.registrada_internamente === true;
                 
@@ -245,8 +251,17 @@ function Home() {
 
             // 2. Sobrescribir con datos de la nube (NUBE MANDA)
             const iData = safeArray(iRes.data);
+            const cloudSeenI = new Set<string>();
+
             iData.forEach((c: any) => {
-              if (c && c.id) ingresoMap.set(c.id, { ...c, sincronizado: true });
+              if (c && c.id) {
+                // Deduplicación por contenido para Ingresos
+                const key = `${(c.factura || '').trim().toUpperCase()}|${safeNumber(c.valor_aceptado)}|${safeNumber(c.valor_no_aceptado)}`;
+                if (cloudSeenI.has(key)) return;
+                cloudSeenI.add(key);
+
+                ingresoMap.set(c.id, { ...c, sincronizado: true });
+              }
             });
 
             const combined = Array.from(ingresoMap.values()).sort((a: any, b: any) => {
@@ -363,7 +378,7 @@ function Home() {
     };
   }, [user?.id, isMounted]);
 
-  const APP_VERSION = "5.8";
+  const APP_VERSION = "5.9";
 
   // --- VERSION GUARD: Cache Buster ---
   useEffect(() => {
@@ -1433,7 +1448,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V10.6 - STABLE</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V10.7 - REFORZADA</h2>
           </div>
         </div>
 
