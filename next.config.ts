@@ -65,6 +65,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
 
   // v10.2: Ignorar errores de compilación para permitir despliegue rápido de recuperación
+  // @ts-ignore
   eslint: {
     ignoreDuringBuilds: true,
   },

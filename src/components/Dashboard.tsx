@@ -21,6 +21,7 @@ interface Glosa {
     tipo_glosa: string;
     estado: string;
     fecha: string;
+    registrada_internamente?: boolean;
 }
 
 interface DashboardProps {
@@ -126,8 +127,15 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
 
     // 2. Metrics for the 4 Cards (UNIFIED ENGINE)
     const metrics = useMemo(() => {
-        // If no filters are applied, we can use the executiveStats directly for absolute agreement
         const isFiltered = selectedService !== 'Todos' || selectedType !== 'Todos' || selectedStatus !== 'Todos';
+
+        // Calcular pendientes de registro sobre las glosas filtradas (siempre dinámico)
+        const filteredGlosas = glosas; // 'glosas' ya está filtrado por el useMemo de arriba
+        const pendientesRegistroCount = filteredGlosas.filter(g => !(g as any).registrada_internamente).length;
+        const pendientesRegistroValue = filteredGlosas
+            .filter(g => !(g as any).registrada_internamente)
+            .reduce((acc, g) => acc + (g.valor_glosa || 0), 0);
+        const totalRegistradoFiltrado = filteredGlosas.reduce((acc, g) => acc + (g.valor_glosa || 0), 0);
 
         if (!isFiltered && executiveStats) {
             return {
@@ -143,11 +151,18 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                 pendingValue: executiveStats.totalPendiente,
                 respondedInvoicesCount: allConsolidado.filter(item => item.aceptado > 0 || item.noAceptado > 0).length,
                 percentPendingTotal: executiveStats.totalGlosado > 0 ? Math.min(100, Math.max(0, (executiveStats.totalPendiente / executiveStats.totalGlosado) * 100)) : 0,
+                // Pendientes de registro (vista global)
+                pendientesRegistroCount: (executiveStats as any).totalNoRegistrado !== undefined
+                    ? pendientesRegistroCount
+                    : pendientesRegistroCount,
+                pendientesRegistroValue: pendientesRegistroValue,
+                totalRegistradoBase: (executiveStats as any).totalPotential || executiveStats.totalGlosado || 1,
+                isFiltered: false,
                 waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
             };
         }
 
-        // If filtered, recalculate using the exact same methodology
+        // Filtered: recalculate
         const totalValue = filteredConsolidado.reduce((acc, curr) => acc + curr.glosado, 0);
         const totalCount = filteredConsolidado.length;
         const acceptedValue = filteredConsolidado.reduce((acc, curr) => acc + curr.aceptado, 0);
@@ -168,13 +183,18 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
             pendingValue: totalValue - acceptedValue - noAcceptedValue,
             respondedInvoicesCount: filteredConsolidado.filter(item => item.aceptado > 0 || item.noAceptado > 0).length,
             percentPendingTotal: totalValue > 0 ? Math.min(100, Math.max(0, ((totalValue - acceptedValue - noAcceptedValue) / totalValue) * 100)) : 0,
+            // Pendientes de registro (vista filtrada)
+            pendientesRegistroCount,
+            pendientesRegistroValue,
+            totalRegistradoBase: totalRegistradoFiltrado || 1,
+            isFiltered: true,
             waves: { totalValue: [30, 45, 35, 60, 40, 70, 55], totalCount: [20, 30, 25, 40, 35, 50, 45], acceptedValue: [10, 20, 15, 30, 25, 40, 35], acceptedCount: [5, 10, 8, 15, 12, 20, 18] }
         };
-    }, [filteredConsolidado, selectedService, selectedType, executiveStats]);
+    }, [glosas, filteredConsolidado, selectedService, selectedType, selectedStatus, executiveStats]);
 
     const categories = useMemo(() => {
-        const types = ['Tarifas', 'Soportes', 'RIPS', 'Autorización'];
-        const counts: Record<string, number> = { 'Tarifas': 0, 'Soportes': 0, 'RIPS': 0, 'Autorización': 0 };
+        const types = ['Tarifas', 'Soportes', 'RIPS', 'Autorización', 'Cobertura'];
+        const counts: Record<string, number> = { 'Tarifas': 0, 'Soportes': 0, 'RIPS': 0, 'Autorización': 0, 'Cobertura': 0 };
 
         allConsolidado.forEach(c => {
             const primaryType = c.tipos?.find((t: string) => types.includes(t)) || 'Tarifas';
@@ -276,6 +296,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                         >
                             <option>Todos</option>
                             <option>Tarifas</option>
+                            <option>Cobertura</option>
                             <option>Soportes</option>
                             <option>RIPS</option>
                             <option>Autorización</option>
@@ -353,28 +374,40 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                 </motion.div>
 
                 <motion.div whileHover={{ y: -5, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
-                    <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid rgba(245, 158, 11, 0.2)', height: '100%' }}>
+                    <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: (metrics as any).pendientesRegistroCount > 0 ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(16,185,129,0.2)', height: '100%' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ width: '32px', height: '32px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <AlertTriangle size={16} color="#fbbf24" />
+                            <div style={{ width: '32px', height: '32px', background: (metrics as any).pendientesRegistroCount > 0 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16,185,129,0.07)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <AlertTriangle size={16} color={(metrics as any).pendientesRegistroCount > 0 ? '#fbbf24' : '#10b981'} />
                             </div>
-                            <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 900 }}>POR REGISTRAR</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                                <span style={{ fontSize: '0.65rem', color: (metrics as any).pendientesRegistroCount > 0 ? '#fbbf24' : '#10b981', fontWeight: 900 }}>POR REGISTRAR</span>
+                                {(metrics as any).isFiltered && (
+                                    <span style={{ fontSize: '0.5rem', color: '#a78bfa', fontWeight: 800, background: 'rgba(139,92,246,0.1)', padding: '1px 6px', borderRadius: '4px' }}>FILTRADO</span>
+                                )}
+                            </div>
                         </div>
                         <div>
-                            <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>VALORES PENDIENTES DE REGISTRO</p>
-                            <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: '4px 0', color: '#f59e0b' }}>${formatPesos((executiveStats as any).totalNoRegistrado || 0)}</h2>
+                            <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>GLOSAS PENDIENTES DE REGISTRO</p>
+                            <h2 style={{ fontSize: '2rem', fontWeight: 950, margin: '4px 0', color: (metrics as any).pendientesRegistroCount > 0 ? '#f59e0b' : '#10b981' }}>
+                                {(metrics as any).pendientesRegistroCount}
+                            </h2>
+                            <p style={{ fontSize: '0.65rem', color: (metrics as any).pendientesRegistroCount > 0 ? 'rgba(245,158,11,0.7)' : 'rgba(16,185,129,0.7)', margin: 0, fontWeight: 700 }}>
+                                ${formatPesos((metrics as any).pendientesRegistroValue || 0)}
+                            </p>
                         </div>
                         <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                                 <span style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: 700 }}>PENDIENTE DE INTEGRACIÓN</span>
-                                <span style={{ fontSize: '0.55rem', color: '#f59e0b', fontWeight: 950 }}>{((((executiveStats as any).totalNoRegistrado || 0) / ((executiveStats as any).totalPotential || 1)) * 100).toFixed(1)}%</span>
+                                <span style={{ fontSize: '0.55rem', color: (metrics as any).pendientesRegistroCount > 0 ? '#f59e0b' : '#10b981', fontWeight: 950 }}>
+                                    {(((metrics as any).pendientesRegistroValue / ((metrics as any).totalRegistradoBase || 1)) * 100).toFixed(1)}%
+                                </span>
                             </div>
                             <div style={{ height: '4px', background: 'rgba(0,0,0,0.03)', borderRadius: '10px' }}>
                                 <motion.div
                                     initial={{ width: 0 }}
-                                    animate={{ width: `${Math.min(100, (((executiveStats as any).totalNoRegistrado || 0) / ((executiveStats as any).totalPotential || 1)) * 100)}%` }}
+                                    animate={{ width: `${Math.min(100, (((metrics as any).pendientesRegistroValue / ((metrics as any).totalRegistradoBase || 1)) * 100))}%` }}
                                     transition={{ type: "spring", bounce: 0, duration: 1.5 }}
-                                    style={{ height: '100%', background: '#fbbf24', borderRadius: '10px', boxShadow: '0 0 10px rgba(251, 191, 36, 0.3)' }}
+                                    style={{ height: '100%', background: (metrics as any).pendientesRegistroCount > 0 ? '#fbbf24' : '#10b981', borderRadius: '10px', boxShadow: (metrics as any).pendientesRegistroCount > 0 ? '0 0 10px rgba(251, 191, 36, 0.3)' : '0 0 8px rgba(16,185,129,0.3)' }}
                                 />
                             </div>
                         </div>

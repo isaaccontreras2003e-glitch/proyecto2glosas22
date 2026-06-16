@@ -145,7 +145,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
 
     // 3. Category Bars
     const categories = useMemo(() => {
-        const types = ['Tarifas', 'Soportes', 'RIPS', 'Autorización'];
+        const types = ['Tarifas', 'Soportes', 'RIPS', 'Autorización', 'Cobertura'];
         const total = glosas.length || 1;
         return types.map(t => {
             const count = glosas.filter(g => g.tipo_glosa === t).length;
@@ -209,6 +209,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                                 <option>Soportes</option>
                                 <option>RIPS</option>
                                 <option>Autorización</option>
+                                <option>Cobertura</option>
                             </select>
                             <Clock size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} />
                         </div>

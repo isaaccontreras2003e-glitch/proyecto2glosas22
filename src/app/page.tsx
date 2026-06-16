@@ -324,13 +324,20 @@ function Home() {
       .channel('realtime_glosas')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'glosas' }, (payload) => {
         setGlosas(prev => {
+          const checkedRegistry: string[] = safeStorage.getJson('checked_ids_registry', []);
+          const checkedIds = new Set<string>(checkedRegistry);
           let updated = [...prev];
           if (payload.eventType === 'INSERT') {
             if (!updated.some(g => g.id === payload.new.id)) {
-              updated = [payload.new as Glosa, ...updated];
+              const isChecked = checkedIds.has(payload.new.id);
+              updated = [{ ...payload.new as Glosa, registrada_internamente: isChecked || payload.new.registrada_internamente }, ...updated];
             }
           } else if (payload.eventType === 'UPDATE') {
-            updated = updated.map(g => g.id === payload.new.id ? { ...g, ...payload.new } : g);
+            updated = updated.map(g => {
+              if (g.id !== payload.new.id) return g;
+              const isChecked = checkedIds.has(g.id);
+              return { ...g, ...payload.new, registrada_internamente: isChecked || payload.new.registrada_internamente || g.registrada_internamente };
+            });
           } else if (payload.eventType === 'DELETE') {
             updated = updated.filter(g => g.id !== payload.old.id);
           }
@@ -367,20 +374,19 @@ function Home() {
     };
   }, [user?.id, isMounted]);
 
-  const APP_VERSION = "15.0";
+  const APP_VERSION = "16.0";
 
-  // --- VERSION GUARD: Cache Buster ---
+  // --- VERSION GUARD: Cache Buster SEGURO ---
+  // FIX: Ya NO borra cached_glosas/cached_ingresos para evitar pérdida de datos al actualizar versión
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedVersion = localStorage.getItem('sisfact_app_version');
       if (storedVersion !== APP_VERSION) {
-        console.log(`[VersionGuard] Outdated version detected (${storedVersion} vs ${APP_VERSION}). Clearing cache safely...`);
-        // ATENCIÓN: NUNCA usar localStorage.clear() porque borra los ingresos pendientes y la sesión de Supabase
-        localStorage.removeItem('cached_glosas');
-        localStorage.removeItem('cached_ingresos');
+        console.log(`[VersionGuard] Nueva versión detectada (${storedVersion} → ${APP_VERSION}). Actualizando sin borrar datos...`);
+        // Solo limpiamos caché de sesión, NUNCA los datos locales
         sessionStorage.clear();
         localStorage.setItem('sisfact_app_version', APP_VERSION);
-        window.location.reload();
+        // No hacemos reload - dejamos que loadData traiga los datos frescos
       }
     }
   }, []);
@@ -409,17 +415,20 @@ function Home() {
   }, [glosas, searchTerm, filterTipo, filterEstado, filterInterno]);
 
   const handleToggleInternalRegistry = async (id: string, currentStatus: boolean) => {
-    if (currentStatus) return; // Si ya está registrado, no permitir desmarcar
-
+    if (currentStatus) return;
     const newStatus = true;
+    // Agregar al registro permanente local
+    const existingRegistry: string[] = safeStorage.getJson('checked_ids_registry', []);
+    if (!existingRegistry.includes(id)) {
+      safeStorage.setJson('checked_ids_registry', [...existingRegistry, id]);
+    }
     const updatedGlosas = glosas.map(g => g.id === id ? { ...g, registrada_internamente: newStatus } : g);
     setGlosas(updatedGlosas);
-    localStorage.setItem('cached_glosas', JSON.stringify(updatedGlosas));
-
+    safeStorage.setJson('cached_glosas', updatedGlosas);
     const { error } = await supabase.from('glosas').update({ registrada_internamente: newStatus }).eq('id', id);
     if (error) {
       console.error('Error actualizando registro interno:', error);
-      showToast('Error al guardar en la nube. Verifica tu conexión.', 'error');
+      showToast('Error al guardar en la nube. El estado local sí fue guardado.', 'error');
     } else {
       const glosa = glosas.find(g => g.id === id);
       if (glosa) syncExcel('glosa', 'update', { ...glosa, registrada_internamente: true });
@@ -712,7 +721,9 @@ function Home() {
 
     // 2. INTENTO DE SINCRONIZACIÓN
     try {
-      const { error } = await supabase.from('glosas').insert([newGlosa]);
+      // Limpiar campos de UI antes de insertar en Supabase
+      const { sincronizado: _s, ...glosaParaDb } = newGlosa as any;
+      const { error } = await supabase.from('glosas').insert([glosaParaDb]);
       syncExcel('glosa', 'insert', newGlosa);
       if (error) {
         console.error('Error sincronizando nueva glosa:', error);
@@ -822,14 +833,14 @@ function Home() {
       safeStorage.setJson('cached_glosas', updated);
       return updated;
     });
+    // Eliminar del registro permanente también
+    const existingRegistry: string[] = safeStorage.getJson('checked_ids_registry', []);
+    safeStorage.setJson('checked_ids_registry', existingRegistry.filter((rid: string) => rid !== id));
     try {
       const { error } = await supabase.from('glosas').delete().eq('id', id);
       if (error) console.error('Error eliminando glosa:', error);
-      
-      // Asegurar que se elimine del buffer también si estaba ahí
       const currentBuffer = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
       safeStorage.setJson('emergency_buffer', currentBuffer.filter((g: any) => g.id !== id));
-      
       if (glosaToDelete) syncExcel('glosa', 'delete', glosaToDelete);
     } catch (err) { console.error('Error crítico eliminando glosa:', err); }
   };
@@ -1468,7 +1479,7 @@ function Home() {
             <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V12.2 - REGISTRO PERMANENTE</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V12.3 - BLINDADO</h2>
           </div>
         </div>
 

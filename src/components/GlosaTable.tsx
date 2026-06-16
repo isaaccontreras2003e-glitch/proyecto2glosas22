@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Card } from './Card';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, X, ClipboardList, Calendar, Info, Tag, Hash, Activity, Pencil, Save, DollarSign, Trash2, AlertTriangle, Copy, CheckCircle2, UploadCloud, FileText } from 'lucide-react';
+import { Eye, X, ClipboardList, Calendar, Info, Tag, Hash, Activity, Pencil, Save, DollarSign, Trash2, AlertTriangle, Copy, CheckCircle2, UploadCloud, FileText, Filter, AlertCircle } from 'lucide-react';
 import { safeNumber } from '@/lib/safeUtils';
 
 const formatPesos = (value: any): string => {
@@ -74,6 +74,21 @@ export const GlosaTable = ({
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
     const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
     const [confirmMarkAll, setConfirmMarkAll] = useState(false);
+
+    // ── RESUMEN CONTEXTUAL DEL FILTRO ACTIVO ──────────────────────────────
+    const filterSummary = useMemo(() => {
+        const safe = (glosas || []).filter(g => g && g.id);
+        const total = safe.length;
+        const pendientesRegistro = safe.filter(g => !g.registrada_internamente);
+        const registradas = safe.filter(g => g.registrada_internamente);
+        const totalValorPendiente = pendientesRegistro.reduce((acc, g) => acc + safeNumber(g.valor_glosa), 0);
+        const hayFiltroActivo = filterEstado !== 'Todos' || filterTipo !== 'Todos' || filterInterno !== 'Todos' || searchTerm !== '';
+        return { total, pendientesRegistro: pendientesRegistro.length, registradas: registradas.length, totalValorPendiente, hayFiltroActivo };
+    }, [glosas, filterEstado, filterTipo, filterInterno, searchTerm]);
+
+    const formatPesosSummary = (value: number): string => {
+        return Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    };
 
 
     const getStatusStyle = (status: string) => {
@@ -192,6 +207,7 @@ export const GlosaTable = ({
                         >
                             <option value="Todos">Todos los tipos</option>
                             <option value="Tarifas">Tarifas</option>
+                            <option value="Cobertura">Cobertura</option>
                             <option value="Soportes">Soportes</option>
                             <option value="RIPS">RIPS</option>
                             <option value="Autorización">Autorización</option>
@@ -264,6 +280,76 @@ export const GlosaTable = ({
                     >
                         <X size={14} /> LIMPIAR
                     </button>
+                </div>
+
+                {/* ── BARRA DE RESUMEN CONTEXTUAL ──────────────────────────────── */}
+                <div style={{
+                    marginBottom: '1rem',
+                    padding: '0.85rem 1.25rem',
+                    borderRadius: '12px',
+                    background: filterSummary.hayFiltroActivo
+                        ? 'rgba(139, 92, 246, 0.06)'
+                        : 'rgba(255,255,255,0.02)',
+                    border: filterSummary.hayFiltroActivo
+                        ? '1px solid rgba(139,92,246,0.25)'
+                        : '1px solid var(--border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '0.75rem',
+                    transition: 'all 0.3s'
+                }}>
+                    {/* Lado izquierdo: totales de la vista */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Filter size={14} style={{ color: filterSummary.hayFiltroActivo ? '#a78bfa' : 'var(--text-muted)' }} />
+                            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: filterSummary.hayFiltroActivo ? '#a78bfa' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                {filterSummary.hayFiltroActivo ? 'Vista filtrada' : 'Vista completa'}
+                            </span>
+                        </div>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                            <strong style={{ color: 'white' }}>{filterSummary.total}</strong> glosas
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <CheckCircle2 size={13} />
+                            <strong>{filterSummary.registradas}</strong> registradas
+                        </span>
+                    </div>
+
+                    {/* Lado derecho: pendientes de registro */}
+                    {filterSummary.pendientesRegistro > 0 ? (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.6rem',
+                            background: 'rgba(245, 158, 11, 0.1)',
+                            border: '1px solid rgba(245,158,11,0.3)',
+                            borderRadius: '8px',
+                            padding: '0.4rem 1rem'
+                        }}>
+                            <AlertCircle size={14} style={{ color: '#f59e0b', flexShrink: 0 }} />
+                            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#f59e0b' }}>
+                                {filterSummary.pendientesRegistro} glosa{filterSummary.pendientesRegistro !== 1 ? 's' : ''} PENDIENTE{filterSummary.pendientesRegistro !== 1 ? 'S' : ''} DE REGISTRAR
+                            </span>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(245,158,11,0.7)' }}>
+                                — ${formatPesosSummary(filterSummary.totalValorPendiente)}
+                            </span>
+                        </div>
+                    ) : (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            background: 'rgba(16, 185, 129, 0.07)',
+                            border: '1px solid rgba(16,185,129,0.2)',
+                            borderRadius: '8px',
+                            padding: '0.4rem 1rem'
+                        }}>
+                            <CheckCircle2 size={14} style={{ color: '#10b981' }} />
+                            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#10b981' }}>✓ Todo registrado en esta vista</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Barra de duplicados */}
@@ -789,6 +875,7 @@ export const GlosaTable = ({
                                     <label className="label">Tipo de Glosa</label>
                                     <select className="input" value={editingGlosa.tipo_glosa} onChange={(e) => setEditingGlosa({ ...editingGlosa, tipo_glosa: e.target.value })}>
                                         <option value="Tarifas">Tarifas</option>
+                                        <option value="Cobertura">Cobertura</option>
                                         <option value="Soportes">Soportes</option>
                                         <option value="RIPS">RIPS</option>
                                         <option value="Autorización">Autorización</option>

@@ -425,6 +425,7 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                                 onChange={(e) => setFormData({ ...formData, tipo_glosa: e.target.value })}
                             >
                                 <option value="Tarifas">Tarifas</option>
+                                <option value="Cobertura">Cobertura</option>
                                 <option value="Soportes">Soportes</option>
                                 <option value="RIPS">RIPS</option>
                                 <option value="Autorización">Autorización</option>
