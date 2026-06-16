@@ -1587,46 +1587,150 @@ function Home() {
         </nav>
 
 
-        {/* Footer Sidebar: User & Force Sync - V5.4 */}
-        <div style={{ marginTop: 'auto', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {/* Footer Sidebar: Botones de control */}
+        <div style={{ marginTop: 'auto', padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+
+          {/* ── RESTAURAR DESDE NUBE ── */}
           <motion.button
-            whileHover={{ background: 'rgba(239, 68, 68, 0.1)', scale: 1.02 }}
+            whileHover={{ background: 'rgba(96, 165, 250, 0.15)', scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={async () => {
-              if (window.confirm('⚠️ ATENCIÓN: Esto borrará TODAS las glosas de la nube permanentemente. ¿Estás seguro? (Los pagos no se tocarán)')) {
-                showToast('Iniciando borrado nuclear...', 'info');
-                const { error } = await supabase.from('glosas').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-                if (error) {
-                  showToast('Error en borrado: ' + error.message, 'error');
-                } else {
-                  showToast('Vaciado completo exitoso', 'success');
-                  setGlosas([]);
-                  localStorage.removeItem('cached_glosas');
-                  localStorage.removeItem('emergency_buffer_glosas');
-                  loadData(true);
+              if (!window.confirm('🔄 Esto restaurará los datos desde el último backup guardado en la nube. ¿Continuar?')) return;
+              setLoading(true);
+              showToast('⏳ Descargando backup desde la nube...', 'info');
+              try {
+                // Descargar el Excel de backup desde la API
+                const res = await fetch('/api/backup?download=true');
+                if (!res.ok) throw new Error('No se pudo descargar el backup: ' + res.statusText);
+                const arrayBuffer = await res.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+                let glosasImportadas = 0;
+                let ingresosImportados = 0;
+
+                // Restaurar Glosas
+                const glosasSheetName = workbook.SheetNames.find((n: string) => n.includes('Glosas'));
+                if (glosasSheetName) {
+                  const ws = workbook.Sheets[glosasSheetName];
+                  const rawRows: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
+                  const glosasData = rawRows
+                    .filter(row => {
+                      const f = String(row['Factura'] || '').trim();
+                      return f && f.toUpperCase() !== 'TOTALES';
+                    })
+                    .map(row => {
+                      const id = String(row['ID'] || '').trim();
+                      const cleanNum = (v: any) => typeof v === 'number' ? v : parseFloat(String(v).replace(/[$. ]/g, '').replace(',', '.')) || 0;
+                      return {
+                        id: id || crypto.randomUUID(),
+                        factura: String(row['Factura'] || '').trim(),
+                        servicio: String(row['Servicio'] || '').trim(),
+                        orden_servicio: String(row['Orden Servicio'] || '').trim(),
+                        valor_glosa: cleanNum(row['Valor Glosa']),
+                        valor_aceptado: cleanNum(row['Valor Aceptado']),
+                        valor_no_aceptado: cleanNum(row['Valor No Aceptado']),
+                        estado: String(row['Estado'] || 'Pendiente').trim(),
+                        tipo_glosa: String(row['Tipo Glosa'] || 'Tarifas').trim(),
+                        descripcion: String(row['Descripción'] || row['Descripcion'] || '').trim(),
+                        registrada_internamente: String(row['Registrada Internamente'] || '').includes('SÍ'),
+                        soporte_pdf: String(row['Soporte PDF'] || '').trim() || null,
+                        fecha: String(row['Fecha'] || '').trim(),
+                        seccion: currentMainSection,
+                      };
+                    });
+                  if (glosasData.length > 0) {
+                    const { error } = await supabase.from('glosas').upsert(glosasData, { onConflict: 'id' });
+                    if (error) throw new Error('Error restaurando glosas: ' + error.message);
+                    glosasImportadas = glosasData.length;
+                  }
                 }
+
+                // Restaurar Ingresos
+                const ingresosSheetName = workbook.SheetNames.find((n: string) => n.includes('Ingresos'));
+                if (ingresosSheetName) {
+                  const ws = workbook.Sheets[ingresosSheetName];
+                  const rawRows: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
+                  const ingresosData = rawRows
+                    .filter(row => {
+                      const f = String(row['Factura'] || '').trim();
+                      return f && f.toUpperCase() !== 'TOTALES';
+                    })
+                    .map(row => {
+                      const id = String(row['ID'] || '').trim();
+                      const cleanNum = (v: any) => typeof v === 'number' ? v : parseFloat(String(v).replace(/[$. ]/g, '').replace(',', '.')) || 0;
+                      return {
+                        id: id || crypto.randomUUID(),
+                        factura: String(row['Factura'] || '').trim(),
+                        valor_aceptado: cleanNum(row['Valor Aceptado']),
+                        valor_no_aceptado: cleanNum(row['Valor No Aceptado']),
+                        fecha: String(row['Fecha'] || '').trim(),
+                        soporte_pdf: String(row['Soporte PDF'] || '').trim() || null,
+                        seccion: currentMainSection,
+                      };
+                    });
+                  if (ingresosData.length > 0) {
+                    const { error } = await supabase.from('ingresos').upsert(ingresosData, { onConflict: 'id' });
+                    if (error) throw new Error('Error restaurando ingresos: ' + error.message);
+                    ingresosImportados = ingresosData.length;
+                  }
+                }
+
+                showToast(`✅ Restaurado: ${glosasImportadas} glosas y ${ingresosImportados} ingresos`, 'success');
+                await loadData(true);
+              } catch (err: any) {
+                showToast('❌ Error restaurando: ' + err.message, 'error');
+              } finally {
+                setLoading(false);
               }
             }}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              padding: '0.6rem',
-              width: '100%',
-              borderRadius: '10px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              padding: '0.6rem', width: '100%', borderRadius: '10px',
+              border: '1px solid rgba(96,165,250,0.4)',
+              background: 'rgba(96,165,250,0.08)',
+              color: '#60a5fa', fontSize: '0.7rem', fontWeight: 800,
+              cursor: 'pointer', textTransform: 'uppercase',
+            }}
+          >
+            <RefreshCw size={14} />
+            Restaurar desde Nube
+          </motion.button>
+
+          {/* ── BORRADO TOTAL: Glosas + Ingresos ── */}
+          <motion.button
+            whileHover={{ background: 'rgba(239, 68, 68, 0.15)', scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={async () => {
+              if (!window.confirm('🚨 PELIGRO: Esto borrará TODAS las glosas Y TODOS los ingresos permanentemente. ¿Estás completamente seguro?')) return;
+              if (!window.confirm('⚠️ Segunda confirmación: ¿Borrar TODO sin posibilidad de recuperar?')) return;
+              showToast('Iniciando borrado total...', 'info');
+              const [resG, resI] = await Promise.all([
+                supabase.from('glosas').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+                supabase.from('ingresos').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
+              ]);
+              if (resG.error || resI.error) {
+                showToast('Error en borrado: ' + (resG.error?.message || resI.error?.message), 'error');
+              } else {
+                setGlosas([]);
+                setIngresos([]);
+                localStorage.removeItem('cached_glosas');
+                localStorage.removeItem('emergency_buffer_glosas');
+                localStorage.removeItem('emergency_buffer_ingresos');
+                showToast('✅ Todo borrado correctamente', 'success');
+                loadData(true);
+              }
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              padding: '0.6rem', width: '100%', borderRadius: '10px',
               border: '1px solid rgba(239, 68, 68, 0.3)',
               background: 'rgba(239, 68, 68, 0.05)',
-              color: '#ef4444',
-              fontSize: '0.7rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              textTransform: 'uppercase',
-              marginBottom: '0.5rem'
+              color: '#ef4444', fontSize: '0.7rem', fontWeight: 800,
+              cursor: 'pointer', textTransform: 'uppercase',
             }}
           >
             <Trash2 size={14} />
-            Borrado Total Glosas
+            Borrar TODO (Glosas + Ingresos)
           </motion.button>
 
 
