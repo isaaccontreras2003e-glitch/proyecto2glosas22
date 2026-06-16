@@ -2,6 +2,7 @@
 // HARDENING v10.0 - Protección completa contra errores comunes y agresivos
 
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import * as XLSX from 'xlsx';
 import { Dashboard } from '@/components/Dashboard';
 import { GlosaForm } from '@/components/GlosaForm';
 import { GlosaTable } from '@/components/GlosaTable';
@@ -1246,77 +1247,127 @@ function Home() {
     }
   };
 
-  const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setLoading(true);
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const text = event.target?.result as string;
-        const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
-        if (lines.length < 2) throw new Error('El archivo está vacío o no tiene encabezados.');
+    showToast('⏳ Procesando archivo Excel...', 'info');
 
-        // Detectar separador común en Excel (punto y coma o coma)
-        const delimiter = text.includes(';') ? ';' : ',';
-        // Limpiamos BOM y espacios de los encabezados
-        const headers = lines[0]
-          .replace(/^\ufeff/, '')
-          .split(delimiter)
-          .map(h => h.trim().toLowerCase());
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
 
-        const data = lines.slice(1).map(line => {
-          const values = line.split(delimiter).map(v => v.trim());
-          const obj: any = {
-            id: 'csv_' + Math.random().toString(36).substr(2, 9),
-            factura: '',
-            servicio: '',
-            orden_servicio: '',
-            valor_glosa: 0,
-            tipo_glosa: 'Tarifas',
-            estado: 'Pendiente',
-            fecha: new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-            descripcion: '',
-            seccion: currentMainSection
-          };
+      let glosasImportadas = 0;
+      let ingresosImportados = 0;
 
-          headers.forEach((header, index) => {
-            const val = values[index];
-            if (!val) return;
+      // ─── Procesar hoja de GLOSAS ───────────────────────────────────────
+      const glosasSheetName = workbook.SheetNames.find(n => n.includes('Glosas') || n.includes('glosas'));
+      if (glosasSheetName) {
+        const ws = workbook.Sheets[glosasSheetName];
+        const rawRows: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
-            if (header.includes('factura')) obj.factura = val;
-            if (header.includes('orden')) obj.orden_servicio = val;
-            if (header.includes('servicio') && !header.includes('orden')) obj.servicio = val;
-            if (header.includes('valor')) {
-              // Limpiar formato de moneda si existe (quitar $ y puntos de miles)
-              const numericVal = val.replace(/[$. ]/g, '').replace(',', '.');
-              obj.valor_glosa = parseFloat(numericVal) || 0;
-            }
-            if (header.includes('tipo')) obj.tipo_glosa = val;
-            if (header.includes('estado')) obj.estado = val;
-            if (header.includes('fecha')) obj.fecha = val;
-            if (header.includes('descrip')) obj.descripcion = val;
+        // Filtrar la fila de TOTALES y filas sin factura válida
+        const glosasData = rawRows
+          .filter(row => {
+            const factura = String(row['Factura'] || row['factura'] || '').trim();
+            return factura && factura.toUpperCase() !== 'TOTALES';
+          })
+          .map(row => {
+            const id = String(row['ID'] || row['id'] || '').trim();
+            const cleanNum = (val: any) => {
+              if (typeof val === 'number') return val;
+              const s = String(val).replace(/[$. ]/g, '').replace(',', '.');
+              return parseFloat(s) || 0;
+            };
+            return {
+              id: id || crypto.randomUUID(),
+              factura: String(row['Factura'] || row['factura'] || '').trim(),
+              servicio: String(row['Servicio'] || row['servicio'] || '').trim(),
+              orden_servicio: String(row['Orden Servicio'] || row['orden_servicio'] || '').trim(),
+              valor_glosa: cleanNum(row['Valor Glosa'] || row['valor_glosa']),
+              valor_aceptado: cleanNum(row['Valor Aceptado'] || row['valor_aceptado']),
+              valor_no_aceptado: cleanNum(row['Valor No Aceptado'] || row['valor_no_aceptado']),
+              estado: String(row['Estado'] || row['estado'] || 'Pendiente').trim(),
+              tipo_glosa: String(row['Tipo Glosa'] || row['tipo_glosa'] || 'Tarifas').trim(),
+              descripcion: String(row['Descripción'] || row['Descripcion'] || row['descripcion'] || '').trim(),
+              registrada_internamente: String(row['Registrada Internamente'] || '').includes('SÍ'),
+              soporte_pdf: String(row['Soporte PDF'] || row['soporte_pdf'] || '').trim() || null,
+              fecha: String(row['Fecha'] || row['fecha'] || new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })).trim(),
+              seccion: currentMainSection,
+            };
           });
-          return obj;
-        }).filter(item => item.factura);
 
-        if (data.length === 0) throw new Error('No se encontraron registros válidos por factura.');
-
-        const { error } = await supabase.from('glosas').upsert(data);
-        if (error) throw error;
-
-        setGlosas(prev => [...data, ...prev]);
-        showToast(`✅ CSV Importado: ${data.length} registros subidos.`, 'success');
-      } catch (err: any) {
-        console.error('CSV Error:', err);
-        showToast('❌ Error leyendo CSV: ' + err.message, 'error');
-      } finally {
-        setLoading(false);
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (glosasData.length > 0) {
+          const { error } = await supabase.from('glosas').upsert(glosasData, { onConflict: 'id' });
+          if (error) throw new Error('Error subiendo glosas: ' + error.message);
+          glosasImportadas = glosasData.length;
+          // Actualizar estado local: reemplazar/agregar cada glosa por ID
+          setGlosas(prev => {
+            const map = new Map(prev.map(g => [g.id, g]));
+            glosasData.forEach((g: any) => map.set(g.id, g));
+            return Array.from(map.values());
+          });
+        }
       }
-    };
-    reader.readAsText(file, 'UTF-8');
+
+      // ─── Procesar hoja de INGRESOS ─────────────────────────────────────
+      const ingresosSheetName = workbook.SheetNames.find(n => n.includes('Ingresos') || n.includes('ingresos'));
+      if (ingresosSheetName) {
+        const ws = workbook.Sheets[ingresosSheetName];
+        const rawRows: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+        const ingresosData = rawRows
+          .filter(row => {
+            const factura = String(row['Factura'] || row['factura'] || '').trim();
+            return factura && factura.toUpperCase() !== 'TOTALES';
+          })
+          .map(row => {
+            const id = String(row['ID'] || row['id'] || '').trim();
+            const cleanNum = (val: any) => {
+              if (typeof val === 'number') return val;
+              const s = String(val).replace(/[$. ]/g, '').replace(',', '.');
+              return parseFloat(s) || 0;
+            };
+            return {
+              id: id || crypto.randomUUID(),
+              factura: String(row['Factura'] || row['factura'] || '').trim(),
+              valor_aceptado: cleanNum(row['Valor Aceptado'] || row['valor_aceptado']),
+              valor_no_aceptado: cleanNum(row['Valor No Aceptado'] || row['valor_no_aceptado']),
+              fecha: String(row['Fecha'] || row['fecha'] || new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })).trim(),
+              soporte_pdf: String(row['Soporte PDF'] || row['soporte_pdf'] || '').trim() || null,
+              seccion: currentMainSection,
+            };
+          });
+
+        if (ingresosData.length > 0) {
+          const { error } = await supabase.from('ingresos').upsert(ingresosData, { onConflict: 'id' });
+          if (error) throw new Error('Error subiendo ingresos: ' + error.message);
+          ingresosImportados = ingresosData.length;
+          // Actualizar estado local
+          setIngresos(prev => {
+            const map = new Map(prev.map(i => [i.id, i]));
+            ingresosData.forEach((i: any) => map.set(i.id, i));
+            return Array.from(map.values());
+          });
+        }
+      }
+
+      if (glosasImportadas === 0 && ingresosImportados === 0) {
+        throw new Error('No se encontraron hojas válidas ("Glosas" o "Ingresos") en el archivo.');
+      }
+
+      showToast(`✅ Importación completa: ${glosasImportadas} glosas y ${ingresosImportados} ingresos actualizados.`, 'success');
+      // Recargar desde Supabase para asegurar consistencia
+      await loadData(true);
+
+    } catch (err: any) {
+      console.error('Import Error:', err);
+      showToast('❌ Error importando: ' + err.message, 'error');
+    } finally {
+      setLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const exportToExcel = () => {
@@ -2021,6 +2072,36 @@ function Home() {
                       <Download size={12} />
                       EXPORTAR DATOS
                     </motion.button>
+
+                    {/* IMPORTAR EXCEL — mantiene IDs para upsert masivo */}
+                    <label
+                      title="Importar Excel de Backup (actualiza registros existentes por ID)"
+                      style={{
+                        padding: '0.6rem 1.25rem',
+                        fontSize: '0.7rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        color: '#f59e0b',
+                        border: '1px solid rgba(245,158,11,0.3)',
+                        borderRadius: '8px',
+                        background: 'rgba(245,158,11,0.08)',
+                        cursor: 'pointer',
+                        fontWeight: 800,
+                        letterSpacing: '0.05em',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <FileSpreadsheet size={12} />
+                      IMPORTAR EXCEL
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".xlsx,.xls"
+                        style={{ display: 'none' }}
+                        onChange={handleFileImport}
+                      />
+                    </label>
                   </div>
 
                   <div style={{ opacity: 0.6 }}>
