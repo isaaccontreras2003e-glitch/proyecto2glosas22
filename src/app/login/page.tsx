@@ -13,7 +13,7 @@ export default function LoginPage() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [showClearButton, setShowClearButton] = useState(false);
-    const [view, setView] = useState<'login' | 'forgot'>('login');
+    const [view, setView] = useState<'login' | 'forgot' | 'register'>('login');
     const router = useRouter();
 
     useEffect(() => {
@@ -56,6 +56,31 @@ export default function LoginPage() {
 
             if (data.session) {
                 router.push('/');
+            }
+        } catch (err: any) {
+            setError('Error de conexión. Verifica tu internet.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRegister = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
+        setSuccess(null);
+
+        try {
+            const { data, error: authError } = await supabase.auth.signUp({
+                email: email.trim(),
+                password: password,
+            });
+
+            if (authError) {
+                setError(authError.message);
+            } else {
+                setSuccess('¡Cuenta creada! Revisa tu correo para confirmar el enlace antes de iniciar sesión. O vuelve y crea con otro correo si falló.');
+                setTimeout(() => setView('login'), 8000);
             }
         } catch (err: any) {
             setError('Error de conexión. Verifica tu internet.');
@@ -261,8 +286,18 @@ export default function LoginPage() {
                             >
                                 {loading ? 'AUTENTICANDO...' : 'INICIAR SESIÓN'} <LogIn size={20} />
                             </button>
+                                <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 600 }}>
+                                    <span style={{ color: 'var(--text-muted)' }}>¿No tienes cuenta?</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setView('register')}
+                                        style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontWeight: 800 }}
+                                    >
+                                        Crear Cuenta Rápida
+                                    </button>
+                                </div>
                         </motion.form>
-                    ) : (
+                    ) : view === 'forgot' ? (
                         <motion.form
                             key="forgot-view"
                             initial={{ opacity: 0, x: 20 }}
@@ -329,6 +364,105 @@ export default function LoginPage() {
                                     }}
                                 >
                                     {loading ? 'ENVIANDO...' : 'ENVIAR ENLACE'} <Send size={18} style={{ marginLeft: '8px' }} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setView('login')}
+                                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                >
+                                    <ArrowLeft size={14} /> Volver al inicio
+                                </button>
+                            </div>
+                    )}
+                    {view === 'register' && (
+                        <motion.form
+                            key="register-view"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            onSubmit={handleRegister}
+                            style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+                        >
+                            <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                                    Crea una cuenta rápido. Usa un correo real para confirmar el acceso.
+                                </p>
+                            </div>
+
+                            <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                <label style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Mail size={12} /> Correo Electrónico
+                                </label>
+                                <input
+                                    type="email"
+                                    placeholder="usuario@oftalmologia.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                    style={{
+                                        width: '100%',
+                                        padding: '1rem',
+                                        background: 'rgba(255,255,255,0.03)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '14px',
+                                        color: 'white',
+                                        outline: 'none'
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                <label style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Lock size={12} /> Contraseña
+                                </label>
+                                <input
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    style={{
+                                        width: '100%',
+                                        padding: '1rem',
+                                        background: 'rgba(255,255,255,0.03)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '14px',
+                                        color: 'white',
+                                        outline: 'none'
+                                    }}
+                                />
+                            </div>
+
+                            {success && (
+                                <div style={{ color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 800, padding: '0.75rem', background: 'rgba(0, 242, 254, 0.1)', borderRadius: '12px', border: '1px solid rgba(0, 242, 254, 0.2)' }}>
+                                    {success}
+                                </div>
+                            )}
+
+                            {error && (
+                                <div style={{ color: '#ff4d4d', fontSize: '0.8rem', fontWeight: 800, padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <AlertTriangle size={14} /> {error}
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    style={{
+                                        height: '56px',
+                                        borderRadius: '16px',
+                                        fontSize: '0.95rem',
+                                        width: '100%',
+                                        background: 'var(--primary)',
+                                        color: '#000',
+                                        fontWeight: 900,
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 8px 16px rgba(0, 242, 254, 0.2)'
+                                    }}
+                                >
+                                    {loading ? 'CREANDO...' : 'CREAR CUENTA'} <LogIn size={18} style={{ marginLeft: '8px' }} />
                                 </button>
                                 <button
                                     type="button"
