@@ -61,13 +61,22 @@ const normalizeText = (val: any): string => String(val || '').trim();
 const findCol = (row: any, variants: string[]): any => {
   for (const v of variants) {
     if (row[v] !== undefined) return row[v];
-    // Búsqueda insensible a mayúsculas/acentos
-    const key = Object.keys(row).find(k =>
-      k.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') ===
-      v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    );
+    // Búsqueda insensible a mayúsculas/acentos y espacios en los encabezados
+    const key = Object.keys(row).find(k => {
+      const cleanK = k.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+      const cleanV = v.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+      return cleanK === cleanV || (cleanK.includes('factura') && cleanV.includes('factura'));
+    });
     if (key) return row[key];
   }
+  
+  // Último recurso: buscar cualquier llave que contenga la palabra clave principal si es muy obvia
+  const mainVariant = variants[0].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (mainVariant === 'factura') {
+    const key = Object.keys(row).find(k => k.toLowerCase().includes('factura'));
+    if (key) return row[key];
+  }
+
   return undefined;
 };
 
@@ -158,47 +167,47 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
 
     // Procesar filas
     const validRows = rows.filter(row => {
-      const f = normalizeText(findCol(row, ['Factura', 'factura', 'FACTURA', 'Nro Factura', 'No. Factura', 'numero_factura', 'NroFactura']));
+      const f = normalizeText(findCol(row, ['Factura', 'factura', 'FACTURA', 'Nro Factura', 'No. Factura', 'numero_factura', 'NroFactura', 'No de Factura', 'Numero de Factura']));
       return f && f.toUpperCase() !== 'TOTALES' && f.toUpperCase() !== 'TOTAL';
     });
 
     if (mode === 'glosas') {
       const glosas: GlosaImportada[] = validRows.map(row => {
-        const idRaw = normalizeText(findCol(row, ['ID', 'id', 'Id']));
-        const estado = normalizeText(findCol(row, ['Estado', 'estado', 'ESTADO', 'Status'])) || 'Pendiente';
-        const regInterna = normalizeText(findCol(row, ['Registrada Internamente', 'registrada_internamente', 'RegistradaInternamente']));
+        const idRaw = normalizeText(findCol(row, ['ID', 'id', 'Id', 'Id Glosa']));
+        const estado = normalizeText(findCol(row, ['Estado', 'estado', 'ESTADO', 'Status', 'Estado Glosa'])) || 'Pendiente';
+        const regInterna = normalizeText(findCol(row, ['Registrada Internamente', 'registrada_internamente', 'RegistradaInternamente', 'Registrada']));
         return {
           id: idRaw || crypto.randomUUID(),
-          factura: normalizeText(findCol(row, ['Factura', 'factura', 'FACTURA', 'Nro Factura', 'No. Factura', 'NroFactura'])),
-          servicio: normalizeText(findCol(row, ['Servicio', 'servicio', 'SERVICIO', 'Tipo Servicio', 'tipo_servicio'])),
-          orden_servicio: normalizeText(findCol(row, ['Orden Servicio', 'orden_servicio', 'OrdenServicio', 'Orden', 'orden'])),
-          valor_glosa: cleanNum(findCol(row, ['Valor Glosa', 'valor_glosa', 'ValorGlosa', 'Glosa', 'glosa', 'Valor Glosado', 'valor_glosado'])),
-          valor_aceptado: cleanNum(findCol(row, ['Valor Aceptado', 'valor_aceptado', 'ValorAceptado', 'Aceptado', 'aceptado'])),
-          valor_no_aceptado: cleanNum(findCol(row, ['Valor No Aceptado', 'valor_no_aceptado', 'ValorNoAceptado', 'No Aceptado'])),
-          descripcion: normalizeText(findCol(row, ['Descripción', 'Descripcion', 'descripcion', 'DESCRIPCION', 'Obs', 'Observacion', 'observacion'])),
-          tipo_glosa: normalizeText(findCol(row, ['Tipo Glosa', 'tipo_glosa', 'TipoGlosa', 'Tipo', 'tipo'])) || 'Tarifas',
+          factura: normalizeText(findCol(row, ['Factura', 'factura', 'FACTURA', 'Nro Factura', 'No. Factura', 'NroFactura', 'No de Factura', 'Numero de Factura'])),
+          servicio: normalizeText(findCol(row, ['Servicio', 'servicio', 'SERVICIO', 'Tipo Servicio', 'tipo_servicio', 'Area'])),
+          orden_servicio: normalizeText(findCol(row, ['Orden Servicio', 'orden_servicio', 'OrdenServicio', 'Orden', 'orden', 'No Orden'])),
+          valor_glosa: cleanNum(findCol(row, ['Valor Glosa', 'valor_glosa', 'ValorGlosa', 'Glosa', 'glosa', 'Valor Glosado', 'valor_glosado', 'Total Glosa'])),
+          valor_aceptado: cleanNum(findCol(row, ['Valor Aceptado', 'valor_aceptado', 'ValorAceptado', 'Aceptado', 'aceptado', 'Total Aceptado'])),
+          valor_no_aceptado: cleanNum(findCol(row, ['Valor No Aceptado', 'valor_no_aceptado', 'ValorNoAceptado', 'No Aceptado', 'Total No Aceptado', 'Valor Rechazado'])),
+          descripcion: normalizeText(findCol(row, ['Descripción', 'Descripcion', 'descripcion', 'DESCRIPCION', 'Obs', 'Observacion', 'observacion', 'Observaciones', 'Motivo', 'Detalle'])),
+          tipo_glosa: normalizeText(findCol(row, ['Tipo Glosa', 'tipo_glosa', 'TipoGlosa', 'Tipo', 'tipo', 'Motivo Glosa'])) || 'Tarifas',
           estado,
-          fecha: normalizeText(findCol(row, ['Fecha', 'fecha', 'FECHA', 'Fecha Glosa', 'FechaGlosa'])) ||
+          fecha: normalizeText(findCol(row, ['Fecha', 'fecha', 'FECHA', 'Fecha Glosa', 'FechaGlosa', 'Fecha de Glosa'])) ||
             new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
           registrada_internamente: regInterna.toUpperCase().includes('SÍ') || regInterna.toUpperCase().includes('SI') || regInterna === '1' || regInterna.toUpperCase() === 'TRUE',
           seccion: currentSeccion,
-          soporte_pdf: normalizeText(findCol(row, ['Soporte PDF', 'soporte_pdf', 'SoportePDF'])) || null,
+          soporte_pdf: normalizeText(findCol(row, ['Soporte PDF', 'soporte_pdf', 'SoportePDF', 'Soporte', 'PDF', 'Archivo'])) || null,
           _status: estado === 'Pendiente' ? 'pendiente' : 'nuevo',
         };
       });
       setGlosasPreview(glosas);
     } else {
       const ingresos: IngresoImportado[] = validRows.map(row => {
-        const idRaw = normalizeText(findCol(row, ['ID', 'id', 'Id']));
+        const idRaw = normalizeText(findCol(row, ['ID', 'id', 'Id', 'Id Ingreso']));
         return {
           id: idRaw || crypto.randomUUID(),
-          factura: normalizeText(findCol(row, ['Factura', 'factura', 'FACTURA', 'Nro Factura', 'NroFactura'])),
-          valor_aceptado: cleanNum(findCol(row, ['Valor Aceptado', 'valor_aceptado', 'ValorAceptado', 'Aceptado'])),
-          valor_no_aceptado: cleanNum(findCol(row, ['Valor No Aceptado', 'valor_no_aceptado', 'No Aceptado'])),
-          fecha: normalizeText(findCol(row, ['Fecha', 'fecha', 'FECHA'])) ||
+          factura: normalizeText(findCol(row, ['Factura', 'factura', 'FACTURA', 'Nro Factura', 'NroFactura', 'No de Factura', 'Numero de Factura'])),
+          valor_aceptado: cleanNum(findCol(row, ['Valor Aceptado', 'valor_aceptado', 'ValorAceptado', 'Aceptado', 'Ingreso', 'Total Ingreso', 'Valor Pagado'])),
+          valor_no_aceptado: cleanNum(findCol(row, ['Valor No Aceptado', 'valor_no_aceptado', 'No Aceptado', 'Total No Aceptado'])),
+          fecha: normalizeText(findCol(row, ['Fecha', 'fecha', 'FECHA', 'Fecha Ingreso'])) ||
             new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
           seccion: currentSeccion,
-          soporte_pdf: normalizeText(findCol(row, ['Soporte PDF', 'soporte_pdf'])) || null,
+          soporte_pdf: normalizeText(findCol(row, ['Soporte PDF', 'soporte_pdf', 'Soporte', 'PDF', 'Archivo'])) || null,
           _status: 'nuevo',
         };
       });
