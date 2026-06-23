@@ -1,44 +1,44 @@
-const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
+const path = require('path');
+const XLSX = require('xlsx');
 
-const supabaseUrl = 'https://pcnxektqlxplrwanazuw.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbnhla3RxbHhwbHJ3YW5henV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NjEwMDksImV4cCI6MjA4NzQzNzAwOX0.rcRxfkQb3k6lVmGHSCWYebgjGi5UYd1LABOZ_0-bk7g';
+const downloadsPath = 'C:\\Users\\AUXFACTURACION8-VIVA\\Downloads';
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+try {
+    const files = fs.readdirSync(downloadsPath);
+    const recentFiles = [];
+    const minDate = new Date('2026-06-01');
 
-async function checkRecent() {
-    console.log('--- BUSCANDO REGISTROS DE AYER Y HOY ---');
-    
-    const { data: glosas, error } = await supabase.from('glosas').select('*');
-    
-    if (error) {
-        console.error('Error fetching glosas:', error);
-        return;
+    for (const f of files) {
+        const fullPath = path.join(downloadsPath, f);
+        try {
+            const stat = fs.statSync(fullPath);
+            if (stat.mtime >= minDate && (f.endsWith('.xlsx') || f.endsWith('.xls') || f.endsWith('.csv'))) {
+                recentFiles.push({ name: f, path: fullPath, mtime: stat.mtime, size: stat.size });
+            }
+        } catch(e) {}
     }
-
-    console.log(`Total glosas en DB: ${glosas.length}`);
-
-    const recent = glosas.filter(g => {
-        const fecha = g.fecha || '';
-        // Buscar 21, 22, 23 de Abril 2026
-        return fecha.includes('21/04/2026') || fecha.includes('22/04/2026') || fecha.includes('23/04/2026');
-    });
-
-    console.log(`Registros recientes encontrados: ${recent.length}`);
-    recent.forEach(g => {
-        console.log(`[${g.fecha}] Factura: ${g.factura}, Valor: ${g.valor_glosa}, Registrada Internamente: ${g.registrada_internamente}`);
-    });
-
-    const { data: ingresos } = await supabase.from('ingresos').select('*');
-    if (ingresos) {
-        const recentI = ingresos.filter(i => {
-             const fecha = i.fecha || '';
-             return fecha.includes('21/04/2026') || fecha.includes('22/04/2026') || fecha.includes('23/04/2026');
-        });
-        console.log(`\nIngresos recientes encontrados: ${recentI.length}`);
-        recentI.forEach(i => {
-            console.log(`[${i.fecha}] Factura: ${i.factura}, Valor Aceptado: ${i.valor_aceptado}`);
-        });
+    
+    recentFiles.sort((a, b) => b.mtime - a.mtime);
+    
+    console.log(`=== RECENT FILES IN DOWNLOADS (after June 1, 2026) ===`);
+    for (const info of recentFiles) {
+        console.log(`- ${info.name} | size: ${(info.size / 1024).toFixed(1)} KB | modified: ${info.mtime.toLocaleString()}`);
+        try {
+            const wb = XLSX.readFile(info.path);
+            const sheet = wb.Sheets[wb.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+            console.log(`   * Rows: ${rows.length}`);
+            if (rows.length > 0) {
+                console.log(`   * Header: ${rows[0].slice(0, 8).join(' | ')}`);
+            }
+            if (rows.length > 1) {
+                console.log(`   * Sample Row 1: ${rows[1].slice(0, 8).join(' | ')}`);
+            }
+        } catch(err) {
+            console.log(`   * Error: ${err.message}`);
+        }
     }
+} catch(err) {
+    console.error('Error scanning downloads:', err.message);
 }
-
-checkRecent();

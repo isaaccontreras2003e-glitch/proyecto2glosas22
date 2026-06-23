@@ -65,15 +65,40 @@ const findCol = (row: any, variants: string[]): any => {
     const key = Object.keys(row).find(k => {
       const cleanK = k.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
       const cleanV = v.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
-      return cleanK === cleanV || (cleanK.includes('factura') && cleanV.includes('factura'));
+      if (cleanK === cleanV) return true;
+      if (cleanK.includes('factura') && cleanV.includes('factura')) return true;
+      return false;
     });
     if (key) return row[key];
   }
   
-  // Último recurso: buscar cualquier llave que contenga la palabra clave principal si es muy obvia
+  // Último recurso: buscar cualquier llave que contenga palabras clave principales
   const mainVariant = variants[0].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  if (mainVariant === 'factura') {
-    const key = Object.keys(row).find(k => k.toLowerCase().includes('factura'));
+  const keys = Object.keys(row);
+  
+  if (mainVariant.includes('factura')) {
+    const key = keys.find(k => k.toLowerCase().includes('factura'));
+    if (key) return row[key];
+  }
+  if (mainVariant.includes('valorglosa') || variants.includes('glosa')) {
+    const key = keys.find(k => {
+      const lk = k.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return (lk.includes('valor') && lk.includes('glosa')) || lk.includes('vlr glosa') || lk.includes('v. glosa') || lk === 'glosa';
+    });
+    if (key) return row[key];
+  }
+  if (mainVariant.includes('valoraceptado')) {
+    const key = keys.find(k => {
+      const lk = k.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return (lk.includes('valor') && lk.includes('aceptado')) || lk.includes('vlr aceptado') || lk === 'aceptado';
+    });
+    if (key) return row[key];
+  }
+  if (mainVariant.includes('valornoaceptado')) {
+    const key = keys.find(k => {
+      const lk = k.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return (lk.includes('valor') && lk.includes('no aceptado')) || lk.includes('vlr no aceptado') || lk.includes('rechazado');
+    });
     if (key) return row[key];
   }
 

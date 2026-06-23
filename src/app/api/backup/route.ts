@@ -496,15 +496,10 @@ export async function GET(req: NextRequest) {
     // Guardar en escritorio si es local
     saveWorkbook(wb);
 
-    // Actualizar Consolidado Fijo en la nube
-    let cloudUrl = null;
-    try {
-      const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx', bookSST: false, cellStyles: true });
-      const fileName = 'Consolidado_Fijo_Sisfact.xlsx';
-      await supabase.storage.from('soportes_glosas').upload(fileName, excelBuffer, { upsert: true });
-      const { data } = supabase.storage.from('soportes_glosas').getPublicUrl(fileName);
-      cloudUrl = data.publicUrl;
-    } catch (e) { console.error('Error cloud sync GET:', e); }
+    // Obtener la URL del Consolidado Fijo en la nube
+    const fileName = 'Consolidado_Fijo_Sisfact.xlsx';
+    const { data } = supabase.storage.from('soportes_glosas').getPublicUrl(fileName);
+    const cloudUrl = data?.publicUrl || null;
 
     if (download) {
       const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx', bookSST: false, cellStyles: true });
