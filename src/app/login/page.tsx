@@ -172,7 +172,7 @@ export default function LoginPage() {
                 </div>
 
                 <AnimatePresence mode="wait">
-                    {view === 'login' ? (
+                    {view === 'login' && (
                         <motion.form
                             key="login-view"
                             initial={{ opacity: 0, x: -20 }}
@@ -297,7 +297,8 @@ export default function LoginPage() {
                                     </button>
                                 </div>
                         </motion.form>
-                    ) : view === 'forgot' ? (
+                    )}
+                    {view === 'forgot' && (
                         <motion.form
                             key="forgot-view"
                             initial={{ opacity: 0, x: 20 }}
@@ -373,6 +374,7 @@ export default function LoginPage() {
                                     <ArrowLeft size={14} /> Volver al inicio
                                 </button>
                             </div>
+                        </motion.form>
                     )}
                     {view === 'register' && (
                         <motion.form
