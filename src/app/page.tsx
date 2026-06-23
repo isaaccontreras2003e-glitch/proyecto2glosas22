@@ -16,6 +16,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { InteractiveLogo } from '@/components/InteractiveLogo';
 import { ToastProvider, useToast } from '@/lib/contexts/ToastContext';
 import { MonthlyReport } from '@/components/MonthlyReport';
+import { ImportadorMasivo } from '@/components/ImportadorMasivo';
 
 
 
@@ -66,6 +67,7 @@ function Home() {
   const [showForceButton, setShowForceButton] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [today, setToday] = useState(new Date());
+  const [showImportadorMasivo, setShowImportadorMasivo] = useState(false);
 
   // v10.1: RELOJ DE REINICIO DIARIO - Actualiza la fecha cada minuto
   useEffect(() => {
@@ -698,6 +700,86 @@ function Home() {
     } catch (err: any) {
       console.error('Error en sincronización completa:', err);
       showToast('Error en la sincronización: ' + err.message, 'error');
+    }
+  };
+
+  const handleRestoreFromLocalHistory = async () => {
+    if (!window.confirm('📋 ¿Deseas escanear el historial local de este navegador para recuperar glosas e ingresos?')) return;
+    
+    setLoading(true);
+    try {
+      const masterLog = safeStorage.getJson<any[]>('MASTER_RECORD_LOG', []);
+      if (!Array.isArray(masterLog) || masterLog.length === 0) {
+        showToast('⚠️ No se encontraron registros en el historial local de este navegador.', 'info');
+        setLoading(false);
+        return;
+      }
+
+      // Filtrar y limpiar campos de UI
+      const glosasRaw = masterLog.filter((item: any) => item.type === 'glosa');
+      const ingresosRaw = masterLog.filter((item: any) => item.type === 'ingreso');
+
+      const glosasData = glosasRaw.map(({ type, timestamp, sincronizado, ...g }) => g);
+      const ingresosData = ingresosRaw.map(({ type, timestamp, sincronizado, ...i }) => i);
+
+      if (glosasData.length === 0 && ingresosData.length === 0) {
+        showToast('⚠️ No hay glosas ni ingresos válidos en el historial para recuperar.', 'info');
+        setLoading(false);
+        return;
+      }
+
+      const confirmRestore = window.confirm(
+        `🔍 ¡Historial Encontrado!\n` +
+        `- Glosas por recuperar: ${glosasData.length}\n` +
+        `- Ingresos por recuperar: ${ingresosData.length}\n\n` +
+        `¿Deseas restaurar estos registros en la base de datos de Supabase ahora?`
+      );
+      if (!confirmRestore) {
+        setLoading(false);
+        return;
+      }
+
+      showToast('Restaurando registros...', 'info');
+
+      let glosasImportadas = 0;
+      let ingresosImportados = 0;
+
+      // Upsert en lotes para evitar sobrecargar la conexión
+      const BATCH_SIZE = 100;
+      if (glosasData.length > 0) {
+        for (let i = 0; i < glosasData.length; i += BATCH_SIZE) {
+          const batch = glosasData.slice(i, i + BATCH_SIZE);
+          const { error } = await supabase.from('glosas').upsert(batch, { onConflict: 'id' });
+          if (error) throw new Error('Error al restaurar glosas: ' + error.message);
+          glosasImportadas += batch.length;
+        }
+      }
+
+      if (ingresosData.length > 0) {
+        for (let i = 0; i < ingresosData.length; i += BATCH_SIZE) {
+          const batch = ingresosData.slice(i, i + BATCH_SIZE);
+          const { error } = await supabase.from('ingresos').upsert(batch, { onConflict: 'id' });
+          if (error) throw new Error('Error al restaurar ingresos: ' + error.message);
+          ingresosImportados += batch.length;
+        }
+      }
+
+      showToast(`✅ Éxito: Se restauraron ${glosasImportadas} glosas y ${ingresosImportados} ingresos.`, 'success');
+      
+      // Intentar actualizar el backup en el escritorio/nube con los nuevos datos
+      try {
+        await fetch('/api/backup?sync=true');
+      } catch (e) {
+        console.error('Error al sincronizar backup post-restauración:', e);
+      }
+
+      // Recargar datos en la UI
+      await loadData(true);
+    } catch (err: any) {
+      console.error('Error crítico durante restauración:', err);
+      showToast('❌ Error de recuperación: ' + err.message, 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1455,6 +1537,17 @@ function Home() {
 
   return (
     <div className="app-layout" style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)', position: 'relative' }}>
+      {/* IMPORTADOR MASIVO Modal */}
+      <AnimatePresence>
+        {showImportadorMasivo && (
+          <ImportadorMasivo
+            currentSeccion={currentMainSection}
+            onImportComplete={() => loadData(true)}
+            onClose={() => setShowImportadorMasivo(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Loading overlay - Top Level */}
       <AnimatePresence>
         {((loading || authLoading) && !forcedEntry) && (
@@ -1696,13 +1789,38 @@ function Home() {
             Restaurar desde Nube
           </motion.button>
 
+          {/* ── RECUPERACIÓN LOCAL: Recuperar desde Historial Local ── */}
+          <motion.button
+            whileHover={{ background: 'rgba(52,211,153,0.15)', scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleRestoreFromLocalHistory}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              padding: '0.6rem', width: '100%', borderRadius: '10px',
+              border: '1px solid rgba(52,211,153,0.4)',
+              background: 'rgba(52,211,153,0.08)',
+              color: '#34d399', fontSize: '0.7rem', fontWeight: 800,
+              cursor: 'pointer', textTransform: 'uppercase',
+            }}
+          >
+            <RefreshCw size={14} />
+            Recuperar Historial Local
+          </motion.button>
+
           {/* ── BORRADO TOTAL: Glosas + Ingresos ── */}
           <motion.button
             whileHover={{ background: 'rgba(239, 68, 68, 0.15)', scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={async () => {
-              if (!window.confirm('🚨 PELIGRO: Esto borrará TODAS las glosas Y TODOS los ingresos permanentemente. ¿Estás completamente seguro?')) return;
-              if (!window.confirm('⚠️ Segunda confirmación: ¿Borrar TODO sin posibilidad de recuperar?')) return;
+              const confirmText = window.prompt(
+                '🚨 PELIGRO DE BORRADO TOTAL 🚨\n\n' +
+                'Esto eliminará PERMANENTEMENTE todas las glosas y todos los ingresos de la base de datos en la nube.\n\n' +
+                'Para continuar, escribe la palabra "ELIMINAR" en mayúsculas a continuación:'
+              );
+              if (confirmText !== 'ELIMINAR') {
+                showToast('Borrado cancelado (la palabra de confirmación no coincide)', 'info');
+                return;
+              }
               showToast('Iniciando borrado total...', 'info');
               const [resG, resI] = await Promise.all([
                 supabase.from('glosas').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
@@ -2206,7 +2324,34 @@ function Home() {
                         onChange={handleFileImport}
                       />
                     </label>
+
+                    {/* IMPORTADOR MASIVO — para 1042+ registros con preview y pendientes */}
+                    <motion.button
+                      whileHover={{ scale: 1.05, opacity: 1 }}
+                      onClick={() => setShowImportadorMasivo(true)}
+                      title="Importador Masivo: sube cientos o miles de registros con preview, lotes automáticos y reporte de pendientes"
+                      style={{
+                        padding: '0.6rem 1.25rem',
+                        fontSize: '0.7rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        color: '#a78bfa',
+                        border: '1px solid rgba(167,139,250,0.4)',
+                        borderRadius: '8px',
+                        background: 'rgba(139,92,246,0.12)',
+                        cursor: 'pointer',
+                        fontWeight: 800,
+                        letterSpacing: '0.05em',
+                        transition: 'all 0.2s',
+                        boxShadow: '0 0 12px rgba(139,92,246,0.15)'
+                      }}
+                    >
+                      <UploadCloud size={12} />
+                      IMPORTAR MASIVO ✨
+                    </motion.button>
                   </div>
+
 
                   <div style={{ opacity: 0.6 }}>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>
