@@ -1533,7 +1533,7 @@ function Home() {
     return () => clearInterval(interval);
   }, [glosas, ingresos, isMounted]);
 
-  if (!isMounted) return <div style={{ background: '#06040d', minHeight: '100vh' }}></div>;
+  if (!isMounted) return <div style={{ background: 'var(--background)', minHeight: '100vh' }}></div>;
 
   return (
     <div className="app-layout" style={{ display: 'flex', minHeight: '100vh', background: 'var(--background)', position: 'relative' }}>
@@ -1573,8 +1573,8 @@ function Home() {
               style={{
                 width: '40px',
                 height: '40px',
-                border: '3px solid rgba(139,92,246,0.2)',
-                borderTop: '3px solid #8b5cf6',
+                border: '3px solid rgba(107,126,255,0.15)',
+                borderTop: '3px solid var(--primary)',
                 borderRadius: '50%',
                 marginBottom: '1rem'
               }}
@@ -1593,9 +1593,9 @@ function Home() {
                 style={{
                   fontSize: '0.75rem',
                   padding: '0.75rem 1.5rem',
-                  background: 'rgba(139, 92, 246, 0.1)',
-                  border: '1px solid rgba(139,92,246,0.3)',
-                  color: 'white',
+                  background: 'rgba(107, 126, 255, 0.08)',
+                  border: '1px solid rgba(107,126,255,0.25)',
+                  color: 'var(--text-primary)',
                   fontWeight: 800,
                   borderRadius: '12px',
                   cursor: 'pointer'
@@ -1620,10 +1620,10 @@ function Home() {
         </div>
         <div style={{ padding: '0 1rem', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-            <div style={{ padding: '8px', background: 'rgba(0, 99, 65, 0.05)', borderRadius: '10px' }}>
+            <div style={{ padding: '8px', background: 'rgba(107, 126, 255, 0.06)', borderRadius: '10px' }}>
               <Activity size={20} color="var(--primary)" />
             </div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#00f2fe', letterSpacing: '0.05em' }}>V12.3 - BLINDADO</h2>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--primary)', letterSpacing: '0.05em' }}>V12.3 - BLINDADO</h2>
           </div>
         </div>
 
@@ -1650,7 +1650,7 @@ function Home() {
                   padding: '0.85rem 1rem',
                   borderRadius: '12px',
                   border: 'none',
-                  background: isActive ? 'rgba(0, 177, 113, 0.1)' : 'transparent',
+                  background: isActive ? 'rgba(107, 126, 255, 0.1)' : 'transparent',
                   color: isActive ? 'var(--primary)' : 'var(--text-muted)',
                   cursor: 'pointer',
                   textAlign: 'left',
@@ -1779,9 +1779,9 @@ function Home() {
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
               padding: '0.6rem', width: '100%', borderRadius: '10px',
-              border: '1px solid rgba(96,165,250,0.4)',
-              background: 'rgba(96,165,250,0.08)',
-              color: '#60a5fa', fontSize: '0.7rem', fontWeight: 800,
+              border: '1px solid rgba(107,126,255,0.25)',
+              background: 'rgba(107,126,255,0.06)',
+              color: 'var(--primary)', fontSize: '0.7rem', fontWeight: 800,
               cursor: 'pointer', textTransform: 'uppercase',
             }}
           >
@@ -1797,9 +1797,9 @@ function Home() {
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
               padding: '0.6rem', width: '100%', borderRadius: '10px',
-              border: '1px solid rgba(52,211,153,0.4)',
-              background: 'rgba(52,211,153,0.08)',
-              color: '#34d399', fontSize: '0.7rem', fontWeight: 800,
+              border: '1px solid rgba(74,222,128,0.25)',
+              background: 'rgba(74,222,128,0.05)',
+              color: 'var(--success)', fontSize: '0.7rem', fontWeight: 800,
               cursor: 'pointer', textTransform: 'uppercase',
             }}
           >
@@ -1841,9 +1841,9 @@ function Home() {
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
               padding: '0.6rem', width: '100%', borderRadius: '10px',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              background: 'rgba(239, 68, 68, 0.05)',
-              color: '#ef4444', fontSize: '0.7rem', fontWeight: 800,
+              border: '1px solid rgba(248, 113, 113, 0.25)',
+              background: 'rgba(248, 113, 113, 0.04)',
+              color: 'var(--danger)', fontSize: '0.7rem', fontWeight: 800,
               cursor: 'pointer', textTransform: 'uppercase',
             }}
           >
@@ -1854,7 +1854,7 @@ function Home() {
 
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0 0.5rem' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#000', fontSize: '0.75rem' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary-glow)', border: '1px solid rgba(107,126,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'var(--primary)', fontSize: '0.75rem' }}>
               {user?.email?.charAt(0).toUpperCase()}
             </div>
             <div style={{ flex: 1, overflow: 'hidden' }}>
@@ -1959,8 +1959,8 @@ function Home() {
             display: 'flex',
             alignItems: 'center',
             gap: '0.35rem',
-            background: 'rgba(0,177,113,0.05)',
-            border: '1px solid rgba(0,177,113,0.1)',
+            background: 'rgba(107,126,255,0.04)',
+            border: '1px solid rgba(107,126,255,0.1)',
             borderRadius: '6px',
             padding: '2px 10px'
           }}>
@@ -2019,8 +2019,8 @@ function Home() {
                     alignItems: 'center',
                     gap: '0.5rem'
                   }}>
-                    {currentMainSection === 'GLOSAS' && <FileText size={20} color="#8b5cf6" />}
-                    {currentMainSection === 'MEDICAMENTOS' && <Activity size={20} color="#10b981" />}
+                    {currentMainSection === 'GLOSAS' && <FileText size={20} color="var(--primary)" />}
+                    {currentMainSection === 'MEDICAMENTOS' && <Activity size={20} color="var(--success)" />}
                     {currentMainSection}
                   </h2>
                 </div>
@@ -2167,7 +2167,7 @@ function Home() {
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '1rem' }}>
-                        <motion.button whileHover={{ scale: 1.05 }} onClick={exportToExcel} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(139,92,246,0.1)', color: 'var(--primary)', height: '42px' }}>
+                        <motion.button whileHover={{ scale: 1.05 }} onClick={exportToExcel} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(107,126,255,0.06)', color: 'var(--primary)', height: '42px' }}>
                           <Download size={16} /> CONSOLIDADO CSV
                         </motion.button>
                       </div>
@@ -2189,9 +2189,9 @@ function Home() {
                           style={{
                             padding: '4px 12px',
                             fontSize: '0.7rem',
-                            background: 'rgba(16, 185, 129, 0.1)',
-                            color: '#34d399',
-                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            background: 'rgba(74, 222, 128, 0.06)',
+                            color: 'var(--success)',
+                            border: '1px solid rgba(74, 222, 128, 0.2)',
                             fontWeight: 800,
                             borderRadius: '6px'
                           }}

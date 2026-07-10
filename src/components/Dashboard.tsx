@@ -226,8 +226,8 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
         const pendingPerc = Math.max(0, 100 - acceptedPerc - noAcceptedPerc);
 
         return [
-            { label: 'ACEPTADA', p: acceptedPerc, color: '#ff4d4d' },
-            { label: 'NO ACEPTADA', p: noAcceptedPerc, color: '#f59e0b' },
+            { label: 'ACEPTADA', p: acceptedPerc, color: 'var(--danger)' },
+            { label: 'NO ACEPTADA', p: noAcceptedPerc, color: 'var(--warning)' },
             { label: 'PENDIENTE', p: pendingPerc, color: 'var(--primary)' }
         ];
     }, [metrics]);
@@ -238,15 +238,15 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <LayoutDashboard size={20} color="var(--primary)" />
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 950, color: 'white', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 950, color: 'var(--text-primary)', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                         TABLERO DE MANDO - GESTIÓN DE GLOSAS
-                        <span style={{ fontSize: '0.55rem', background: 'var(--primary)', color: '#000', padding: '3px 8px', borderRadius: '4px', marginLeft: '0.75rem', verticalAlign: 'middle', fontWeight: 900 }}>COI V.RECONCILIADA</span>
+                        <span style={{ fontSize: '0.55rem', background: 'rgba(107,126,255,0.15)', color: 'var(--primary)', border: '1px solid rgba(107,126,255,0.3)', padding: '3px 8px', borderRadius: '4px', marginLeft: '0.75rem', verticalAlign: 'middle', fontWeight: 900 }}>COI V.RECONCILIADA</span>
                     </h2>
                 </div>
 
                 {onRescue && (
                     <motion.button
-                        whileHover={{ scale: 1.05, background: 'rgba(139, 92, 246, 0.2)' }}
+                        whileHover={{ scale: 1.05, background: 'rgba(107, 126, 255, 0.12)' }}
                         whileTap={{ scale: 0.95 }}
                         onClick={onRescue}
                         style={{
@@ -255,8 +255,8 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                             gap: '0.6rem',
                             padding: '0.6rem 1.25rem',
                             borderRadius: '10px',
-                            background: 'rgba(139, 92, 246, 0.1)',
-                            border: '1px solid rgba(139, 92, 246, 0.3)',
+                            background: 'rgba(107, 126, 255, 0.06)',
+                            border: '1px solid rgba(107, 126, 255, 0.2)',
                             color: 'var(--primary)',
                             fontSize: '0.75rem',
                             fontWeight: 800,
@@ -333,15 +333,15 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                                 <DollarSign size={16} color="var(--primary)" />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
-                                {/* Aceptado = SALMÓN (Pago Real IPS) */}
+                                {/* Aceptado = DANGER (Pago Real IPS) */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ fontSize: '0.75rem', color: '#ff4d4d', fontWeight: 950 }}>${formatPesos(metrics.acceptedValue)}</span>
-                                    <span style={{ fontSize: '0.55rem', color: 'rgba(255, 77, 77, 0.5)', fontWeight: 800 }}>({metrics.percentAcceptedTotal.toFixed(1)}% Aceptado)</span>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--danger)', fontWeight: 950 }}>${formatPesos(metrics.acceptedValue)}</span>
+                                    <span style={{ fontSize: '0.55rem', color: 'rgba(248, 113, 113, 0.5)', fontWeight: 800 }}>({metrics.percentAcceptedTotal.toFixed(1)}% Aceptado)</span>
                                 </div>
-                                {/* Resto Registrado = AZUL (En Gestión Interna) */}
+                                {/* Resto = PRIMARY (En Gestión Interna) */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 950 }}>${formatPesos(metrics.totalValue - metrics.acceptedValue)}</span>
-                                    <span style={{ fontSize: '0.55rem', color: 'rgba(56, 189, 248, 0.5)', fontWeight: 800 }}>({(((metrics.totalValue - metrics.acceptedValue) / (metrics.totalValue || 1)) * 100).toFixed(1)}% No Aceptado / Pendiente)</span>
+                                    <span style={{ fontSize: '0.55rem', color: 'rgba(107, 126, 255, 0.5)', fontWeight: 800 }}>({(((metrics.totalValue - metrics.acceptedValue) / (metrics.totalValue || 1)) * 100).toFixed(1)}% No Aceptado / Pendiente)</span>
                                 </div>
                             </div>
                         </div>
@@ -374,40 +374,40 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                 </motion.div>
 
                 <motion.div whileHover={{ y: -5, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
-                    <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: (metrics as any).pendientesRegistroCount > 0 ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(16,185,129,0.2)', height: '100%' }}>
+                    <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: (metrics as any).pendientesRegistroCount > 0 ? '1px solid rgba(252, 211, 77, 0.25)' : '1px solid rgba(74, 222, 128, 0.2)', height: '100%' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ width: '32px', height: '32px', background: (metrics as any).pendientesRegistroCount > 0 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16,185,129,0.07)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <AlertTriangle size={16} color={(metrics as any).pendientesRegistroCount > 0 ? '#fbbf24' : '#10b981'} />
+                            <div style={{ width: '32px', height: '32px', background: (metrics as any).pendientesRegistroCount > 0 ? 'rgba(252, 211, 77, 0.08)' : 'rgba(74, 222, 128, 0.06)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <AlertTriangle size={16} color={(metrics as any).pendientesRegistroCount > 0 ? 'var(--warning)' : 'var(--success)'} />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                                <span style={{ fontSize: '0.65rem', color: (metrics as any).pendientesRegistroCount > 0 ? '#fbbf24' : '#10b981', fontWeight: 900 }}>POR REGISTRAR</span>
+                                <span style={{ fontSize: '0.65rem', color: (metrics as any).pendientesRegistroCount > 0 ? 'var(--warning)' : 'var(--success)', fontWeight: 900 }}>POR REGISTRAR</span>
                                 {(metrics as any).isFiltered && (
-                                    <span style={{ fontSize: '0.5rem', color: '#a78bfa', fontWeight: 800, background: 'rgba(139,92,246,0.1)', padding: '1px 6px', borderRadius: '4px' }}>FILTRADO</span>
+                                    <span style={{ fontSize: '0.5rem', color: 'var(--primary)', fontWeight: 800, background: 'var(--primary-glow)', padding: '1px 6px', borderRadius: '4px' }}>FILTRADO</span>
                                 )}
                             </div>
                         </div>
                         <div>
                             <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>GLOSAS PENDIENTES DE REGISTRO</p>
-                            <h2 style={{ fontSize: '2rem', fontWeight: 950, margin: '4px 0', color: (metrics as any).pendientesRegistroCount > 0 ? '#f59e0b' : '#10b981' }}>
+                            <h2 style={{ fontSize: '2rem', fontWeight: 950, margin: '4px 0', color: (metrics as any).pendientesRegistroCount > 0 ? 'var(--warning)' : 'var(--success)' }}>
                                 {(metrics as any).pendientesRegistroCount}
                             </h2>
-                            <p style={{ fontSize: '0.65rem', color: (metrics as any).pendientesRegistroCount > 0 ? 'rgba(245,158,11,0.7)' : 'rgba(16,185,129,0.7)', margin: 0, fontWeight: 700 }}>
+                            <p style={{ fontSize: '0.65rem', color: (metrics as any).pendientesRegistroCount > 0 ? 'rgba(252,211,77,0.7)' : 'rgba(74,222,128,0.7)', margin: 0, fontWeight: 700 }}>
                                 ${formatPesos((metrics as any).pendientesRegistroValue || 0)}
                             </p>
                         </div>
                         <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                                 <span style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: 700 }}>PENDIENTE DE INTEGRACIÓN</span>
-                                <span style={{ fontSize: '0.55rem', color: (metrics as any).pendientesRegistroCount > 0 ? '#f59e0b' : '#10b981', fontWeight: 950 }}>
+                                <span style={{ fontSize: '0.55rem', color: (metrics as any).pendientesRegistroCount > 0 ? 'var(--warning)' : 'var(--success)', fontWeight: 950 }}>
                                     {(((metrics as any).pendientesRegistroValue / ((metrics as any).totalRegistradoBase || 1)) * 100).toFixed(1)}%
                                 </span>
                             </div>
-                            <div style={{ height: '4px', background: 'rgba(0,0,0,0.03)', borderRadius: '10px' }}>
+                            <div style={{ height: '4px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
                                 <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `${Math.min(100, (((metrics as any).pendientesRegistroValue / ((metrics as any).totalRegistradoBase || 1)) * 100))}%` }}
                                     transition={{ type: "spring", bounce: 0, duration: 1.5 }}
-                                    style={{ height: '100%', background: (metrics as any).pendientesRegistroCount > 0 ? '#fbbf24' : '#10b981', borderRadius: '10px', boxShadow: (metrics as any).pendientesRegistroCount > 0 ? '0 0 10px rgba(251, 191, 36, 0.3)' : '0 0 8px rgba(16,185,129,0.3)' }}
+                                    style={{ height: '100%', background: (metrics as any).pendientesRegistroCount > 0 ? 'var(--warning)' : 'var(--success)', borderRadius: '10px', opacity: 0.8 }}
                                 />
                             </div>
                         </div>
@@ -437,10 +437,10 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                 <motion.div whileHover={{ y: -5, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
                     <Card style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <TrendingUp size={16} color="var(--secondary)" />
+                            <div style={{ width: '32px', height: '32px', background: 'rgba(74,222,128,0.06)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <TrendingUp size={16} color="var(--success)" />
                             </div>
-                            <span style={{ fontSize: '0.6rem', color: 'var(--secondary)', fontWeight: 800 }}>FACTURAS RESPONDIDAS</span>
+                            <span style={{ fontSize: '0.6rem', color: 'var(--success)', fontWeight: 800 }}>FACTURAS RESPONDIDAS</span>
                         </div>
                         <div>
                             <p style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>CANTIDAD TOTAL CONTESTADA</p>
@@ -478,7 +478,7 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                                         initial={{ width: 0 }}
                                         animate={{ width: `${Math.min(100, cat.p)}%` }}
                                         transition={{ type: "spring", stiffness: 60, damping: 15, delay: i * 0.15 }}
-                                        style={{ height: '100%', background: 'linear-gradient(90deg, var(--primary), var(--secondary))', borderRadius: '10px', boxShadow: `0 0 10px var(--primary-glow)` }}
+                                        style={{ height: '100%', background: 'var(--primary)', borderRadius: '10px', opacity: 0.75 }}
                                     />
                                 </div>
                             </div>

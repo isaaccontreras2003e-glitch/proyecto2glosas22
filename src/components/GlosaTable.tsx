@@ -93,9 +93,9 @@ export const GlosaTable = ({
 
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'Pendiente': return { background: 'rgba(0, 242, 254, 0.1)', color: 'var(--primary)', borderColor: 'rgba(0, 242, 254, 0.2)' };
-            case 'Respondida': return { background: 'rgba(56, 189, 248, 0.12)', color: 'var(--secondary)', borderColor: 'rgba(56, 189, 248, 0.25)' };
-            case 'Aceptada': return { background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.2)' };
+            case 'Pendiente': return { background: 'rgba(107, 126, 255, 0.1)', color: 'var(--primary)', borderColor: 'rgba(107, 126, 255, 0.2)' };
+            case 'Respondida': return { background: 'rgba(148, 163, 184, 0.1)', color: 'var(--secondary)', borderColor: 'rgba(148, 163, 184, 0.2)' };
+            case 'Aceptada': return { background: 'rgba(248, 113, 113, 0.08)', color: 'var(--danger)', borderColor: 'rgba(248, 113, 113, 0.2)' };
             default: return {};
         }
     };
@@ -288,10 +288,10 @@ export const GlosaTable = ({
                     padding: '0.85rem 1.25rem',
                     borderRadius: '12px',
                     background: filterSummary.hayFiltroActivo
-                        ? 'rgba(139, 92, 246, 0.06)'
+                        ? 'rgba(107, 126, 255, 0.05)'
                         : 'rgba(255,255,255,0.02)',
                     border: filterSummary.hayFiltroActivo
-                        ? '1px solid rgba(139,92,246,0.25)'
+                        ? '1px solid rgba(107,126,255,0.2)'
                         : '1px solid var(--border)',
                     display: 'flex',
                     alignItems: 'center',
@@ -303,15 +303,15 @@ export const GlosaTable = ({
                     {/* Lado izquierdo: totales de la vista */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Filter size={14} style={{ color: filterSummary.hayFiltroActivo ? '#a78bfa' : 'var(--text-muted)' }} />
-                            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: filterSummary.hayFiltroActivo ? '#a78bfa' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            <Filter size={14} style={{ color: filterSummary.hayFiltroActivo ? 'var(--primary)' : 'var(--text-muted)' }} />
+                            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: filterSummary.hayFiltroActivo ? 'var(--primary)' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                                 {filterSummary.hayFiltroActivo ? 'Vista filtrada' : 'Vista completa'}
                             </span>
                         </div>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                            <strong style={{ color: 'white' }}>{filterSummary.total}</strong> glosas
+                            <strong style={{ color: 'var(--text-primary)' }}>{filterSummary.total}</strong> glosas
                         </span>
-                        <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                             <CheckCircle2 size={13} />
                             <strong>{filterSummary.registradas}</strong> registradas
                         </span>
@@ -323,16 +323,16 @@ export const GlosaTable = ({
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.6rem',
-                            background: 'rgba(245, 158, 11, 0.1)',
-                            border: '1px solid rgba(245,158,11,0.3)',
+                            background: 'rgba(252, 211, 77, 0.07)',
+                            border: '1px solid rgba(252,211,77,0.2)',
                             borderRadius: '8px',
                             padding: '0.4rem 1rem'
                         }}>
-                            <AlertCircle size={14} style={{ color: '#f59e0b', flexShrink: 0 }} />
-                            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#f59e0b' }}>
+                            <AlertCircle size={14} style={{ color: 'var(--warning)', flexShrink: 0 }} />
+                            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--warning)' }}>
                                 {filterSummary.pendientesRegistro} glosa{filterSummary.pendientesRegistro !== 1 ? 's' : ''} PENDIENTE{filterSummary.pendientesRegistro !== 1 ? 'S' : ''} DE REGISTRAR
                             </span>
-                            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(245,158,11,0.7)' }}>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(252,211,77,0.65)' }}>
                                 — ${formatPesosSummary(filterSummary.totalValorPendiente)}
                             </span>
                         </div>
@@ -341,13 +341,13 @@ export const GlosaTable = ({
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.5rem',
-                            background: 'rgba(16, 185, 129, 0.07)',
-                            border: '1px solid rgba(16,185,129,0.2)',
+                            background: 'rgba(74, 222, 128, 0.05)',
+                            border: '1px solid rgba(74,222,128,0.15)',
                             borderRadius: '8px',
                             padding: '0.4rem 1rem'
                         }}>
-                            <CheckCircle2 size={14} style={{ color: '#10b981' }} />
-                            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#10b981' }}>✓ Todo registrado en esta vista</span>
+                            <CheckCircle2 size={14} style={{ color: 'var(--success)' }} />
+                            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--success)' }}>✓ Todo registrado en esta vista</span>
                         </div>
                     )}
                 </div>
@@ -358,8 +358,8 @@ export const GlosaTable = ({
                         marginBottom: '1.25rem',
                         padding: '0.85rem 1.25rem',
                         borderRadius: '12px',
-                        background: 'rgba(239,68,68,0.07)',
-                        border: '1px solid rgba(239,68,68,0.25)',
+                        background: 'rgba(248,113,113,0.05)',
+                        border: '1px solid rgba(248,113,113,0.2)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -414,8 +414,8 @@ export const GlosaTable = ({
                         marginBottom: '1.25rem',
                         padding: '0.85rem 1.25rem',
                         borderRadius: '12px',
-                        background: 'rgba(0, 242, 254, 0.05)',
-                        border: '1px solid rgba(0, 242, 254, 0.15)',
+                        background: 'rgba(107,126,255,0.04)',
+                        border: '1px solid rgba(107,126,255,0.12)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -441,8 +441,8 @@ export const GlosaTable = ({
                             <button
                                 onClick={() => setConfirmMarkAll(true)}
                                 style={{
-                                    background: 'rgba(0, 242, 254, 0.1)',
-                                    border: '1px solid rgba(0, 242, 254, 0.3)',
+                                    background: 'rgba(107, 126, 255, 0.08)',
+                                    border: '1px solid rgba(107, 126, 255, 0.2)',
                                     color: 'var(--primary)',
                                     padding: '0.4rem 1rem',
                                     borderRadius: '8px',
@@ -493,9 +493,9 @@ export const GlosaTable = ({
                                                 borderBottom: '1px solid var(--border)',
                                                 transition: 'background 0.2s',
                                                 background: glosa.registrada_internamente
-                                                        ? 'rgba(0, 242, 254, 0.04)'
-                                                    : (isExactDupe ? 'rgba(239,68,68,0.05)' : (index % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent')),
-                                                borderLeft: glosa.registrada_internamente ? '4px solid var(--primary)' : (isExactDupe ? '4px solid var(--danger)' : '1px solid var(--border)')
+                                                        ? 'rgba(107, 126, 255, 0.04)'
+                                                    : (isExactDupe ? 'rgba(248,113,113,0.04)' : (index % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent')),
+                                                borderLeft: glosa.registrada_internamente ? '3px solid rgba(107,126,255,0.4)' : (isExactDupe ? '3px solid rgba(248,113,113,0.5)' : '1px solid var(--border)')
                                             }}
                                         >
                                             <td style={{ padding: '1.25rem 1rem', textAlign: 'center' }}>
@@ -517,7 +517,7 @@ export const GlosaTable = ({
                                                     }}
                                                     title={glosa.registrada_internamente ? "Registro permanente en sistema interno" : "Marcar como registrado en sistema interno"}
                                                 >
-                                                    <CheckCircle2 size={20} fill={glosa.registrada_internamente ? "rgba(0,177,113,0.1)" : "none"} />
+                                                    <CheckCircle2 size={20} fill={glosa.registrada_internamente ? 'rgba(107,126,255,0.15)' : 'none'} />
                                                 </motion.button>
                                             </td>
                                             <td style={{ padding: '1.25rem 1rem', fontWeight: 600, color: glosa.registrada_internamente ? 'var(--secondary)' : (isExactDupe ? 'var(--danger)' : 'var(--text-primary)') }}>
@@ -525,9 +525,9 @@ export const GlosaTable = ({
                                                     {isExactDupe && <Copy size={13} style={{ flexShrink: 0 }} />}
                                                     <span>{glosa.factura}</span>
                                                     {glosa.sincronizado ? (
-                                                        <div title="Sincronizado en la nube" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 5px #10b981' }}></div>
+                                                        <div title="Sincronizado en la nube" style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--success)', opacity: 0.8 }}></div>
                                                     ) : (
-                                                        <div title="Guardado localmente (Pendiente de subir)" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b', boxShadow: '0 0 5px #f59e0b' }}></div>
+                                                        <div title="Guardado localmente (Pendiente de subir)" style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--warning)', opacity: 0.8 }}></div>
                                                     )}
                                                 </div>
                                             </td>
@@ -578,8 +578,8 @@ export const GlosaTable = ({
                                                         onClick={() => setSelectedGlosa(glosa)}
                                                         title="Ver detalles"
                                                         style={{
-                                                            background: 'rgba(0, 99, 65, 0.05)',
-                                                            border: '1px solid rgba(0, 99, 65, 0.1)',
+                                                            background: 'rgba(107, 126, 255, 0.05)',
+                                                            border: '1px solid rgba(107, 126, 255, 0.1)',
                                                             color: 'var(--primary)',
                                                             padding: '0.5rem',
                                                             borderRadius: '0.75rem',
@@ -599,9 +599,9 @@ export const GlosaTable = ({
                                                                 rel="noopener noreferrer"
                                                                 title="Ver Nota Crédito/PDF"
                                                                 style={{
-                                                                    background: 'rgba(59, 130, 246, 0.1)',
-                                                                    border: '1px solid rgba(59, 130, 246, 0.2)',
-                                                                    color: '#60a5fa',
+                                                                    background: 'rgba(107, 126, 255, 0.06)',
+                                                                    border: '1px solid rgba(107, 126, 255, 0.15)',
+                                                                    color: 'var(--primary)',
                                                                     padding: '0.5rem',
                                                                     borderRadius: '0.75rem',
                                                                     display: 'flex',
@@ -617,9 +617,9 @@ export const GlosaTable = ({
                                                                     onClick={() => onDeletePdf(glosa.id)}
                                                                     title="Eliminar PDF"
                                                                     style={{
-                                                                        background: 'rgba(239, 68, 68, 0.1)',
-                                                                        border: '1px solid rgba(239, 68, 68, 0.2)',
-                                                                        color: '#ef4444',
+                                                                        background: 'rgba(248, 113, 113, 0.06)',
+                                                                        border: '1px solid rgba(248, 113, 113, 0.15)',
+                                                                        color: 'var(--danger)',
                                                                         padding: '0.5rem',
                                                                         borderRadius: '0.75rem',
                                                                         cursor: 'pointer',
@@ -637,9 +637,9 @@ export const GlosaTable = ({
                                                         <label
                                                             title="Anexar Nota Crédito PDF"
                                                             style={{
-                                                                background: 'rgba(16, 185, 129, 0.1)',
-                                                                border: '1px solid rgba(16, 185, 129, 0.2)',
-                                                                color: '#10b981',
+                                                                background: 'rgba(74, 222, 128, 0.06)',
+                                                                border: '1px solid rgba(74, 222, 128, 0.15)',
+                                                                color: 'var(--success)',
                                                                 padding: '0.5rem',
                                                                 borderRadius: '0.75rem',
                                                                 cursor: 'pointer',

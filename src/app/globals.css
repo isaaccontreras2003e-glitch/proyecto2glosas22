@@ -1,45 +1,56 @@
 /* ═══════════════════════════════════════════════════════
-   SISFACT PRO · Global Styles · v5.5
+   SISFACT PRO · Global Styles · v5.6 - Neutral Palette
+   Paleta de 4 colores principales:
+   1. --primary   : #6B7EFF  (Azul índigo suave)
+   2. --accent    : #E2E8F0  (Blanco humo / texto claro)
+   3. --success   : #4ADE80  (Verde suave)
+   4. --danger    : #F87171  (Rojo apagado)
    ═══════════════════════════════════════════════════════ */
 
 /* ── Design Tokens ──────────────────────────────────── */
 :root {
-  --background: #00050a;
-  --surface: #0f172a;
-  --surface-hover: #1e293b;
-  --bg-card: var(--surface);
-  --foreground: #f8fafc;
+  /* ── Backgrounds ── */
+  --background:     #0c0f18;
+  --surface:        #131720;
+  --surface-hover:  #1a2030;
+  --bg-card:        var(--surface);
 
-  --primary: #00f2fe;
-  --primary-hover: #00d2da;
-  --primary-glow: rgba(0, 242, 254, 0.15);
+  /* ── 4 colores principales del sistema ── */
+  --primary:        #6B7EFF;          /* Azul índigo suave */
+  --primary-hover:  #5467e8;
+  --primary-glow:   rgba(107, 126, 255, 0.12);
 
-  --secondary: #38bdf8;
-  --secondary-hover: #0ea5e9;
+  --secondary:      #94A3B8;          /* Slate gris (texto secundario/neutro) */
+  --secondary-hover:#CBD5E1;
 
-  --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --success:        #4ADE80;          /* Verde suave */
+  --danger:         #F87171;          /* Rojo apagado */
 
-  --border: rgba(255, 255, 255, 0.08);
-  --border-focus: rgba(0, 242, 254, 0.4);
+  /* ── Texto ── */
+  --foreground:     #E2E8F0;
+  --text-primary:   #E2E8F0;
+  --text-secondary: #94A3B8;
+  --text-muted:     #64748B;
 
-  --glass-bg: rgba(15, 23, 42, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.05);
+  /* ── Bordes ── */
+  --border:         rgba(255, 255, 255, 0.06);
+  --border-focus:   rgba(107, 126, 255, 0.35);
 
-  --shadow-glow: 0 8px 32px rgba(0, 242, 254, 0.2);
-  --shadow-premium: 0 10px 30px rgba(0, 0, 0, 0.4);
+  /* ── Glass ── */
+  --glass-bg:       rgba(19, 23, 32, 0.88);
+  --glass-border:   rgba(255, 255, 255, 0.04);
 
+  /* ── Sombras ── */
+  --shadow-glow:    0 8px 32px rgba(107, 126, 255, 0.15);
+  --shadow-premium: 0 4px 20px rgba(0, 0, 0, 0.35);
+  --shadow-sm:      0 2px 8px rgba(0, 0, 0, 0.25);
+
+  /* ── Radios ── */
   --radius-sm: 0.5rem;
   --radius-md: 1rem;
   --radius-lg: 1.5rem;
 
-  --success: #00f2fe;
-  --warning: #fbbf24;
-  --danger: #ef4444;
-  --pending: #8b5cf6;
-
-  /* Spacing scale */
+  /* ── Espaciado ── */
   --space-xs: 0.5rem;
   --space-sm: 0.75rem;
   --space-md: 1rem;
@@ -47,8 +58,12 @@
   --space-xl: 2rem;
   --space-2xl: 3rem;
 
-  /* Sidebar width */
+  /* ── Sidebar ── */
   --sidebar-width: 260px;
+
+  /* ── Alias semánticos (para estados) ── */
+  --warning: #FCD34D;   /* Amarillo neutro solo para advertencias críticas */
+  --pending: var(--primary);
 }
 
 /* ── Reset ──────────────────────────────────────────── */
@@ -69,7 +84,7 @@ body {
   color: var(--foreground);
   background-color: var(--background);
   background-image:
-    linear-gradient(rgba(0, 5, 10, 0.94), rgba(0, 5, 10, 0.94)),
+    linear-gradient(rgba(12, 15, 24, 0.96), rgba(12, 15, 24, 0.96)),
     url('/medical-bg.png');
   background-size: cover;
   background-position: center;
@@ -120,7 +135,7 @@ p {
 }
 
 .card:hover {
-  border-color: var(--border-focus);
+  border-color: rgba(107, 126, 255, 0.2);
   box-shadow: var(--shadow-glow);
   transform: translateY(-3px);
   background: var(--surface-hover);
@@ -166,12 +181,12 @@ p {
   background: var(--primary);
   color: #fff;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0, 99, 65, 0.2);
+  box-shadow: 0 4px 14px rgba(107, 126, 255, 0.25);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 99, 65, 0.3);
+  box-shadow: 0 6px 20px rgba(107, 126, 255, 0.35);
   background: var(--primary-hover);
 }
 
@@ -180,15 +195,15 @@ p {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
   border: 1px solid var(--border);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(107, 126, 255, 0.08);
   color: var(--primary);
-  border-color: var(--primary);
+  border-color: rgba(107, 126, 255, 0.3);
   transform: translateY(-1px);
 }
 
@@ -204,7 +219,7 @@ p {
   display: block;
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--secondary);
   text-transform: uppercase;
   letter-spacing: 0.07em;
 }
@@ -216,24 +231,24 @@ p {
   border-radius: var(--radius-sm);
   font-size: 0.9375rem;
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-  background: #1e293b !important;
-  color: #ffffff !important;
+  background: #1a2030 !important;
+  color: var(--text-primary) !important;
   font-family: inherit;
 }
 
 .input:hover {
-  border-color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.3);
 }
 
 .input:focus {
   outline: none;
   border-color: var(--primary);
-  background: #2d3748 !important;
+  background: #1e2640 !important;
   box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .input::placeholder {
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 select.input {
@@ -242,7 +257,7 @@ select.input {
 
 select.input option {
   background: var(--surface);
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 textarea.input {
@@ -267,7 +282,7 @@ textarea.input {
   z-index: 100;
   overflow-y: auto;
   flex-shrink: 0;
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.02);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
 }
 
 .app-main {
@@ -278,8 +293,8 @@ textarea.input {
 
 /* ── Scrollbars ─────────────────────────────────────── */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 5px;
+  height: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -288,13 +303,13 @@ textarea.input {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--primary);
+  background: rgba(107, 126, 255, 0.4);
   border-radius: 10px;
   border: 2px solid var(--background);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-hover);
+  background: rgba(107, 126, 255, 0.7);
 }
 
 .custom-scrollbar-mini::-webkit-scrollbar {
@@ -316,7 +331,7 @@ textarea.input {
 
 /* ── Utilities ──────────────────────────────────────── */
 .delete-hover:hover {
-  background: rgba(239, 68, 68, 0.1) !important;
+  background: rgba(248, 113, 113, 0.08) !important;
 }
 
 .sr-only {
