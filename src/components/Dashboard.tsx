@@ -526,6 +526,61 @@ export const Dashboard = ({ glosas: allGlosas, consolidado: allConsolidado, stat
                     </div>
                 </Card>
             </div>
+
+            {/* Facturas Filtradas */}
+            {(selectedService !== 'Todos' || selectedType !== 'Todos' || selectedStatus !== 'Todos') && (
+                <Card style={{ padding: '2rem' }}>
+                    <h3 style={{ fontSize: '0.85rem', fontWeight: 900, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <FileText size={16} color="var(--primary)" /> DETALLE DE FACTURAS {selectedService !== 'Todos' ? `- ${selectedService}` : ''}
+                    </h3>
+                    <div style={{ overflowX: 'auto', maxHeight: '400px' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
+                            <thead style={{ position: 'sticky', top: 0, background: 'var(--surface)' }}>
+                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-muted)' }}>FACTURA</th>
+                                    <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-muted)' }}>SERVICIO</th>
+                                    <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-muted)' }}>ESTADO</th>
+                                    <th style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--text-muted)' }}>VALOR GLOSA</th>
+                                    <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-muted)' }}>TIPO</th>
+                                    <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-muted)' }}>FECHA</th>
+                                    <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-muted)' }}>DESCRIPCIÓN</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {glosas.map(g => (
+                                    <tr key={g.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <td style={{ padding: '0.75rem', fontWeight: 'bold' }}>{g.factura}</td>
+                                        <td style={{ padding: '0.75rem' }}>{g.servicio}</td>
+                                        <td style={{ padding: '0.75rem' }}>
+                                            <span style={{ 
+                                                padding: '2px 6px', 
+                                                borderRadius: '4px', 
+                                                background: g.estado === 'Aceptada' ? 'rgba(74,222,128,0.1)' : g.estado === 'Pendiente' ? 'rgba(107,126,255,0.1)' : 'rgba(252,211,77,0.1)',
+                                                color: g.estado === 'Aceptada' ? 'var(--success)' : g.estado === 'Pendiente' ? 'var(--primary)' : 'var(--warning)'
+                                            }}>
+                                                {g.estado}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: 'bold' }}>${formatPesos(g.valor_glosa)}</td>
+                                        <td style={{ padding: '0.75rem' }}>{g.tipo_glosa}</td>
+                                        <td style={{ padding: '0.75rem' }}>{g.fecha}</td>
+                                        <td style={{ padding: '0.75rem', opacity: 0.8, maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={g.descripcion}>
+                                            {g.descripcion}
+                                        </td>
+                                    </tr>
+                                ))}
+                                {glosas.length === 0 && (
+                                    <tr>
+                                        <td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                            No hay facturas para los filtros seleccionados
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </Card>
+            )}
         </div>
     );
 };
