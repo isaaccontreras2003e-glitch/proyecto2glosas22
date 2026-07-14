@@ -1499,15 +1499,13 @@ function Home() {
     if (!isMounted) return; // Saltamos si no está montado, pero el hook siempre se llama
     const autoSync = async () => {
       // Campos válidos en Supabase (evita error 400 por campos extra)
-      const CAMPOS_GLOSA = ['id','factura','servicio','orden_servicio','valor_glosa','valor_aceptado','valor_no_aceptado','descripcion','tipo_glosa','estado','fecha','registrada_internamente','seccion','soporte_pdf'];
+      const CAMPOS_GLOSA = ['id','factura','servicio','orden_servicio','valor_glosa','descripcion','tipo_glosa','estado','fecha','registrada_internamente','seccion','soporte_pdf'];
       const CAMPOS_INGRESO = ['id','factura','valor_aceptado','valor_no_aceptado','fecha','seccion','soporte_pdf'];
 
       const limpiarGlosa = (item: any) => {
         const obj: any = {};
         CAMPOS_GLOSA.forEach(c => { if (item[c] !== undefined) obj[c] = item[c]; });
         if (obj.valor_glosa !== undefined) obj.valor_glosa = Number(obj.valor_glosa) || 0;
-        if (obj.valor_aceptado !== undefined) obj.valor_aceptado = Number(obj.valor_aceptado) || 0;
-        if (obj.valor_no_aceptado !== undefined) obj.valor_no_aceptado = Number(obj.valor_no_aceptado) || 0;
         if (obj.registrada_internamente !== undefined) obj.registrada_internamente = Boolean(obj.registrada_internamente);
         return obj;
       };
