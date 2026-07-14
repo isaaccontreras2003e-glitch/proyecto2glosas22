@@ -1498,32 +1498,58 @@ function Home() {
   useEffect(() => {
     if (!isMounted) return; // Saltamos si no está montado, pero el hook siempre se llama
     const autoSync = async () => {
-      // 1. Reintentar GLOSAS
+      // Campos válidos en Supabase (evita error 400 por campos extra)
+      const CAMPOS_GLOSA = ['id','factura','servicio','orden_servicio','valor_glosa','valor_aceptado','valor_no_aceptado','descripcion','tipo_glosa','estado','fecha','registrada_internamente','seccion','soporte_pdf'];
+      const CAMPOS_INGRESO = ['id','factura','valor_aceptado','valor_no_aceptado','fecha','seccion','soporte_pdf'];
+
+      const limpiarGlosa = (item: any) => {
+        const obj: any = {};
+        CAMPOS_GLOSA.forEach(c => { if (item[c] !== undefined) obj[c] = item[c]; });
+        if (obj.valor_glosa !== undefined) obj.valor_glosa = Number(obj.valor_glosa) || 0;
+        if (obj.valor_aceptado !== undefined) obj.valor_aceptado = Number(obj.valor_aceptado) || 0;
+        if (obj.valor_no_aceptado !== undefined) obj.valor_no_aceptado = Number(obj.valor_no_aceptado) || 0;
+        if (obj.registrada_internamente !== undefined) obj.registrada_internamente = Boolean(obj.registrada_internamente);
+        return obj;
+      };
+
+      const limpiarIngreso = (item: any) => {
+        const obj: any = {};
+        CAMPOS_INGRESO.forEach(c => { if (item[c] !== undefined) obj[c] = item[c]; });
+        if (obj.valor_aceptado !== undefined) obj.valor_aceptado = Number(obj.valor_aceptado) || 0;
+        if (obj.valor_no_aceptado !== undefined) obj.valor_no_aceptado = Number(obj.valor_no_aceptado) || 0;
+        return obj;
+      };
+
+      // 1. Reintentar GLOSAS — upsert en vez de insert para evitar error 400
       const pendingGlosas = glosas.filter(g => g.sincronizado === false);
       if (pendingGlosas.length > 0) {
-        console.log(`--- [v9.1] Auto-Sync Glosas: Reintentando ${pendingGlosas.length} ---`);
+        console.log(`--- [v10.1] Auto-Sync Glosas: Reintentando ${pendingGlosas.length} ---`);
         for (const item of pendingGlosas) {
-          const { sincronizado, ...cleanItem } = item as any;
-          const { error } = await supabase.from('glosas').insert([cleanItem]);
+          const cleanItem = limpiarGlosa(item);
+          const { error } = await supabase.from('glosas').upsert([cleanItem], { onConflict: 'id' });
           if (!error) {
             setGlosas(prev => prev.map(g => g.id === item.id ? { ...g, sincronizado: true } : g));
             const currentBuffer = safeStorage.getJson<Glosa[]>('emergency_buffer', []);
             safeStorage.setJson('emergency_buffer', currentBuffer.filter((g: any) => g.id !== item.id));
+          } else {
+            console.warn('[Auto-Sync] Error en glosa:', error.message);
           }
         }
       }
 
-      // 2. Reintentar INGRESOS (NUEVO v9.1)
+      // 2. Reintentar INGRESOS — upsert en vez de insert para evitar error 400
       const pendingIngresos = ingresos.filter(i => i.sincronizado === false);
       if (pendingIngresos.length > 0) {
-        console.log(`--- [v9.1] Auto-Sync Ingresos: Reintentando ${pendingIngresos.length} ---`);
+        console.log(`--- [v10.1] Auto-Sync Ingresos: Reintentando ${pendingIngresos.length} ---`);
         for (const item of pendingIngresos) {
-          const { sincronizado, ...cleanItem } = item as any;
-          const { error } = await supabase.from('ingresos').insert([cleanItem]);
+          const cleanItem = limpiarIngreso(item);
+          const { error } = await supabase.from('ingresos').upsert([cleanItem], { onConflict: 'id' });
           if (!error) {
             setIngresos(prev => prev.map(i => i.id === item.id ? { ...i, sincronizado: true } : i));
             const currentBuffer = safeStorage.getJson<Ingreso[]>('emergency_buffer_ingresos', []);
             safeStorage.setJson('emergency_buffer_ingresos', currentBuffer.filter((i: any) => i.id !== item.id));
+          } else {
+            console.warn('[Auto-Sync] Error en ingreso:', error.message);
           }
         }
       }
