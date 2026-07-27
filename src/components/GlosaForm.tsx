@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Save, Plus, AlertTriangle, CheckCircle2, UploadCloud, FileText } from 'lucide-react';
+import { Save, Plus, AlertTriangle, CheckCircle2, UploadCloud, FileText, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './Card';
 import { useToast } from '@/lib/contexts/ToastContext';
@@ -244,6 +244,24 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
         setPdfFile(null);
 
         console.log('✅ Registro enviado y formulario reseteado:', uniqueId);
+    };
+
+    const handleClearForm = () => {
+        setFormData({
+            factura: '',
+            servicio: '',
+            orden_servicio: '',
+            valor_glosa: '',
+            valor_aceptado: '',
+            descripcion: '',
+            tipo_glosa: 'Tarifas',
+            estado: 'Pendiente'
+        });
+        localStorage.removeItem(`glosa_form_draft_${currentSeccion}`);
+        setPdfFile(null);
+        setForceSubmit(false);
+        setConfirmDupe(false);
+        showToast('🧹 Formulario limpiado correctamente.', 'info');
     };
 
     const formTitle = 'Registrar Gestión de Glosa';
@@ -496,42 +514,86 @@ export const GlosaForm = ({ onAddGlosa, existingGlosas, existingIngresos = [], c
                     </div>
                 )}
 
-                {/* Botón principal rediseñado para seguridad de duplicados */}
+                {/* Botones de acción: Guardar y Limpiar */}
                 {isAdmin && (
-                    <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={isUploadingPdf || (isDupeMatch && !confirmDupe)}
-                        style={{
-                            width: '100%',
-                            gap: '0.75rem',
-                            marginTop: '1rem',
-                            opacity: (isUploadingPdf || (isDupeMatch && !confirmDupe)) ? 0.6 : 1,
-                            cursor: (isUploadingPdf || (isDupeMatch && !confirmDupe)) ? 'not-allowed' : 'pointer',
-                            background: isDupeMatch 
-                                ? (confirmDupe ? '#ef4444' : 'rgba(239, 68, 68, 0.3)') 
-                                : (facturaExiste ? 'var(--secondary)' : undefined),
-                            border: isDupeMatch ? 'none' : undefined,
-                            transition: 'all 0.3s ease'
-                        }}
-                    >
-                        {isDupeMatch ? (
-                            <>
-                                <AlertTriangle size={18} />
-                                {confirmDupe ? 'FORZAR REGISTRO DE DUPLICADO' : 'BLOQUEADO: CONFIRMA QUE NO ES DUPLICADO'}
-                            </>
-                        ) : facturaExiste ? (
-                            <>
-                                <Plus size={18} />
-                                Añadir Nuevo Registro a Factura
-                            </>
-                        ) : (
-                            <>
-                                {isUploadingPdf ? <Save size={18} /> : <Plus size={18} />}
-                                {isUploadingPdf ? 'Subiendo PDF y Guardando...' : 'Guardar Gestión de Glosa'}
-                            </>
-                        )}
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', alignItems: 'stretch' }}>
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={isUploadingPdf || (isDupeMatch && !confirmDupe)}
+                            style={{
+                                flex: 1,
+                                gap: '0.75rem',
+                                opacity: (isUploadingPdf || (isDupeMatch && !confirmDupe)) ? 0.6 : 1,
+                                cursor: (isUploadingPdf || (isDupeMatch && !confirmDupe)) ? 'not-allowed' : 'pointer',
+                                background: isDupeMatch 
+                                    ? (confirmDupe ? '#ef4444' : 'rgba(239, 68, 68, 0.3)') 
+                                    : (facturaExiste ? 'var(--secondary)' : undefined),
+                                border: isDupeMatch ? 'none' : undefined,
+                                transition: 'all 0.3s ease'
+                            }}
+                        >
+                            {isDupeMatch ? (
+                                <>
+                                    <AlertTriangle size={18} />
+                                    {confirmDupe ? 'FORZAR REGISTRO DE DUPLICADO' : 'BLOQUEADO: CONFIRMA QUE NO ES DUPLICADO'}
+                                </>
+                            ) : facturaExiste ? (
+                                <>
+                                    <Plus size={18} />
+                                    Añadir Nuevo Registro a Factura
+                                </>
+                            ) : (
+                                <>
+                                    {isUploadingPdf ? <Save size={18} /> : <Plus size={18} />}
+                                    {isUploadingPdf ? 'Subiendo PDF y Guardando...' : 'Guardar Gestión de Glosa'}
+                                </>
+                            )}
+                        </button>
+
+                        {/* Botón Limpiar Formulario */}
+                        <motion.button
+                            type="button"
+                            onClick={handleClearForm}
+                            whileHover={{ scale: 1.04 }}
+                            whileTap={{ scale: 0.96 }}
+                            title="Limpiar todos los campos del formulario"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem',
+                                padding: '0 1.25rem',
+                                minWidth: '160px',
+                                height: '48px',
+                                borderRadius: '12px',
+                                border: '1.5px solid rgba(239, 68, 68, 0.45)',
+                                background: 'rgba(239, 68, 68, 0.08)',
+                                color: '#f87171',
+                                fontWeight: 700,
+                                fontSize: '0.82rem',
+                                letterSpacing: '0.04em',
+                                cursor: 'pointer',
+                                transition: 'all 0.25s ease',
+                                flexShrink: 0,
+                                backdropFilter: 'blur(6px)',
+                                boxShadow: '0 0 12px rgba(239,68,68,0.1)'
+                            }}
+                            onMouseEnter={(e) => {
+                                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239, 68, 68, 0.18)';
+                                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239, 68, 68, 0.7)';
+                                (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 18px rgba(239,68,68,0.25)';
+                            }}
+                            onMouseLeave={(e) => {
+                                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239, 68, 68, 0.08)';
+                                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239, 68, 68, 0.45)';
+                                (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 12px rgba(239,68,68,0.1)';
+                            }}
+                        >
+                            <Trash2 size={16} />
+                            Limpiar
+                        </motion.button>
+                    </div>
                 )}
 
                 {/* Indicadores de Control Diario */}
