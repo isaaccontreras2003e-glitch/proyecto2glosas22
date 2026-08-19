@@ -119,8 +119,8 @@ export default function LoginPage() {
             justifyContent: 'center',
             minHeight: '100vh',
             width: '100vw',
-            background: '#00050a',
-            backgroundImage: 'linear-gradient(rgba(0, 5, 10, 0.94), rgba(0, 5, 10, 0.94)), url("/medical-bg.png")',
+            background: '#0F172A',
+            backgroundImage: 'linear-gradient(rgba(15, 23, 42, 0.97), rgba(15, 23, 42, 0.97)), url("/medical-bg.png")',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundAttachment: 'fixed',
@@ -137,12 +137,12 @@ export default function LoginPage() {
                     maxWidth: '440px',
                     width: '100%',
                     padding: '3.5rem 2.5rem',
-                    background: 'rgba(15, 23, 42, 0.85)',
+                    background: 'rgba(30, 41, 59, 0.90)',
                     backdropFilter: 'blur(30px)',
                     WebkitBackdropFilter: 'blur(30px)',
-                    border: '1px solid rgba(0, 242, 254, 0.1)',
+                    border: '1px solid rgba(56, 189, 248, 0.12)',
                     borderRadius: '24px',
-                    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 242, 254, 0.1)',
+                    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(56, 189, 248, 0.08)',
                     position: 'relative',
                     textAlign: 'center'
                 }}
@@ -158,13 +158,13 @@ export default function LoginPage() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         margin: '0 auto 1.5rem',
-                        boxShadow: '0 8px 25px rgba(0, 242, 254, 0.3)',
-                        color: 'black'
+                        boxShadow: '0 8px 25px rgba(56, 189, 248, 0.25)',
+                        color: '#0F172A'
                     }}>
                         <Activity size={32} />
                     </div>
-                    <h1 style={{ fontSize: '2.1rem', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
-                        SisFact <span style={{ color: 'var(--primary)', fontSize: '0.75rem', verticalAlign: 'middle', background: 'rgba(0, 242, 254, 0.12)', padding: '4px 10px', borderRadius: '8px', fontWeight: 900 }}>PRO V5.5</span>
+                    <h1 style={{ fontSize: '2.1rem', fontWeight: 900, color: '#E2E8F0', margin: 0, letterSpacing: '-0.02em' }}>
+                        SisFact <span style={{ color: 'var(--primary)', fontSize: '0.75rem', verticalAlign: 'middle', background: 'rgba(56, 189, 248, 0.12)', padding: '4px 10px', borderRadius: '8px', fontWeight: 900 }}>PRO V6.0</span>
                     </h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.6rem', fontWeight: 500, letterSpacing: '0.02em' }}>
                         THE DIGITAL AUDITOR
@@ -188,7 +188,7 @@ export default function LoginPage() {
                                     onClick={handleClearBlock}
                                     style={{
                                         padding: '0.75rem',
-                                        background: 'rgba(0, 242, 254, 0.08)',
+                                        background: 'rgba(56, 189, 248, 0.08)',
                                         border: '1px solid var(--primary)',
                                         borderRadius: '12px',
                                         color: 'var(--primary)',
@@ -218,10 +218,10 @@ export default function LoginPage() {
                                     style={{
                                         width: '100%',
                                         padding: '1rem',
-                                        background: 'rgba(255,255,255,0.03)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        background: 'rgba(255,255,255,0.04)',
+                                        border: '1px solid rgba(255,255,255,0.10)',
                                         borderRadius: '14px',
-                                        color: 'white',
+                                        color: '#E2E8F0',
                                         outline: 'none'
                                     }}
                                 />
@@ -249,17 +249,17 @@ export default function LoginPage() {
                                     style={{
                                         width: '100%',
                                         padding: '1rem',
-                                        background: 'rgba(255,255,255,0.03)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        background: 'rgba(255,255,255,0.04)',
+                                        border: '1px solid rgba(255,255,255,0.10)',
                                         borderRadius: '14px',
-                                        color: 'white',
+                                        color: '#E2E8F0',
                                         outline: 'none'
                                     }}
                                 />
                             </div>
 
                             {error && (
-                                <div style={{ color: '#ff4d4d', fontSize: '0.8rem', fontWeight: 800, padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <div style={{ color: 'var(--danger)', fontSize: '0.8rem', fontWeight: 800, padding: '0.75rem', background: 'rgba(248, 113, 113, 0.10)', borderRadius: '12px', border: '1px solid rgba(248, 113, 113, 0.25)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <AlertTriangle size={14} /> {error}
                                 </div>
                             )}
@@ -273,7 +273,7 @@ export default function LoginPage() {
                                     fontSize: '0.95rem',
                                     width: '100%',
                                     background: 'var(--primary)',
-                                    color: '#000',
+                                    color: '#0F172A',
                                     fontWeight: 900,
                                     border: 'none',
                                     cursor: 'pointer',
@@ -281,7 +281,7 @@ export default function LoginPage() {
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     gap: '0.75rem',
-                                    boxShadow: '0 8px 16px rgba(0, 242, 254, 0.2)'
+                                    boxShadow: '0 8px 16px rgba(56, 189, 248, 0.25)'
                                 }}
                             >
                                 {loading ? 'AUTENTICANDO...' : 'INICIAR SESIÓN'} <LogIn size={20} />
@@ -326,23 +326,23 @@ export default function LoginPage() {
                                     style={{
                                         width: '100%',
                                         padding: '1rem',
-                                        background: 'rgba(255,255,255,0.03)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        background: 'rgba(255,255,255,0.04)',
+                                        border: '1px solid rgba(255,255,255,0.10)',
                                         borderRadius: '14px',
-                                        color: 'white',
+                                        color: '#E2E8F0',
                                         outline: 'none'
                                     }}
                                 />
                             </div>
 
                             {success && (
-                                <div style={{ color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 800, padding: '0.75rem', background: 'rgba(0, 242, 254, 0.1)', borderRadius: '12px', border: '1px solid rgba(0, 242, 254, 0.2)' }}>
+                                <div style={{ color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 800, padding: '0.75rem', background: 'rgba(56, 189, 248, 0.10)', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
                                     {success}
                                 </div>
                             )}
 
                             {error && (
-                                <div style={{ color: '#ff4d4d', fontSize: '0.8rem', fontWeight: 800, padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <div style={{ color: 'var(--danger)', fontSize: '0.8rem', fontWeight: 800, padding: '0.75rem', background: 'rgba(248, 113, 113, 0.10)', borderRadius: '12px', border: '1px solid rgba(248, 113, 113, 0.25)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <AlertTriangle size={14} /> {error}
                                 </div>
                             )}
@@ -357,11 +357,11 @@ export default function LoginPage() {
                                         fontSize: '0.95rem',
                                         width: '100%',
                                         background: 'var(--primary)',
-                                        color: '#000',
+                                        color: '#0F172A',
                                         fontWeight: 900,
                                         border: 'none',
                                         cursor: 'pointer',
-                                        boxShadow: '0 8px 16px rgba(0, 242, 254, 0.2)'
+                                        boxShadow: '0 8px 16px rgba(56, 189, 248, 0.25)'
                                     }}
                                 >
                                     {loading ? 'ENVIANDO...' : 'ENVIAR ENLACE'} <Send size={18} style={{ marginLeft: '8px' }} />
@@ -404,10 +404,10 @@ export default function LoginPage() {
                                     style={{
                                         width: '100%',
                                         padding: '1rem',
-                                        background: 'rgba(255,255,255,0.03)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        background: 'rgba(255,255,255,0.04)',
+                                        border: '1px solid rgba(255,255,255,0.10)',
                                         borderRadius: '14px',
-                                        color: 'white',
+                                        color: '#E2E8F0',
                                         outline: 'none'
                                     }}
                                 />
@@ -426,23 +426,23 @@ export default function LoginPage() {
                                     style={{
                                         width: '100%',
                                         padding: '1rem',
-                                        background: 'rgba(255,255,255,0.03)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        background: 'rgba(255,255,255,0.04)',
+                                        border: '1px solid rgba(255,255,255,0.10)',
                                         borderRadius: '14px',
-                                        color: 'white',
+                                        color: '#E2E8F0',
                                         outline: 'none'
                                     }}
                                 />
                             </div>
 
                             {success && (
-                                <div style={{ color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 800, padding: '0.75rem', background: 'rgba(0, 242, 254, 0.1)', borderRadius: '12px', border: '1px solid rgba(0, 242, 254, 0.2)' }}>
+                                <div style={{ color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 800, padding: '0.75rem', background: 'rgba(56, 189, 248, 0.10)', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
                                     {success}
                                 </div>
                             )}
 
                             {error && (
-                                <div style={{ color: '#ff4d4d', fontSize: '0.8rem', fontWeight: 800, padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <div style={{ color: 'var(--danger)', fontSize: '0.8rem', fontWeight: 800, padding: '0.75rem', background: 'rgba(248, 113, 113, 0.10)', borderRadius: '12px', border: '1px solid rgba(248, 113, 113, 0.25)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <AlertTriangle size={14} /> {error}
                                 </div>
                             )}
@@ -457,11 +457,11 @@ export default function LoginPage() {
                                         fontSize: '0.95rem',
                                         width: '100%',
                                         background: 'var(--primary)',
-                                        color: '#000',
+                                        color: '#0F172A',
                                         fontWeight: 900,
                                         border: 'none',
                                         cursor: 'pointer',
-                                        boxShadow: '0 8px 16px rgba(0, 242, 254, 0.2)'
+                                        boxShadow: '0 8px 16px rgba(56, 189, 248, 0.25)'
                                     }}
                                 >
                                     {loading ? 'CREANDO...' : 'CREAR CUENTA'} <LogIn size={18} style={{ marginLeft: '8px' }} />
@@ -478,7 +478,7 @@ export default function LoginPage() {
                     )}
                 </AnimatePresence>
 
-                <div style={{ marginTop: '3rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                <div style={{ marginTop: '3rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>
                         POWERED BY ANTIGRAVITY · DIGITAL AUDITOR EDITION
                     </p>

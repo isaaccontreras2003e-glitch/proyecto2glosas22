@@ -1,30 +1,31 @@
 /* ═══════════════════════════════════════════════════════
-   SISFACT PRO · Global Styles · v5.6 - Neutral Palette
-   Paleta de 4 colores principales:
-   1. --primary   : #6B7EFF  (Azul índigo suave)
-   2. --accent    : #E2E8F0  (Blanco humo / texto claro)
-   3. --success   : #4ADE80  (Verde suave)
-   4. --danger    : #F87171  (Rojo apagado)
+   SISFACT PRO · Global Styles · v6.0 - Professional Palette
+   Paleta de 5 colores profesionales:
+   1. --bg-deep    : #0F172A  (Azul marino profundo - fondo base)
+   2. --surface    : #1E293B  (Azul marino medio - cards/panels)
+   3. --primary    : #38BDF8  (Azul cielo corporativo - acciones)
+   4. --success    : #34D399  (Verde esmeralda suave - éxito)
+   5. --danger     : #F87171  (Rojo coral - errores/alertas)
    ═══════════════════════════════════════════════════════ */
 
 /* ── Design Tokens ──────────────────────────────────── */
 :root {
   /* ── Backgrounds ── */
-  --background:     #0c0f18;
-  --surface:        #131720;
-  --surface-hover:  #1a2030;
+  --background:     #0F172A;          /* Azul marino profundo */
+  --surface:        #1E293B;          /* Azul marino medio */
+  --surface-hover:  #263448;          /* Hover suave */
   --bg-card:        var(--surface);
 
-  /* ── 4 colores principales del sistema ── */
-  --primary:        #6B7EFF;          /* Azul índigo suave */
-  --primary-hover:  #5467e8;
-  --primary-glow:   rgba(107, 126, 255, 0.12);
+  /* ── 5 colores principales del sistema ── */
+  --primary:        #38BDF8;          /* Azul cielo corporativo */
+  --primary-hover:  #29ABE2;          /* Azul un poco más oscuro */
+  --primary-glow:   rgba(56, 189, 248, 0.12);
 
-  --secondary:      #94A3B8;          /* Slate gris (texto secundario/neutro) */
+  --secondary:      #94A3B8;          /* Slate gris (texto secundario) */
   --secondary-hover:#CBD5E1;
 
-  --success:        #4ADE80;          /* Verde suave */
-  --danger:         #F87171;          /* Rojo apagado */
+  --success:        #34D399;          /* Verde esmeralda suave */
+  --danger:         #F87171;          /* Rojo coral */
 
   /* ── Texto ── */
   --foreground:     #E2E8F0;
@@ -33,17 +34,17 @@
   --text-muted:     #64748B;
 
   /* ── Bordes ── */
-  --border:         rgba(255, 255, 255, 0.06);
-  --border-focus:   rgba(107, 126, 255, 0.35);
+  --border:         rgba(255, 255, 255, 0.07);
+  --border-focus:   rgba(56, 189, 248, 0.40);
 
   /* ── Glass ── */
-  --glass-bg:       rgba(19, 23, 32, 0.88);
-  --glass-border:   rgba(255, 255, 255, 0.04);
+  --glass-bg:       rgba(15, 23, 42, 0.90);
+  --glass-border:   rgba(255, 255, 255, 0.05);
 
   /* ── Sombras ── */
-  --shadow-glow:    0 8px 32px rgba(107, 126, 255, 0.15);
-  --shadow-premium: 0 4px 20px rgba(0, 0, 0, 0.35);
-  --shadow-sm:      0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-glow:    0 8px 32px rgba(56, 189, 248, 0.14);
+  --shadow-premium: 0 4px 20px rgba(0, 0, 0, 0.40);
+  --shadow-sm:      0 2px 8px rgba(0, 0, 0, 0.30);
 
   /* ── Radios ── */
   --radius-sm: 0.5rem;
@@ -62,7 +63,7 @@
   --sidebar-width: 260px;
 
   /* ── Alias semánticos (para estados) ── */
-  --warning: #FCD34D;   /* Amarillo neutro solo para advertencias críticas */
+  --warning: #FBBF24;   /* Ámbar para advertencias */
   --pending: var(--primary);
 }
 
@@ -84,7 +85,7 @@ body {
   color: var(--foreground);
   background-color: var(--background);
   background-image:
-    linear-gradient(rgba(12, 15, 24, 0.96), rgba(12, 15, 24, 0.96)),
+    linear-gradient(rgba(15, 23, 42, 0.97), rgba(15, 23, 42, 0.97)),
     url('/medical-bg.png');
   background-size: cover;
   background-position: center;
@@ -135,7 +136,7 @@ p {
 }
 
 .card:hover {
-  border-color: rgba(107, 126, 255, 0.2);
+  border-color: rgba(56, 189, 248, 0.20);
   box-shadow: var(--shadow-glow);
   transform: translateY(-3px);
   background: var(--surface-hover);
@@ -179,14 +180,14 @@ p {
 
 .btn-primary {
   background: var(--primary);
-  color: #fff;
-  font-weight: 600;
-  box-shadow: 0 4px 14px rgba(107, 126, 255, 0.25);
+  color: #0F172A;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.25);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(107, 126, 255, 0.35);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.35);
   background: var(--primary-hover);
 }
 
@@ -201,9 +202,9 @@ p {
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: rgba(107, 126, 255, 0.08);
+  background: rgba(56, 189, 248, 0.08);
   color: var(--primary);
-  border-color: rgba(107, 126, 255, 0.3);
+  border-color: rgba(56, 189, 248, 0.30);
   transform: translateY(-1px);
 }
 
@@ -231,19 +232,19 @@ p {
   border-radius: var(--radius-sm);
   font-size: 0.9375rem;
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-  background: #1a2030 !important;
+  background: #1E293B !important;
   color: var(--text-primary) !important;
   font-family: inherit;
 }
 
 .input:hover {
-  border-color: rgba(148, 163, 184, 0.3);
+  border-color: rgba(148, 163, 184, 0.30);
 }
 
 .input:focus {
   outline: none;
   border-color: var(--primary);
-  background: #1e2640 !important;
+  background: #253347 !important;
   box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
@@ -282,7 +283,7 @@ textarea.input {
   z-index: 100;
   overflow-y: auto;
   flex-shrink: 0;
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.20);
 }
 
 .app-main {
@@ -303,13 +304,13 @@ textarea.input {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(107, 126, 255, 0.4);
+  background: rgba(56, 189, 248, 0.35);
   border-radius: 10px;
   border: 2px solid var(--background);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(107, 126, 255, 0.7);
+  background: rgba(56, 189, 248, 0.65);
 }
 
 .custom-scrollbar-mini::-webkit-scrollbar {

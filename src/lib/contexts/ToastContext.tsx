@@ -55,25 +55,25 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
                             exit={{ opacity: 0, scale: 0.8, x: 20 }}
                             style={{
                                 pointerEvents: 'auto',
-                                background: 'rgba(15, 15, 20, 0.95)',
+                                background: 'rgba(15, 23, 42, 0.96)',
                                 backdropFilter: 'blur(10px)',
-                                border: `1px solid ${toast.type === 'success' ? 'rgba(16, 185, 129, 0.3)' :
-                                        toast.type === 'error' ? 'rgba(239, 68, 68, 0.3)' :
-                                            'rgba(59, 130, 246, 0.3)'
+                                border: `1px solid ${toast.type === 'success' ? 'rgba(52, 211, 153, 0.30)' :
+                                        toast.type === 'error' ? 'rgba(248, 113, 113, 0.30)' :
+                                            'rgba(56, 189, 248, 0.30)'
                                     }`,
                                 padding: '1rem 1.25rem',
                                 borderRadius: '16px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '0.75rem',
-                                color: 'white',
+                                color: '#E2E8F0',
                                 minWidth: '300px',
-                                boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                                boxShadow: '0 10px 30px rgba(0,0,0,0.45)',
                             }}
                         >
-                            {toast.type === 'success' && <CheckCircle2 size={20} color="#10b981" />}
-                            {toast.type === 'error' && <AlertCircle size={20} color="#ef4444" />}
-                            {toast.type === 'info' && <Info size={20} color="#3b82f6" />}
+                            {toast.type === 'success' && <CheckCircle2 size={20} color="#34d399" />}
+                            {toast.type === 'error' && <AlertCircle size={20} color="#f87171" />}
+                            {toast.type === 'info' && <Info size={20} color="#38bdf8" />}
 
                             <p style={{ fontSize: '0.85rem', fontWeight: 600, flex: 1 }}>{toast.message}</p>
 
