@@ -57,27 +57,48 @@ const cleanNum = (val: any): number => {
 
 const normalizeText = (val: any): string => String(val || '').trim();
 
+// Valida si un string es un UUID v4 válido
+const isValidUUID = (s: string): boolean =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
+
 // Genera un ID determinístico basado en campos clave del registro.
+// Produce un UUID v4 válido basado en un hash de los campos.
 // Así la misma fila del Excel siempre produce el mismo ID, sin duplicados
 // aunque se importe el archivo varias veces.
 const deterministicId = (fields: string[]): string => {
   const raw = fields.join('|').toLowerCase().trim();
-  // Hash simple djb2
-  let h = 5381;
+
+  // Hash djb2 sobre el string completo
+  let h1 = 5381;
   for (let i = 0; i < raw.length; i++) {
-    h = ((h << 5) + h) ^ raw.charCodeAt(i);
-    h = h >>> 0; // convertir a uint32
+    h1 = ((h1 << 5) + h1) ^ raw.charCodeAt(i);
+    h1 = h1 >>> 0;
   }
-  // Formatear como UUID v4-like para compatibilidad con la base de datos
-  const hex = h.toString(16).padStart(8, '0');
-  // Completar con un hash secundario sobre la longitud para más unicidad
-  let h2 = raw.length * 31337;
-  for (let i = raw.length - 1; i >= 0; i--) {
-    h2 = ((h2 << 3) + h2) ^ raw.charCodeAt(i);
+  // Segundo hash (sdbm) para más entropía
+  let h2 = 0;
+  for (let i = 0; i < raw.length; i++) {
+    h2 = raw.charCodeAt(i) + (h2 << 6) + (h2 << 16) - h2;
     h2 = h2 >>> 0;
   }
-  const hex2 = h2.toString(16).padStart(8, '0');
-  return `${hex.slice(0,8)}-${hex2.slice(0,4)}-4${hex.slice(0,3)}-8${hex2.slice(0,3)}-${hex}${hex2}`.slice(0, 36);
+  // Tercer hash (reverse djb2)
+  let h3 = 5381;
+  for (let i = raw.length - 1; i >= 0; i--) {
+    h3 = ((h3 << 5) + h3) ^ raw.charCodeAt(i);
+    h3 = h3 >>> 0;
+  }
+
+  // Convertir a hex con padding garantizado
+  const p = (n: number, len: number) => n.toString(16).padStart(len, '0').slice(0, len);
+
+  // UUID v4: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+  // Grupos: 8 - 4 - 4 - 4 - 12 chars
+  const g1 = p(h1, 8);                          // 8
+  const g2 = p(h2, 4);                          // 4
+  const g3 = '4' + p(h1 ^ h2, 3);              // 4 (versión 4)
+  const g4 = (8 + (h2 & 3)).toString(16) + p(h3, 3); // 4 (variante 8/9/a/b)
+  const g5 = p(h1, 8) + p(h2 ^ h3, 4);         // 12
+
+  return `${g1}-${g2}-${g3}-${g4}-${g5}`;
 };
 
 // Intenta mapear columna buscando variantes del nombre
@@ -244,9 +265,12 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
         const estado = normalizeText(findCol(row, ['Estado', 'estado', 'ESTADO', 'Status', 'Estado Glosa'])) || 'Pendiente';
         const regInterna = normalizeText(findCol(row, ['Registrada Internamente', 'registrada_internamente', 'RegistradaInternamente', 'Registrada']));
 
-        // FIX: ID determinístico — si el Excel tiene ID propio lo usamos; si no,
-        // generamos uno basado en los campos únicos para evitar duplicados en re-importaciones.
-        const finalId = idRaw || deterministicId([factura, servicio, fecha, String(idx), currentSeccion]);
+        // FIX: Validar que el ID del Excel sea un UUID real antes de usarlo.
+        // Si el Excel tiene columna "ID" con números (1,2,3) o texto personalizado,
+        // Supabase lo rechaza porque la columna id es tipo UUID.
+        const finalId = (idRaw && isValidUUID(idRaw))
+          ? idRaw
+          : deterministicId([factura, servicio, fecha, String(idx), currentSeccion]);
 
         return {
           id: finalId,
@@ -274,8 +298,10 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
         const fecha = normalizeText(findCol(row, ['Fecha', 'fecha', 'FECHA', 'Fecha Ingreso'])) ||
           new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-        // FIX: ID determinístico para ingresos también
-        const finalId = idRaw || deterministicId([factura, fecha, String(idx), currentSeccion, 'ingreso']);
+        // FIX: Validar UUID igual que en glosas
+        const finalId = (idRaw && isValidUUID(idRaw))
+          ? idRaw
+          : deterministicId([factura, fecha, String(idx), currentSeccion, 'ingreso']);
 
         return {
           id: finalId,
@@ -362,6 +388,7 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
 
       let ok = 0;
       let err = 0;
+      let firstErrorMsg = '';
 
       // Limpiar campos internos antes de enviar a Supabase
       const cleanItems = items.map(({ _status, _errorMsg, ...rest }: any) => rest);
@@ -375,10 +402,28 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
           const { error } = await supabase.from(tableName).upsert(batch, { onConflict: 'id' });
           if (error) throw error;
           ok += batch.length;
-          addLog(`✅ Lote ${batchNum}/${totalBatches}: ${batch.length} registros guardados`);
+          if (batchNum <= 3 || batchNum === totalBatches) {
+            addLog(`✅ Lote ${batchNum}/${totalBatches}: ${batch.length} registros guardados`);
+          }
         } catch (e: any) {
           err += batch.length;
-          addLog(`❌ Lote ${batchNum}/${totalBatches}: Error - ${e.message}`);
+          const msg = e?.message || e?.details || JSON.stringify(e);
+          // Mostrar el primer error con detalle completo
+          if (!firstErrorMsg) {
+            firstErrorMsg = msg;
+            addLog(`❌ ERROR SUPABASE: "${msg}"`);
+            // Intentar 1 registro solo para ver el error exacto
+            try {
+              const { error: singleErr } = await supabase.from(tableName).upsert([batch[0]], { onConflict: 'id' });
+              if (singleErr) {
+                addLog(`🔍 Detalle del registro #1: ${singleErr.message} | código: ${singleErr.code}`);
+                addLog(`🔍 Campos: ${Object.keys(batch[0]).join(', ')}`);
+                addLog(`🔍 ID enviado: "${batch[0].id}" (¿válido? ${isValidUUID(batch[0].id) ? 'SÍ' : 'NO'})`);
+              }
+            } catch { /* ignorar */ }
+          } else {
+            addLog(`❌ Lote ${batchNum}/${totalBatches}: Error - ${msg.slice(0, 80)}`);
+          }
         }
 
         setImportedCount(ok);
