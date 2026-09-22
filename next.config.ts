@@ -55,6 +55,26 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: securityHeaders,
       },
+      {
+        // FIX v17.0: Evitar que navegadores/CDN sirvan HTML desactualizado al compartir el link.
+        // Con no-store, cada apertura del link descarga el HTML fresco del servidor,
+        // y la app obtiene datos actualizados desde Supabase en lugar de un snapshot viejo.
+        source: "/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate, proxy-revalidate",
+          },
+          {
+            key: "Pragma",
+            value: "no-cache",
+          },
+          {
+            key: "Expires",
+            value: "0",
+          },
+        ],
+      },
     ];
   },
 

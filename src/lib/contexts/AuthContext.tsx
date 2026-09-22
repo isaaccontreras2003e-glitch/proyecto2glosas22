@@ -85,6 +85,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         // 3. Escuchar cambios en la sesión
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            const incomingUserId = session?.user?.id ?? null;
+
+            // ── FIX: Detectar cambio de usuario y limpiar caché de sesión anterior ──
+            // Esto evita que al compartir el sistema (o al cambiar de usuario en el
+            // mismo equipo) aparezcan datos desactualizados o de otro usuario.
+            try {
+                if (typeof window !== 'undefined') {
+                    const prevUserId = localStorage.getItem('active_user_id');
+                    if (prevUserId && incomingUserId && prevUserId !== incomingUserId) {
+                        // Usuario diferente: limpiar TODOS los cachés de datos
+                        console.log('[AuthContext] Cambio de usuario detectado. Limpiando caché de sesión anterior...');
+                        clearAllDataCache();
+                    }
+                    if (incomingUserId) {
+                        localStorage.setItem('active_user_id', incomingUserId);
+                    } else {
+                        // Logout: limpiar caché de datos
+                        clearAllDataCache();
+                        localStorage.removeItem('active_user_id');
+                    }
+                }
+            } catch { /* localStorage bloqueado */ }
+
             setUser(session?.user ?? null);
 
             if (session?.user) {
@@ -130,6 +153,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }, []);
 
     const signOut = async () => {
+        // Limpiar caché de datos antes de cerrar sesión para que el próximo usuario
+        // (o la próxima apertura del link compartido) vea datos frescos de Supabase.
+        clearAllDataCache();
         await supabase.auth.signOut();
     };
 
@@ -141,3 +167,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+
+/**
+ * clearAllDataCache — elimina todos los cachés de datos del localStorage.
+ * Se llama al hacer logout o al detectar que se inició sesión con un usuario
+ * diferente al que había antes. Esto garantiza que nunca aparezcan datos
+ * desactualizados o de otro usuario al compartir el sistema.
+ */
+export function clearAllDataCache() {
+    const CACHE_KEYS = [
+        'cached_glosas',
+        'cached_ingresos',
+        'emergency_buffer',
+        'emergency_buffer_glosas',
+        'emergency_buffer_ingresos',
+        'pending_glosas',
+        'checked_ids_registry',
+        'MASTER_RECORD_LOG',
+        'sisfact_app_version',
+        'cache_owner_user_id',  // FIX v17.0: ownership marker para detectar cambio de usuario
+    ];
+    try {
+        if (typeof window === 'undefined') return;
+        CACHE_KEYS.forEach(key => {
+            try { localStorage.removeItem(key); } catch { /* ignorar */ }
+        });
+        console.log('[AuthContext] Caché de datos limpiado correctamente.');
+    } catch { /* localStorage bloqueado */ }
+}

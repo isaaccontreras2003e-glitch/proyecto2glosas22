@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { safeNumber, safeArray, safeStorage } from '@/lib/safeUtils';
 import { LayoutDashboard, TrendingUp, Wallet, Activity, Trash2, Download, ListChecks, PieChart, ChevronUp, RefreshCw, ClipboardList, LogOut, FileText, CheckCircle, Clock, Cloud, CloudOff, UploadCloud, Plus, AlertTriangle, Copy, BarChart3, FileSpreadsheet } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/lib/contexts/AuthContext';
+import { useAuth, clearAllDataCache } from '@/lib/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { InteractiveLogo } from '@/components/InteractiveLogo';
@@ -227,6 +227,8 @@ function Home() {
             const finalBuffer = Array.from(glosaMap.values()).filter((g: any) => !g.sincronizado);
             safeStorage.setJson('emergency_buffer', finalBuffer);
             safeStorage.setJson('cached_glosas', sorted);
+            // FIX v17.0: Marcar el dueño del caché para detectar cambio de usuario
+            try { localStorage.setItem('cache_owner_user_id', user?.id || ''); } catch { /* ignorar */ }
             return sorted;
           });
           lastFetchedUserId.current = user.id;
@@ -291,23 +293,42 @@ function Home() {
     await attemptFetch();
   }, [user?.id]);
 
-  // Cargar datos desde caché local (INSTANTÁNEO) — con safeStorage para modo privado
+  // Cargar datos desde caché local (INSTANTÁNEO) — SOLO si pertenecen al usuario actual
+  // FIX v17.0: Al compartir el link o cambiar de usuario, el caché local puede ser de
+  // otro usuario o estar desactualizado. Solo usamos el caché si el userId guardado
+  // coincide con el usuario activo. Si no, dejamos que Supabase sea la fuente de verdad.
   useEffect(() => {
-    const g = safeStorage.getJson<Glosa[]>('cached_glosas', []);
-    const i = safeStorage.getJson<Ingreso[]>('cached_ingresos', []);
-    // Deduplicar por ID antes de colocar en estado (previene duplicados del caché)
-    if (g.length > 0) {
-      const uniqueG = Array.from(new Map(g.map((item: Glosa) => [item.id, item])).values());
-      setGlosas(uniqueG);
-    }
-    if (i.length > 0) {
-      const uniqueI = Array.from(new Map(i.map((item: Ingreso) => [item.id, item])).values());
-      setIngresos(uniqueI);
-    }
-    if (g.length > 0 || i.length > 0) {
-      setLoading(false);
-      setLastUpdate(new Date());
-    }
+    if (typeof window === 'undefined') return;
+
+    try {
+      const cachedUserId = localStorage.getItem('cache_owner_user_id');
+      const activeUserId = localStorage.getItem('active_user_id');
+
+      // Si hay caché de otro usuario (o sin owner definido en un navegador nuevo),
+      // limpiar y NO cargar — esperamos los datos de Supabase.
+      if (!cachedUserId || (activeUserId && cachedUserId !== activeUserId)) {
+        console.log('[Cache] Caché de sesión anterior o sin owner detectado. Ignorando para cargar desde Supabase.');
+        // Limpiar buffers obsoletos para no contaminar la sesión actual
+        clearAllDataCache();
+        return;
+      }
+
+      const g = safeStorage.getJson<Glosa[]>('cached_glosas', []);
+      const i = safeStorage.getJson<Ingreso[]>('cached_ingresos', []);
+      // Deduplicar por ID antes de colocar en estado (previene duplicados del caché)
+      if (g.length > 0) {
+        const uniqueG = Array.from(new Map(g.map((item: Glosa) => [item.id, item])).values());
+        setGlosas(uniqueG);
+      }
+      if (i.length > 0) {
+        const uniqueI = Array.from(new Map(i.map((item: Ingreso) => [item.id, item])).values());
+        setIngresos(uniqueI);
+      }
+      if (g.length > 0 || i.length > 0) {
+        setLoading(false);
+        setLastUpdate(new Date());
+      }
+    } catch { /* localStorage bloqueado — esperar Supabase */ }
   }, []);
 
   // Cargar datos desde Supabase al montar o cambiar usuario
