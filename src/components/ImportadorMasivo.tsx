@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   UploadCloud, FileSpreadsheet, CheckCircle2, AlertTriangle, X, ChevronDown,
   ChevronRight, Loader2, Download, RefreshCw, Eye, EyeOff, BarChart3,
-  ClipboardList, TrendingUp, AlertCircle, Check, Filter, FileText
+  ClipboardList, TrendingUp, AlertCircle, Check, Filter, FileText, Trash2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -56,6 +56,29 @@ const cleanNum = (val: any): number => {
 };
 
 const normalizeText = (val: any): string => String(val || '').trim();
+
+// Genera un ID determinístico basado en campos clave del registro.
+// Así la misma fila del Excel siempre produce el mismo ID, sin duplicados
+// aunque se importe el archivo varias veces.
+const deterministicId = (fields: string[]): string => {
+  const raw = fields.join('|').toLowerCase().trim();
+  // Hash simple djb2
+  let h = 5381;
+  for (let i = 0; i < raw.length; i++) {
+    h = ((h << 5) + h) ^ raw.charCodeAt(i);
+    h = h >>> 0; // convertir a uint32
+  }
+  // Formatear como UUID v4-like para compatibilidad con la base de datos
+  const hex = h.toString(16).padStart(8, '0');
+  // Completar con un hash secundario sobre la longitud para más unicidad
+  let h2 = raw.length * 31337;
+  for (let i = raw.length - 1; i >= 0; i--) {
+    h2 = ((h2 << 3) + h2) ^ raw.charCodeAt(i);
+    h2 = h2 >>> 0;
+  }
+  const hex2 = h2.toString(16).padStart(8, '0');
+  return `${hex.slice(0,8)}-${hex2.slice(0,4)}-4${hex.slice(0,3)}-8${hex2.slice(0,3)}-${hex}${hex2}`.slice(0, 36);
+};
 
 // Intenta mapear columna buscando variantes del nombre
 const findCol = (row: any, variants: string[]): any => {
@@ -110,12 +133,17 @@ const BATCH_SIZE = 50; // Supabase recomienda lotes de 50
 // ── Componente principal ──────────────────────────────────────────────────────
 export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: ImportadorMasivoProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // FIX: Guardar el workbook en un ref para poder re-procesar hojas sin re-leer el archivo
+  const workbookRef = useRef<XLSX.WorkBook | null>(null);
+
   const [step, setStep] = useState<'idle' | 'preview' | 'importing' | 'done'>('idle');
   const [fileName, setFileName] = useState('');
   const [rawSheets, setRawSheets] = useState<string[]>([]);
   const [selectedSheet, setSelectedSheet] = useState('');
-  const [rawRows, setRawRows] = useState<any[]>([]);
   const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
+
+  // Modo de carga: reemplazar todo vs agregar/actualizar
+  const [loadMode, setLoadMode] = useState<'replace' | 'upsert'>('replace');
 
   // Filas procesadas para importar
   const [glosasPreview, setGlosasPreview] = useState<GlosaImportada[]>([]);
@@ -131,6 +159,7 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
   const [importLog, setImportLog] = useState<string[]>([]);
   const [showPreviewTable, setShowPreviewTable] = useState(true);
   const [filterPendientes, setFilterPendientes] = useState(false);
+  const [currentPhase, setCurrentPhase] = useState('');
 
   // Resultado final
   const [resultStats, setResultStats] = useState<{
@@ -159,6 +188,8 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
     try {
       const arrayBuffer = await file.arrayBuffer();
       const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+      // FIX: Guardar el workbook en el ref para reutilizarlo al cambiar de hoja
+      workbookRef.current = wb;
       setRawSheets(wb.SheetNames);
 
       // Auto-seleccionar la hoja más relevante
@@ -174,11 +205,18 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
     }
   };
 
+  // FIX: Usar el workbook guardado en el ref, no crear uno vacío
+  const handleSheetChange = (sheetName: string) => {
+    setSelectedSheet(sheetName);
+    if (workbookRef.current) {
+      processSheet(workbookRef.current, sheetName);
+    }
+  };
+
   const processSheet = (wb: XLSX.WorkBook, sheetName: string) => {
     const ws = wb.Sheets[sheetName];
     if (!ws) return;
     const rows: any[] = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
-    setRawRows(rows);
 
     const cols = rows.length > 0 ? Object.keys(rows[0]) : [];
     setDetectedColumns(cols);
@@ -197,14 +235,23 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
     });
 
     if (mode === 'glosas') {
-      const glosas: GlosaImportada[] = validRows.map(row => {
+      const glosas: GlosaImportada[] = validRows.map((row, idx) => {
         const idRaw = normalizeText(findCol(row, ['ID', 'id', 'Id', 'Id Glosa']));
+        const factura = normalizeText(findCol(row, ['Factura', 'factura', 'FACTURA', 'Nro Factura', 'No. Factura', 'NroFactura', 'No de Factura', 'Numero de Factura']));
+        const servicio = normalizeText(findCol(row, ['Servicio', 'servicio', 'SERVICIO', 'Tipo Servicio', 'tipo_servicio', 'Area']));
+        const fecha = normalizeText(findCol(row, ['Fecha', 'fecha', 'FECHA', 'Fecha Glosa', 'FechaGlosa', 'Fecha de Glosa'])) ||
+          new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const estado = normalizeText(findCol(row, ['Estado', 'estado', 'ESTADO', 'Status', 'Estado Glosa'])) || 'Pendiente';
         const regInterna = normalizeText(findCol(row, ['Registrada Internamente', 'registrada_internamente', 'RegistradaInternamente', 'Registrada']));
+
+        // FIX: ID determinístico — si el Excel tiene ID propio lo usamos; si no,
+        // generamos uno basado en los campos únicos para evitar duplicados en re-importaciones.
+        const finalId = idRaw || deterministicId([factura, servicio, fecha, String(idx), currentSeccion]);
+
         return {
-          id: idRaw || crypto.randomUUID(),
-          factura: normalizeText(findCol(row, ['Factura', 'factura', 'FACTURA', 'Nro Factura', 'No. Factura', 'NroFactura', 'No de Factura', 'Numero de Factura'])),
-          servicio: normalizeText(findCol(row, ['Servicio', 'servicio', 'SERVICIO', 'Tipo Servicio', 'tipo_servicio', 'Area'])),
+          id: finalId,
+          factura,
+          servicio,
           orden_servicio: normalizeText(findCol(row, ['Orden Servicio', 'orden_servicio', 'OrdenServicio', 'Orden', 'orden', 'No Orden'])),
           valor_glosa: cleanNum(findCol(row, ['Valor Glosa', 'valor_glosa', 'ValorGlosa', 'Glosa', 'glosa', 'Valor Glosado', 'valor_glosado', 'Total Glosa'])),
           valor_aceptado: cleanNum(findCol(row, ['Valor Aceptado', 'valor_aceptado', 'ValorAceptado', 'Aceptado', 'aceptado', 'Total Aceptado'])),
@@ -212,8 +259,7 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
           descripcion: normalizeText(findCol(row, ['Descripción', 'Descripcion', 'descripcion', 'DESCRIPCION', 'Obs', 'Observacion', 'observacion', 'Observaciones', 'Motivo', 'Detalle'])),
           tipo_glosa: normalizeText(findCol(row, ['Tipo Glosa', 'tipo_glosa', 'TipoGlosa', 'Tipo', 'tipo', 'Motivo Glosa'])) || 'Tarifas',
           estado,
-          fecha: normalizeText(findCol(row, ['Fecha', 'fecha', 'FECHA', 'Fecha Glosa', 'FechaGlosa', 'Fecha de Glosa'])) ||
-            new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          fecha,
           registrada_internamente: regInterna.toUpperCase().includes('SÍ') || regInterna.toUpperCase().includes('SI') || regInterna === '1' || regInterna.toUpperCase() === 'TRUE',
           seccion: currentSeccion,
           soporte_pdf: normalizeText(findCol(row, ['Soporte PDF', 'soporte_pdf', 'SoportePDF', 'Soporte', 'PDF', 'Archivo'])) || null,
@@ -222,15 +268,21 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
       });
       setGlosasPreview(glosas);
     } else {
-      const ingresos: IngresoImportado[] = validRows.map(row => {
+      const ingresos: IngresoImportado[] = validRows.map((row, idx) => {
         const idRaw = normalizeText(findCol(row, ['ID', 'id', 'Id', 'Id Ingreso']));
+        const factura = normalizeText(findCol(row, ['Factura', 'factura', 'FACTURA', 'Nro Factura', 'NroFactura', 'No de Factura', 'Numero de Factura']));
+        const fecha = normalizeText(findCol(row, ['Fecha', 'fecha', 'FECHA', 'Fecha Ingreso'])) ||
+          new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        // FIX: ID determinístico para ingresos también
+        const finalId = idRaw || deterministicId([factura, fecha, String(idx), currentSeccion, 'ingreso']);
+
         return {
-          id: idRaw || crypto.randomUUID(),
-          factura: normalizeText(findCol(row, ['Factura', 'factura', 'FACTURA', 'Nro Factura', 'NroFactura', 'No de Factura', 'Numero de Factura'])),
+          id: finalId,
+          factura,
           valor_aceptado: cleanNum(findCol(row, ['Valor Aceptado', 'valor_aceptado', 'ValorAceptado', 'Aceptado', 'Ingreso', 'Total Ingreso', 'Valor Pagado'])),
           valor_no_aceptado: cleanNum(findCol(row, ['Valor No Aceptado', 'valor_no_aceptado', 'No Aceptado', 'Total No Aceptado'])),
-          fecha: normalizeText(findCol(row, ['Fecha', 'fecha', 'FECHA', 'Fecha Ingreso'])) ||
-            new Date().toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          fecha,
           seccion: currentSeccion,
           soporte_pdf: normalizeText(findCol(row, ['Soporte PDF', 'soporte_pdf', 'Soporte', 'PDF', 'Archivo'])) || null,
           _status: 'nuevo',
@@ -244,7 +296,39 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
     addLog(`📊 Modo detectado: ${mode === 'glosas' ? 'GLOSAS' : 'INGRESOS'}`);
   };
 
-  // ── 2. Importar en lotes ─────────────────────────────────────────────────
+  // ── 2. Backup automático antes de borrar ─────────────────────────────────
+  const backupCurrentData = async (tableName: string): Promise<number> => {
+    addLog(`💾 Haciendo backup de datos actuales...`);
+    const { data, error } = await supabase.from(tableName).select('*').limit(100000);
+    if (error) throw new Error('No se pudo hacer backup: ' + error.message);
+    if (!data || data.length === 0) {
+      addLog(`ℹ️ No había datos anteriores en ${tableName}. Continuando...`);
+      return 0;
+    }
+    // Descargar backup como JSON automáticamente
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `backup_${tableName}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    addLog(`✅ Backup descargado: ${data.length} registros guardados en tu PC`);
+    return data.length;
+  };
+
+  // ── 3. Borrar todos los registros de una tabla ───────────────────────────
+  const deleteAllRecords = async (tableName: string): Promise<void> => {
+    addLog(`🗑️ Eliminando todos los registros anteriores de ${tableName}...`);
+    // Supabase requiere una condición para DELETE masivo; usamos "id is not null"
+    const { error } = await supabase.from(tableName).delete().not('id', 'is', null);
+    if (error) throw new Error('Error al eliminar registros: ' + error.message);
+    addLog(`✅ Registros anteriores eliminados correctamente`);
+  };
+
+  // ── 4. Importar en lotes ─────────────────────────────────────────────────
   const startImport = async () => {
     const items = importMode === 'glosas' ? glosasPreview : ingresosPreview;
     if (items.length === 0) return;
@@ -254,57 +338,82 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
     setProgress(0);
     setImportedCount(0);
     setErrorCount(0);
-    addLog(`🚀 Iniciando importación de ${items.length} registros en lotes de ${BATCH_SIZE}...`);
-
-    let ok = 0;
-    let err = 0;
     const tableName = importMode === 'glosas' ? 'glosas' : 'ingresos';
 
-    // Limpiar campos internos antes de enviar a Supabase
-    const cleanItems = items.map(({ _status, _errorMsg, ...rest }: any) => rest);
+    addLog(`🚀 Modo: ${loadMode === 'replace' ? '🔄 REEMPLAZAR TODO' : '➕ AGREGAR/ACTUALIZAR'}`);
 
-    for (let i = 0; i < cleanItems.length; i += BATCH_SIZE) {
-      const batch = cleanItems.slice(i, i + BATCH_SIZE);
-      const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-      const totalBatches = Math.ceil(cleanItems.length / BATCH_SIZE);
+    try {
+      // PASO A — Si es modo "Reemplazar todo": backup + borrar
+      if (loadMode === 'replace') {
+        setCurrentPhase('backup');
+        addLog(`📋 Paso 1/3: Creando backup de seguridad...`);
+        await backupCurrentData(tableName);
 
-      try {
-        const { error } = await supabase.from(tableName).upsert(batch, { onConflict: 'id' });
-        if (error) throw error;
-        ok += batch.length;
-        addLog(`✅ Lote ${batchNum}/${totalBatches}: ${batch.length} registros guardados`);
-      } catch (e: any) {
-        err += batch.length;
-        addLog(`❌ Lote ${batchNum}/${totalBatches}: Error - ${e.message}`);
+        setCurrentPhase('deleting');
+        addLog(`📋 Paso 2/3: Eliminando registros anteriores...`);
+        await deleteAllRecords(tableName);
+
+        addLog(`📋 Paso 3/3: Cargando ${items.length} registros del Excel...`);
+      } else {
+        addLog(`📋 Cargando ${items.length} registros en lotes de ${BATCH_SIZE}...`);
       }
 
-      setImportedCount(ok);
-      setErrorCount(err);
-      setProgress(Math.round(((i + batch.length) / cleanItems.length) * 100));
+      setCurrentPhase('uploading');
 
-      // Pausa pequeña para no saturar la API
-      await new Promise(r => setTimeout(r, 120));
+      let ok = 0;
+      let err = 0;
+
+      // Limpiar campos internos antes de enviar a Supabase
+      const cleanItems = items.map(({ _status, _errorMsg, ...rest }: any) => rest);
+
+      for (let i = 0; i < cleanItems.length; i += BATCH_SIZE) {
+        const batch = cleanItems.slice(i, i + BATCH_SIZE);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(cleanItems.length / BATCH_SIZE);
+
+        try {
+          const { error } = await supabase.from(tableName).upsert(batch, { onConflict: 'id' });
+          if (error) throw error;
+          ok += batch.length;
+          addLog(`✅ Lote ${batchNum}/${totalBatches}: ${batch.length} registros guardados`);
+        } catch (e: any) {
+          err += batch.length;
+          addLog(`❌ Lote ${batchNum}/${totalBatches}: Error - ${e.message}`);
+        }
+
+        setImportedCount(ok);
+        setErrorCount(err);
+        setProgress(Math.round(((i + batch.length) / cleanItems.length) * 100));
+
+        // Pausa pequeña para no saturar la API
+        await new Promise(r => setTimeout(r, 120));
+      }
+
+      // Calcular estadísticas finales
+      const pendientes = importMode === 'glosas'
+        ? glosasPreview.filter(g => g.estado === 'Pendiente').length
+        : 0;
+
+      setResultStats({
+        total: items.length,
+        nuevos: ok,
+        actualizados: 0,
+        errores: err,
+        pendientes,
+      });
+
+      addLog(`🎉 Importación completada: ${ok} exitosos, ${err} errores`);
+    } catch (fatalErr: any) {
+      addLog(`💥 Error crítico: ${fatalErr.message}`);
+      addLog(`⚠️ Proceso interrumpido. Revisa el backup descargado.`);
     }
 
-    // Calcular estadísticas finales
-    const pendientes = importMode === 'glosas'
-      ? glosasPreview.filter(g => g.estado === 'Pendiente').length
-      : 0;
-
-    setResultStats({
-      total: items.length,
-      nuevos: ok,
-      actualizados: 0, // upsert mezcla nuevos y actualizados
-      errores: err,
-      pendientes,
-    });
-
-    addLog(`🎉 Importación completada: ${ok} exitosos, ${err} errores`);
+    setCurrentPhase('');
     setStep('done');
     onImportComplete();
   };
 
-  // ── 3. Exportar pendientes ────────────────────────────────────────────────
+  // ── 5. Exportar pendientes ────────────────────────────────────────────────
   const exportPendientes = () => {
     const pendientes = glosasPreview.filter(g => g.estado === 'Pendiente');
     if (pendientes.length === 0) {
@@ -338,6 +447,12 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
     : previewItems;
 
   const pendienteCount = glosasPreview.filter(g => g.estado === 'Pendiente').length;
+
+  // Texto de la fase actual
+  const phaseLabel =
+    currentPhase === 'backup' ? '💾 Creando backup...' :
+    currentPhase === 'deleting' ? '🗑️ Eliminando registros anteriores...' :
+    currentPhase === 'uploading' ? '⬆️ Subiendo registros del Excel...' : '';
 
   return (
     <motion.div
@@ -402,6 +517,74 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
           </button>
         </div>
 
+        {/* ── MODO DE CARGA ── */}
+        <div style={{ marginBottom: '1.25rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setLoadMode('replace')}
+            style={{
+              flex: 1,
+              minWidth: 200,
+              padding: '0.75rem 1rem',
+              borderRadius: '12px',
+              border: `2px solid ${loadMode === 'replace' ? '#ef4444' : 'rgba(255,255,255,0.1)'}`,
+              background: loadMode === 'replace' ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.04)',
+              color: loadMode === 'replace' ? '#ef4444' : 'rgba(255,255,255,0.5)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'all 0.2s',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '0.85rem', marginBottom: '0.2rem' }}>
+              <Trash2 size={15} />
+              🔄 Reemplazar todo
+              {loadMode === 'replace' && <span style={{ marginLeft: 'auto', fontSize: '0.7rem', background: '#ef4444', color: '#fff', borderRadius: '99px', padding: '0.1rem 0.5rem' }}>ACTIVO</span>}
+            </div>
+            <p style={{ margin: 0, fontSize: '0.72rem', opacity: 0.7, lineHeight: 1.4 }}>
+              Borra todos los registros actuales y carga solo los del Excel. Hace backup automático antes de borrar.
+            </p>
+          </button>
+          <button
+            onClick={() => setLoadMode('upsert')}
+            style={{
+              flex: 1,
+              minWidth: 200,
+              padding: '0.75rem 1rem',
+              borderRadius: '12px',
+              border: `2px solid ${loadMode === 'upsert' ? '#10b981' : 'rgba(255,255,255,0.1)'}`,
+              background: loadMode === 'upsert' ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.04)',
+              color: loadMode === 'upsert' ? '#10b981' : 'rgba(255,255,255,0.5)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'all 0.2s',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '0.85rem', marginBottom: '0.2rem' }}>
+              <CheckCircle2 size={15} />
+              ➕ Agregar / Actualizar
+              {loadMode === 'upsert' && <span style={{ marginLeft: 'auto', fontSize: '0.7rem', background: '#10b981', color: '#fff', borderRadius: '99px', padding: '0.1rem 0.5rem' }}>ACTIVO</span>}
+            </div>
+            <p style={{ margin: 0, fontSize: '0.72rem', opacity: 0.7, lineHeight: 1.4 }}>
+              Mantiene los registros actuales y solo añade o actualiza los que vienen en el Excel.
+            </p>
+          </button>
+        </div>
+
+        {/* Aviso modo reemplazar */}
+        {loadMode === 'replace' && (
+          <div style={{
+            marginBottom: '1.25rem', padding: '0.75rem 1rem',
+            background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
+            borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '0.6rem'
+          }}>
+            <AlertTriangle size={16} color="#ef4444" style={{ flexShrink: 0, marginTop: 2 }} />
+            <p style={{ margin: 0, fontSize: '0.76rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
+              <strong style={{ color: '#ef4444' }}>Modo "Reemplazar todo" activo.</strong>{' '}
+              Se descargará automáticamente un backup JSON de los datos actuales antes de borrarlos.
+              La base de datos quedará idéntica al Excel importado.
+            </p>
+          </div>
+        )}
+
         {/* ── PASO 1: Drop zone ── */}
         <div
           onClick={() => fileInputRef.current?.click()}
@@ -446,13 +629,10 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
             <label style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', fontWeight: 600 }}>
               Hoja del Excel:
             </label>
+            {/* FIX: Ahora usa handleSheetChange que re-procesa desde el workbook guardado en ref */}
             <select
               value={selectedSheet}
-              onChange={e => {
-                setSelectedSheet(e.target.value);
-                const wb = XLSX.read(new ArrayBuffer(0));
-                // Re-procesar la hoja seleccionada
-              }}
+              onChange={e => handleSheetChange(e.target.value)}
               style={{
                 background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)',
                 borderRadius: '8px', color: '#fff', padding: '0.4rem 0.75rem',
@@ -496,6 +676,9 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
               {/* Barra de progreso (cuando importa) */}
               {step === 'importing' && (
                 <div style={{ marginBottom: '1.25rem' }}>
+                  {phaseLabel && (
+                    <p style={{ margin: '0 0 0.5rem', color: '#f59e0b', fontSize: '0.8rem', fontWeight: 700 }}>{phaseLabel}</p>
+                  )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
                     <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: 600 }}>
                       <Loader2 size={14} style={{ display: 'inline', marginRight: '0.25rem', animation: 'spin 1s linear infinite' }} />
@@ -536,6 +719,7 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
                     </p>
                     <p style={{ margin: '0.2rem 0 0', color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>
                       {resultStats.nuevos} registros subidos a Supabase · {resultStats.errores} errores · {resultStats.pendientes} pendientes por registrar
+                      {loadMode === 'replace' && ' · Modo: Reemplazó todos los registros anteriores'}
                     </p>
                   </div>
                   {pendienteCount > 0 && (
@@ -608,16 +792,22 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
                     whileTap={{ scale: 0.97 }}
                     onClick={startImport}
                     style={{
-                      background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+                      background: loadMode === 'replace'
+                        ? 'linear-gradient(135deg, #ef4444, #b91c1c)'
+                        : 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
                       border: 'none', borderRadius: '10px',
                       padding: '0.6rem 1.5rem', color: '#fff',
                       fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      boxShadow: '0 4px 15px rgba(139,92,246,0.4)'
+                      boxShadow: loadMode === 'replace'
+                        ? '0 4px 15px rgba(239,68,68,0.4)'
+                        : '0 4px 15px rgba(139,92,246,0.4)'
                     }}
                   >
-                    <UploadCloud size={16} />
-                    SUBIR {previewItems.length.toLocaleString('es-CO')} REGISTROS A SUPABASE
+                    {loadMode === 'replace' ? <Trash2 size={16} /> : <UploadCloud size={16} />}
+                    {loadMode === 'replace'
+                      ? `REEMPLAZAR CON ${previewItems.length.toLocaleString('es-CO')} REGISTROS`
+                      : `SUBIR ${previewItems.length.toLocaleString('es-CO')} REGISTROS`}
                   </motion.button>
                 )}
 
@@ -630,6 +820,7 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
                       setGlosasPreview([]);
                       setIngresosPreview([]);
                       setResultStats(null);
+                      workbookRef.current = null;
                       if (fileInputRef.current) fileInputRef.current.value = '';
                     }}
                     style={{
@@ -759,7 +950,7 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
                   {importLog.map((line, i) => (
                     <p key={i} style={{
                       margin: '0.15rem 0', fontSize: '0.7rem',
-                      color: line.includes('❌') ? '#ef4444' : line.includes('✅') ? '#10b981' : line.includes('⚠️') ? '#f59e0b' : 'rgba(255,255,255,0.5)',
+                      color: line.includes('❌') || line.includes('💥') ? '#ef4444' : line.includes('✅') ? '#10b981' : line.includes('⚠️') || line.includes('🗑️') ? '#f59e0b' : 'rgba(255,255,255,0.5)',
                       fontFamily: 'monospace'
                     }}>
                       {line}
@@ -779,6 +970,9 @@ export const ImportadorMasivo = ({ currentSeccion, onImportComplete, onClose }: 
             <br />
             💡 <strong style={{ color: 'rgba(255,255,255,0.5)' }}>Para Ingresos:</strong>{' '}
             Factura, Valor Aceptado, Valor No Aceptado, Fecha
+            <br />
+            💡 <strong style={{ color: 'rgba(255,255,255,0.5)' }}>IDs:</strong>{' '}
+            Si tu Excel no tiene columna &quot;ID&quot;, el sistema genera IDs únicos automáticamente basados en Factura + Servicio + Fecha.
           </p>
         </div>
       </motion.div>
@@ -803,7 +997,7 @@ const thStyle: React.CSSProperties = {
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: '0.4rem 0.75rem',
+  padding: '0.45rem 0.75rem',
   color: 'rgba(255,255,255,0.75)',
   whiteSpace: 'nowrap',
 };

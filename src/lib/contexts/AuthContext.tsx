@@ -45,12 +45,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setLoading(false);
 
                 if (session?.user) {
+                    const currentUserId = session.user.id;
+
+                    // ── FIX CROSS-PC: Al iniciar sesión, comparar el usuario actual con el
+                    // dueño del caché local. Si no coinciden (PC compartido, link compartido,
+                    // cambio de cuenta), limpiar TODOS los cachés para forzar datos frescos de Supabase.
+                    try {
+                        if (typeof window !== 'undefined') {
+                            const cacheOwner = localStorage.getItem('cache_owner_user_id');
+                            const prevActiveUser = localStorage.getItem('active_user_id');
+
+                            if ((cacheOwner && cacheOwner !== currentUserId) ||
+                                (prevActiveUser && prevActiveUser !== currentUserId)) {
+                                console.log('[AuthContext] initAuth: Usuario diferente al dueño del caché. Limpiando caché de sesión anterior...');
+                                clearAllDataCache();
+                            }
+                            // Registrar el usuario activo inmediatamente al iniciar
+                            localStorage.setItem('active_user_id', currentUserId);
+                        }
+                    } catch { /* localStorage bloqueado */ }
+
                     // Obtener perfil con timeout de 10s para no bloquear indefinidamente
                     try {
                         const profilePromise = supabase
                             .from('perfiles')
                             .select('rol, seccion_asignada')
-                            .eq('id', session.user.id)
+                            .eq('id', currentUserId)
                             .single();
 
                         const timeoutPromise = new Promise<null>((resolve) =>
@@ -74,6 +94,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         console.error('Error obteniendo perfil (no crítico):', profileErr);
                         // Continuar sin perfil - la app funciona con rol null
                     }
+                } else {
+                    // Sin sesión: limpiar caché para no dejar datos expuestos
+                    try {
+                        if (typeof window !== 'undefined') {
+                            clearAllDataCache();
+                            localStorage.removeItem('active_user_id');
+                        }
+                    } catch { /* localStorage bloqueado */ }
                 }
             } catch (err) {
                 console.error('Error inicializando auth:', err);
@@ -183,7 +211,6 @@ export function clearAllDataCache() {
         'emergency_buffer_ingresos',
         'pending_glosas',
         'checked_ids_registry',
-        'MASTER_RECORD_LOG',
         'sisfact_app_version',
         'cache_owner_user_id',  // FIX v17.0: ownership marker para detectar cambio de usuario
     ];

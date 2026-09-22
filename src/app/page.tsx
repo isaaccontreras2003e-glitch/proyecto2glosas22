@@ -123,16 +123,59 @@ function Home() {
   }, [loading, authLoading]);
 
   // ─── HELPER: Registro Maestro Inmutable (Local) ──────────────────────────
-  // Guarda una copia de CADA registro ingresado en un historial permanente
+  // Guarda una copia de CADA registro ingresado en un historial permanente y en la Bóveda
   const saveToMasterLog = (item: any) => {
     try {
       const history = safeStorage.getJson<any[]>('MASTER_RECORD_LOG', []);
+      const vault = safeStorage.getJson<any[]>('IMMUTABLE_VAULT_LOG', []);
       // Evitar duplicados exactos por ID
       if (!history.some(h => h.id === item.id)) {
-        safeStorage.setJson('MASTER_RECORD_LOG', [item, ...history].slice(0, 5000)); // Límite de 5000
+        safeStorage.setJson('MASTER_RECORD_LOG', [item, ...history].slice(0, 10000));
+      }
+      if (!vault.some((v: any) => v.id === item.id)) {
+        // La bóveda no tiene límite de tamaño estricto para evitar pérdida
+        const newVault = [item, ...vault];
+        // Limitar a 20000 por seguridad de memoria del navegador (aprox 10-20MB)
+        safeStorage.setJson('IMMUTABLE_VAULT_LOG', newVault.slice(0, 20000)); 
       }
     } catch (e) {
       console.error('Error en Master Log:', e);
+    }
+  };
+
+  // Función para descargar la bóveda completa manualmente al equipo físico
+  const exportImmutableVault = () => {
+    try {
+      const vaultData = safeStorage.getJson<any[]>('IMMUTABLE_VAULT_LOG', []);
+      const masterData = safeStorage.getJson<any[]>('MASTER_RECORD_LOG', []);
+      
+      // Mezclamos ambos por si uno tiene datos que el otro no
+      const combined = [...vaultData, ...masterData];
+      const uniqueMap = new Map();
+      combined.forEach(item => {
+         if (item && item.id) uniqueMap.set(item.id, item);
+      });
+      const uniqueData = Array.from(uniqueMap.values());
+
+      if (uniqueData.length === 0) {
+        showToast('La bóveda local está vacía.', 'info');
+        return;
+      }
+
+      const blob = new Blob([JSON.stringify(uniqueData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Boveda_Seguridad_Sisfact_${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showToast(`✅ Bóveda descargada (${uniqueData.length} registros). Guárdala en un lugar seguro.`, 'success');
+    } catch (error) {
+      console.error('Error exportando bóveda:', error);
+      showToast('Error al exportar bóveda.', 'error');
     }
   };
 
